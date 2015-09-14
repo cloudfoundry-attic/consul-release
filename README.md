@@ -1,4 +1,4 @@
-# etcd-release
+# consul-release
 ---
 
 This is a [bosh](http://bosh.io) release for [consul](https://github.com/hashicorp/consul).
@@ -29,7 +29,7 @@ We assume you have already deployed and targeted a bosh director. For more instr
 Find the "BOSH Lite Warden" stemcell you wish to use. [bosh.io](https://bosh.io/stemcells) provides a resource to find and download stemcells.  Then run `bosh upload release PATH_TO_DOWNLOADED_STEMCELL`.
 
 ###2. Creating a release
-From within the etcd-release director run `bosh create release --force` to create a development release.
+From within the consul-release director run `bosh create release --force` to create a development release.
 
 ###3. Uploading a release
 Once you've created a development release run `bosh upload release` to upload your development release to the director.
@@ -52,7 +52,7 @@ Once installed, manifests can be generated using `./scripts/generate_consul_depl
 	```
 2. instance_count_stub
 
-	The instance count stub provides the ability to overwrite the number of instances of consul to deploy. The minimal deployment of etcd is shown below:
+	The instance count stub provides the ability to overwrite the number of instances of consul to deploy. The minimal deployment of consul is shown below:
 	```yaml
 	---
 	instance_count_overrides:
@@ -87,7 +87,7 @@ We provide [default stubs for a BOSH-Lite deployment](https://github.com/cloudfo
 
 * instance_count_stub: [manifest-generation/bosh-lite-stubs/instance-count-overrides.yml](manifest-generation/bosh-lite-stubs/instance-count-overrides.yml)
 * persistent_disk_stub: [manifest-generation/bosh-lite-stubs/persistent-disk-overrides.yml](manifest-generation/bosh-lite-stubs/persistent-disk-overrides.yml)
-* iaas_settings: [manifest-generation/bosh-lite-stubs/iaas-settings-etcd.yml](manifest-generation/bosh-lite-stubs/iaas-settings-etcd.yml)
+* iaas_settings: [manifest-generation/bosh-lite-stubs/iaas-settings-consul.yml](manifest-generation/bosh-lite-stubs/iaas-settings-consul.yml)
 
 [Optional]
 
