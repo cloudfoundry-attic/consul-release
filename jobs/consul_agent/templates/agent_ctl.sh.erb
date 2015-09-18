@@ -1,6 +1,22 @@
 #!/bin/bash -e
 # vim: set ft=sh
 
+<%
+  require 'openssl'
+  require 'base64'
+  def string_to_encrypt_key(string)
+    return string if is_already_key?(string)
+    Base64.encode64(OpenSSL::PKCS5.pbkdf2_hmac_sha1(string, "", 20000, 16)).strip
+  end
+
+  def is_already_key?(string)
+    return false unless string.length == 24
+    Base64.strict_decode64(string).length == 16
+  rescue
+    false
+  end
+%>
+
 LOG_DIR=/var/vcap/sys/log/consul_agent
 RUN_DIR=/var/vcap/sys/run/consul_agent
 DATA_DIR=/var/vcap/store/consul_agent
@@ -170,11 +186,11 @@ EOF
         <% if !p("consul.encrypt_keys").nil? && !p("consul.encrypt_keys").empty? %>
           if [ "$server" == "true" ]; then
             allkeys=$($PKG/bin/consul keyring -list | grep -oP '[^\s]{24}' | sort -u | awk '{ print $1 }')
-            extrakeys=$(echo $allkeys | xargs -n1 | grep -v '<%= p("consul.encrypt_keys").join('\\|') %>' | cat)
+            extrakeys=$(echo $allkeys | xargs -n1 | grep -v '<%= p("consul.encrypt_keys").collect{|key| string_to_encrypt_key(key) }.join('\\|') %>' | cat)
             <% p("consul.encrypt_keys").each do |encrypt_key| %>
-              $PKG/bin/consul keyring -install='<%= encrypt_key %>'
+              $PKG/bin/consul keyring -install='<%= string_to_encrypt_key(encrypt_key) %>'
             <% end %>
-            $PKG/bin/consul keyring -use='<%= p("consul.encrypt_keys").first %>'
+            $PKG/bin/consul keyring -use='<%= string_to_encrypt_key(p("consul.encrypt_keys").first) %>'
             for toremove in $extrakeys ; do
               $PKG/bin/consul keyring -remove="$toremove"
             done

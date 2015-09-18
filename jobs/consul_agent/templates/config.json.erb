@@ -1,4 +1,19 @@
 <%=
+  require 'openssl'
+  require 'base64'
+
+  def string_to_encrypt_key(string)
+    return string if is_already_key?(string)
+    Base64.encode64(OpenSSL::PKCS5.pbkdf2_hmac_sha1(string, "", 20000, 16)).strip
+  end
+
+  def is_already_key?(string)
+    return false unless string.length == 24
+    Base64.strict_decode64(string).length == 16
+  rescue
+    false
+  end
+
   def discover_external_ip
     networks = spec.networks.marshal_dump
 
@@ -68,7 +83,7 @@ if p("consul.require_ssl")
     "ca_file" => "#{certs_dir}/ca.crt",
     "key_file" => key_file,
     "cert_file" => cert_file,
-    "encrypt" => p("consul.encrypt_keys").first,
+    "encrypt" => string_to_encrypt_key(p("consul.encrypt_keys").first),
   })
 end
 

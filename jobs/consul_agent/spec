@@ -62,4 +62,4 @@ properties:
   consul.agent_key:
     description: "PEM-encoded client key"
   consul.encrypt_keys:
-    description: "A list of base64 encoded keys, the key length must be 16 bytes, the first key in the list is the active one"
+    description: "A list of passphrases that will be converted into encryption keys, the first key in the list is the active one"
