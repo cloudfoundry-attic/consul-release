@@ -3,12 +3,11 @@
   require 'base64'
 
   def string_to_encrypt_key(string)
-    return string if is_already_key?(string)
-    Base64.encode64(OpenSSL::PKCS5.pbkdf2_hmac_sha1(string, "", 20000, 16)).strip
+    return string if is_key?(string)
+    Base64.strict_encode64(OpenSSL::PKCS5.pbkdf2_hmac_sha1(string, "", 20000, 16))
   end
 
-  def is_already_key?(string)
-    return false unless string.length == 24
+  def is_key?(string)
     Base64.strict_decode64(string).length == 16
   rescue
     false
