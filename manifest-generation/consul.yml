@@ -1,7 +1,5 @@
 name: (( name_overrides.deployment_name ))
 
-release_version: (( release_version_overrides || "latest" ))
-
 releases:
   - name: (( name_overrides.release_name ))
     version: (( release_version ))
@@ -16,7 +14,7 @@ update:
   canaries: 1
   canary_watch_time: 1000-180000
   update_watch_time: 1000-180000
-  max_in_flight: 50
+  max_in_flight: 1
   serial: true
 
 networks:
@@ -44,9 +42,7 @@ jobs:
   - name: consul_z1
     networks:
       - name: consul1
-        static_ips: (( merge ))
-    update:
-      max_in_flight: 1
+        static_ips: (( static_ips(0,1,2,3,4) ))
     properties:
       consul:
         agent:
@@ -57,15 +53,10 @@ jobs:
     instances: (( instance_count_overrides.consul_z1.instances || 1 ))
     persistent_disk: (( persistent_disk_overrides.consul_z1 || 1024 ))
     resource_pool: consul_z1
-    networks:
-      - name: consul1
-        static_ips: (( static_ips(0,1,2,3,4) ))
   - name: consul_z2
     networks:
       - name: consul2
-        static_ips: (( merge ))
-    update:
-      max_in_flight: 1
+        static_ips: (( static_ips(0,1,2,3,4) ))
     properties:
       consul:
         agent:
@@ -76,9 +67,6 @@ jobs:
     instances: (( instance_count_overrides.consul_z2.instances || 0 ))
     persistent_disk: (( persistent_disk_overrides.consul_z2 || 1024 ))
     resource_pool: consul_z2
-    networks:
-      - name: consul2
-        static_ips: (( static_ips(0,1,2,3,4) ))
 
 properties:
   consul:
@@ -95,6 +83,7 @@ properties:
         lan: (( jobs.consul_z1.networks.consul1.static_ips jobs.consul_z2.networks.consul2.static_ips ))
 
 # The keys below should not be included in the final stub
+release_version: (( release_version_overrides || "latest" ))
 iaas_settings: (( merge ))
 instance_count_overrides: (( merge ))
 persistent_disk_overrides: (( merge ))
