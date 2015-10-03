@@ -1,0 +1,6 @@
+---
+instance_count_overrides:
+  etcd_z1:
+    instances: 1
+  etcd_z2:
+    instances: 0
