@@ -13,7 +13,6 @@ import (
 	. "github.com/onsi/gomega/gexec"
 )
 
-
 func SetupGoPath() string {
 	goEnv := os.Getenv("GOPATH")
 	return strings.Split(goEnv, ":")[0]

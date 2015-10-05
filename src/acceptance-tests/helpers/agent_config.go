@@ -12,24 +12,24 @@ const defaultLogLevel = "info"
 const defaultProtocolVersion = 2
 
 type configFile struct {
-	BootstrapExpect    int            `json:"bootstrap_expect"`
-	Datacenter         string         `json:"datacenter"`
-	DataDir            string         `json:"data_dir"`
-	LogLevel           string         `json:"log_level"`
-	NodeName           string         `json:"node_name"`
-	Server             bool           `json:"server"`
-	BindAddr           string         `json:"bind_addr"`
-	ProtocolVersion    int            `json:"protocol"`
-	RetryJoin          []string       `json:"retry_join"`
-	RejoinAfterLeave   bool           `json:"rejoin_after_leave"`
-	DisableRemoteExec  bool           `json:"disable_remote_exec"`
-	DisableUpdateCheck bool           `json:"disable_update_check"`
+	BootstrapExpect    int      `json:"bootstrap_expect"`
+	Datacenter         string   `json:"datacenter"`
+	DataDir            string   `json:"data_dir"`
+	LogLevel           string   `json:"log_level"`
+	NodeName           string   `json:"node_name"`
+	Server             bool     `json:"server"`
+	BindAddr           string   `json:"bind_addr"`
+	ProtocolVersion    int      `json:"protocol"`
+	RetryJoin          []string `json:"retry_join"`
+	RejoinAfterLeave   bool     `json:"rejoin_after_leave"`
+	DisableRemoteExec  bool     `json:"disable_remote_exec"`
+	DisableUpdateCheck bool     `json:"disable_update_check"`
 }
 
 func newConfigFile(
-dataDir string,
-bindAddress string,
-serverAddresses []string,
+	dataDir string,
+	bindAddress string,
+	serverAddresses []string,
 ) configFile {
 
 	return configFile{
@@ -47,10 +47,10 @@ serverAddresses []string,
 }
 
 func writeConfigFile(
-configDir string,
-dataDir string,
-bindAddress string,
-serverAddresses []string,
+	configDir string,
+	dataDir string,
+	bindAddress string,
+	serverAddresses []string,
 ) string {
 	filePath := path.Join(configDir, "config.json")
 	file, err := os.Create(filePath)

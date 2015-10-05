@@ -8,12 +8,12 @@ import (
 )
 
 type Config struct {
-	BindAddress                    string `json:"bind_address"`
-	BoshTarget                     string `json:"bosh_target"`
-	IAASSettingsConsulStubPath     string `json:"iaas_settings_consul_stub_path"`
-	CPIReleaseUrl                  string `json:"cpi_release_url"`
-	CPIReleaseName                 string `json:"cpi_release_name"`
-	BoshOperationTimeout           string `json:"bosh_operation_timeout"`
+	BindAddress                string `json:"bind_address"`
+	BoshTarget                 string `json:"bosh_target"`
+	IAASSettingsConsulStubPath string `json:"iaas_settings_consul_stub_path"`
+	CPIReleaseUrl              string `json:"cpi_release_url"`
+	CPIReleaseName             string `json:"cpi_release_name"`
+	BoshOperationTimeout       string `json:"bosh_operation_timeout"`
 }
 
 var loadedConfig *Config

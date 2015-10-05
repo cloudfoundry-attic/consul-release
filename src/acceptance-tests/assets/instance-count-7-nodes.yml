@@ -1,0 +1,6 @@
+---
+instance_count_overrides:
+  consul_z1:
+    instances: 3
+  consul_z2:
+    instances: 4

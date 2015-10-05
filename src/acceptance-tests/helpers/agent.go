@@ -15,12 +15,12 @@ import (
 )
 
 type AgentRunner struct {
-	consulProcess   ifrit.Process
-	running         bool
-	dataDir         string
-	configDir       string
-	serverIps       []string
-	bindAddress     string
+	consulProcess ifrit.Process
+	running       bool
+	dataDir       string
+	configDir     string
+	serverIps     []string
+	bindAddress   string
 
 	mutex *sync.RWMutex
 }
@@ -32,9 +32,9 @@ func NewAgentRunner(serverIps []string, bindAddress string) *AgentRunner {
 	Expect(len(serverIps)).NotTo(Equal(0))
 
 	return &AgentRunner{
-		serverIps: serverIps,
+		serverIps:   serverIps,
 		bindAddress: bindAddress,
-		mutex: &sync.RWMutex{},
+		mutex:       &sync.RWMutex{},
 	}
 }
 

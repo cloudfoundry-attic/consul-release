@@ -35,7 +35,7 @@ type Network struct {
 }
 
 type Properties struct {
-	Consul        Consul        `yaml:"consul"`
+	Consul Consul `yaml:"consul"`
 }
 
 type Consul struct {

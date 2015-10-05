@@ -19,6 +19,7 @@ var _ = Describe("Multiple Instance Rolling deploys", func() {
 
 	BeforeEach(func() {
 		consulManifest = new(helpers.Manifest)
+		consulServerIPs = []string{}
 
 		bosh.GenerateAndSetDeploymentManifest(
 			consulManifest,
