@@ -10,7 +10,7 @@ import (
 	"github.com/onsi/gomega/gexec"
 )
 
-var _ = Describe("Single Instance Rolling deploys", func() {
+var _ = Describe("Multiple Instance Rolling deploys", func() {
 	var (
 		consulManifest  *helpers.Manifest
 		consulServerIPs []string
@@ -24,7 +24,7 @@ var _ = Describe("Single Instance Rolling deploys", func() {
 			consulManifest,
 			consulManifestGeneration,
 			directorUUIDStub,
-			helpers.InstanceCount1NodeStubPath,
+			helpers.InstanceCount3NodesStubPath,
 			helpers.PersistentDiskStubPath,
 			config.IAASSettingsConsulStubPath,
 			helpers.PropertyOverridesStubPath,
@@ -32,7 +32,7 @@ var _ = Describe("Single Instance Rolling deploys", func() {
 		)
 
 		Expect(bosh.Command("-n", "deploy")).To(gexec.Exit(0))
-		Expect(len(consulManifest.Properties.Consul.Agent.Servers.Lans)).To(Equal(1))
+		Expect(len(consulManifest.Properties.Consul.Agent.Servers.Lans)).To(Equal(3))
 
 		for _, elem := range consulManifest.Properties.Consul.Agent.Servers.Lans {
 			consulServerIPs = append(consulServerIPs, elem)
@@ -79,7 +79,7 @@ property_overrides:
 			consulManifest,
 			consulManifestGeneration,
 			directorUUIDStub,
-			helpers.InstanceCount1NodeStubPath,
+			helpers.InstanceCount3NodesStubPath,
 			helpers.PersistentDiskStubPath,
 			config.IAASSettingsConsulStubPath,
 			consulRollingDeployStub,

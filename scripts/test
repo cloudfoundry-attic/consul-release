@@ -1,6 +1,6 @@
 #!/bin/sh
 
-set -ex
+set -eux
 
 root_dir=$(cd $(dirname $0)/.. && pwd)
 
@@ -12,4 +12,4 @@ export PATH=$root_dir/bin:$PATH
 # install ginkgo
 go install -v github.com/onsi/ginkgo/ginkgo
 
-ginkgo -r src/acceptance-tests
+ginkgo -r -race "$@" src/acceptance-tests
