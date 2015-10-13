@@ -10,8 +10,6 @@ This is a [BOSH](http://bosh.io) release for [consul](https://github.com/hashico
 
 1. [Deploying](#deploying)
 2. [Running Tests](#running-tests)
-3. [Advanced](#advanced)
-
 
 ## Deploying
 
@@ -99,3 +97,47 @@ Output the result of the above command to a file: `./scripts/generate_consul_dep
 ### 5. Deploy.
 
 Run `bosh -d OUTPUT_MANIFEST_PATH deploy`.
+
+## Running Tests
+
+We have written a test suite that exercises spinning up single/multiple consul server instances, scaling them,
+and perform rolling deploys. If you have already installed Go, you can run `EATS_CONFIG=[config_file.json] ./scripts/test_default`.
+`./scripts/test_default` calls `./scripts/test`, which installs all dependancies and appends the release directory
+to the gopath. `./scripts/test_default` passes all test suites to `./scripts/test`. If you wish to run a specific test suite
+you can call `./scripts/test` directly like so: `CONSATS_CONFIG=[config_file.json] ./scripts/test src/acceptance_tests/deploy/`.
+
+The EATS_CONFIG environment variable points to a configuration file which specifies the endpoint of the BOSH
+director and the path to your iaas_settings stub. An example config json for BOSH-lite would look like:
+
+```json
+cat > integration_config.json << EOF
+{
+  "bosh_target": "192.168.50.4",
+  "iaas_settings_consul_stub_path": "./src/acceptance-tests/manifest-generation/bosh-lite-stubs/iaas-settings-consul.yml",
+  "iaas_settings_turbulence_stub_path": "./src/acceptance-tests/manifest-generation/bosh-lite-stubs/iaas-settings-turbulence.yml",
+  "turbulence_properties_stub_path": "./src/acceptance-tests/manifest-generation/bosh-lite-stubs/turbulence/property-overrides.yml",
+  "cpi_release_url": "https://bosh.io/d/github.com/cppforlife/bosh-warden-cpi-release?v=21",
+  "cpi_release_name": "bosh-warden-cpi",
+  "bind_address": "192.168.50.1"
+}
+EOF
+export CONSUL_CONFIG=$PWD/integration_config.json
+```
+
+The full set of config parameters is explained below:
+* `bosh_target` (required) Public BOSH IP address that will be used to host test environment.
+* `bind_address` (required) IP that the local consul node will use to connect to the cluster. See note below for info about bosh-lite
+* `iaas_settings_consul_stub_path` (required) Stub containing iaas settings for the consul deployment.
+* `iaas_settings_turbulence_stub_path` (required for turbulence tests) Stub containing iaas setting for the turbulence deployment.
+* `turbulence_properties_stub_path` (required for turbulence tests) Stub containing property overrides for the turbulence deployment.
+* `cpi_release_url` (required for turbulence tests) CPI for the current BOSH director being used to deploy tests with.
+* `cpi_release_name` (required for turbulence tests) Name for the `cpi_release_url` parameter
+* `bosh_operation_timeout` (optional) Time to wait for BOSH commands to exit before erroring out. (default time is 5 min if not specified)
+* `turbulence_operation_timeout` (optional) Time to wait for Turbulence operations to succeed before erroring out. (default time is 5 min if not specified)
+
+Note: When running against bosh-lite the IP specified for `bind_address` must be in the 192.168.50.0/24 subnet. This is due how the consul agent and servers communicate 
+and determine whether a source is trusted. This differs from most bosh-lite networking where the 10.244.0.0/24 subnet is used.
+
+Note: You must ensure that the stemcells specified in `iaas_settings_consul` and `iaas_settings_turbulence_stub_path` are already uploaded to the director at `bosh_target`.
+
+Note: The ruby `bundler` gem is used to install the correct version of the `bosh_cli`, as well as to decrease the `bosh` startup time. 
