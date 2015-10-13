@@ -35,7 +35,8 @@ type Network struct {
 }
 
 type Properties struct {
-	Consul Consul `yaml:"consul"`
+	Consul        Consul        `yaml:"consul"`
+	TurbulenceApi TurbulenceApi `yaml:"turbulence_api"`
 }
 
 type Consul struct {
@@ -48,6 +49,11 @@ type Agent struct {
 
 type Server struct {
 	Lans []string `yaml:"lan"`
+}
+
+type TurbulenceApi struct {
+	// TODO: name
+	Password string `yaml:"password"`
 }
 
 func NewBosh(gemfilePath string, goPath string, target string, operationTimeout time.Duration) *Bosh {

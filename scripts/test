@@ -17,4 +17,4 @@ ginkgo \
     -race \
     -randomizeAllSpecs \
     -randomizeSuites \
-    "$@" \
+    "$@"

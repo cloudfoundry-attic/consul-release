@@ -1,0 +1,92 @@
+name: (( name_overrides.deployment_name ))
+
+releases:
+  - name: (( name_overrides.turbulence.release_name ))
+    version: latest
+  - name: (( name_overrides.cpi.release_name ))
+    version: latest
+
+compilation:
+  workers: 3
+  network: compilation
+  reuse_compilation_vms: true
+  cloud_properties: (( iaas_settings.compilation_cloud_properties ))
+
+update:
+  canaries: 1
+  canary_watch_time: 1000-180000
+  update_watch_time: 1000-180000
+  max_in_flight: 1
+  serial: true
+
+networks:
+  - name: turbulence
+    type: manual
+    subnets: (( iaas_settings.subnet_configs.turbulence.subnets ))
+  - name: compilation
+    type: manual
+    subnets: (( iaas_settings.subnet_configs.compilation.subnets ))
+
+resource_pools:
+  - name: turbulence
+    network: turbulence
+    stemcell: (( iaas_settings.stemcell ))
+    cloud_properties: (( iaas_settings.resource_pool_cloud_properties.turbulence.cloud_properties ))
+
+jobs:
+  - name: api
+    templates:
+      - name: turbulence_api
+        release: (( name_overrides.turbulence.release_name ))
+      - name: cpi
+        release: (( name_overrides.cpi.release_name ))
+    instances: (( instance_count_overrides.api.instances || 1 ))
+    persistent_disk: (( persistent_disk_overrides.api || 1024 ))
+    resource_pool: turbulence
+    networks:
+      - name: turbulence
+        static_ips: (( static_ips(0) ))
+
+properties:
+  turbulence_api:
+    password: (( property_overrides.turbulence_api.password ))
+    certificate: (( property_overrides.turbulence_api.certificate ))
+    private_key: (( property_overrides.turbulence_api.private_key ))
+    registry: (( property_overrides.registry || nil ))
+
+    director:
+      host: (( property_overrides.turbulence_api.director.host ))
+      username: (( property_overrides.turbulence_api.director.username ))
+      password: (( property_overrides.turbulence_api.director.password ))
+      ca_cert: (( property_overrides.turbulence_api.director.ca_cert ))
+
+  cpi: (( property_overrides.cpi || nil ))
+  aws: (( property_overrides.aws || nil ))
+  registry: (( property_overrides.registry || nil ))
+  blobstore:
+    address: (( jobs.api.networks.turbulence.static_ips[0] ))
+    port: 25250
+    agent:
+      user: agent
+      password: agent-password
+  agent:
+    mbus: (( "nats://nats" property_overrides.nats_password "@" jobs.api.networks.turbulence.static_ips[0] ":4222" ))
+
+# The keys below should not be included in the final stub
+name_defaults:
+  deployment_name: turbulence
+  turbulence:
+    release_name: turbulence
+  cpi:
+    release_name: bosh-warden-cpi
+
+iaas_settings: (( merge ))
+instance_count_overrides: (( merge ))
+persistent_disk_overrides: (( merge ))
+property_overrides: (( merge ))
+name_overrides:
+  deployment_name: (( merge || name_defaults.deployment_name ))
+  turbulence: 
+    release_name: (( merge || name_defaults.turbulence.release_name ))
+  cpi: 
+    release_name: (( merge || name_defaults.cpi.release_name ))

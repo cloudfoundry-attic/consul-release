@@ -8,12 +8,15 @@ import (
 )
 
 type Config struct {
-	BindAddress                string `json:"bind_address"`
-	BoshTarget                 string `json:"bosh_target"`
-	IAASSettingsConsulStubPath string `json:"iaas_settings_consul_stub_path"`
-	CPIReleaseUrl              string `json:"cpi_release_url"`
-	CPIReleaseName             string `json:"cpi_release_name"`
-	BoshOperationTimeout       string `json:"bosh_operation_timeout"`
+	BindAddress                    string `json:"bind_address"`
+	BoshTarget                     string `json:"bosh_target"`
+	IAASSettingsConsulStubPath     string `json:"iaas_settings_consul_stub_path"`
+	IAASSettingsTurbulenceStubPath string `json:"iaas_settings_turbulence_stub_path"`
+	TurbulencePropertiesStubPath   string `json:"turbulence_properties_stub_path"`
+	CPIReleaseUrl                  string `json:"cpi_release_url"`
+	CPIReleaseName                 string `json:"cpi_release_name"`
+	BoshOperationTimeout           string `json:"bosh_operation_timeout"`
+	TurbulenceOperationTimeout     string `json:"turbulence_operation_timeout"`
 }
 
 var loadedConfig *Config
@@ -74,6 +77,19 @@ func GetBoshOperationTimeout(config Config) time.Duration {
 	duration, err := time.ParseDuration(config.BoshOperationTimeout)
 	if err != nil {
 		panic(fmt.Sprintf("invalid duration string for BOSH operation timeout config: '%s'", config.BoshOperationTimeout))
+	}
+
+	return duration
+}
+
+func GetTurbulenceOperationTimeout(config Config) time.Duration {
+	if config.TurbulenceOperationTimeout == "" {
+		return defaultTurbulenceOperationTimeout
+	}
+
+	duration, err := time.ParseDuration(config.TurbulenceOperationTimeout)
+	if err != nil {
+		panic(fmt.Sprintf("invalid duration string for Turbulence operation timeout config: '%s'", config.TurbulenceOperationTimeout))
 	}
 
 	return duration
