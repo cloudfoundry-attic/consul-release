@@ -123,7 +123,11 @@ func (bosh *Bosh) Command(boshArgs ...string) *Session {
 	return session.Wait(bosh.operationTimeout)
 }
 
-func (bosh *Bosh) GenerateAndSetDeploymentManifest(manifest interface{}, manifestGenerateScripts string, stubs ...string) {
+func (bosh *Bosh) GenerateAndSetDeploymentManifest(
+	manifest interface{},
+	manifestGenerateScripts string,
+	stubs ...string,
+) {
 	cmd := exec.Command(manifestGenerateScripts, stubs...)
 	session, err := Start(cmd, GinkgoWriter, GinkgoWriter)
 	Expect(err).ToNot(HaveOccurred())

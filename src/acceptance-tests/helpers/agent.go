@@ -63,11 +63,12 @@ func (runner *AgentRunner) Start() {
 		runner.serverIps,
 	)
 
+	timeout := 1 * time.Minute
 	process := ginkgomon.Invoke(ginkgomon.New(ginkgomon.Config{
 		Name:              "consul_agent",
 		AnsiColorCode:     "35m",
 		StartCheck:        "agent: Join completed.",
-		StartCheckTimeout: 10 * time.Second,
+		StartCheckTimeout: timeout,
 		Command: exec.Command(
 			"consul",
 			"agent",
@@ -77,7 +78,7 @@ func (runner *AgentRunner) Start() {
 	runner.consulProcess = process
 
 	ready := process.Ready()
-	Eventually(ready, 10, 0.05).Should(BeClosed(), "Expected consul to be up and running")
+	Eventually(ready, timeout, 100*time.Millisecond).Should(BeClosed(), "Expected consul to be up and running")
 
 	runner.running = true
 }

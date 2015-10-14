@@ -15,6 +15,8 @@ type Config struct {
 	TurbulencePropertiesStubPath   string `json:"turbulence_properties_stub_path"`
 	CPIReleaseUrl                  string `json:"cpi_release_url"`
 	CPIReleaseName                 string `json:"cpi_release_name"`
+	TurbulenceReleaseUrl           string `json:"turbulence_release_url"`
+	TurbulenceReleaseName          string `json:"turbulence_release_name"`
 	BoshOperationTimeout           string `json:"bosh_operation_timeout"`
 	TurbulenceOperationTimeout     string `json:"turbulence_operation_timeout"`
 }

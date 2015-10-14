@@ -3,21 +3,21 @@ package turbulence_test
 import (
 	"acceptance-tests/helpers"
 	"acceptance-tests/turbulence/client"
+	"time"
 
 	capi "github.com/hashicorp/consul/api"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/gexec"
-	"fmt"
 )
 
 var _ = Describe("KillVm", func() {
 	var (
-		runner          *helpers.AgentRunner
-		consulManifest = new(helpers.Manifest)
-		turbulenceUrl string
+		runner         *helpers.AgentRunner
+		consulManifest *helpers.Manifest
+		turbulenceUrl  string
 
-		consulClientIPs []string
+		consulClientIPs  []string
 		killedConsulUrls []string
 		aliveConsulUrls  []string
 	)
@@ -26,6 +26,7 @@ var _ = Describe("KillVm", func() {
 		turbulenceUrl = "https://turbulence:" + turbulenceManifest.Properties.TurbulenceApi.Password + "@" + turbulenceManifest.Jobs[0].Networks[0].StaticIps[0] + ":8080"
 
 		By("generating consul manifest")
+		consulManifest = new(helpers.Manifest)
 		bosh.GenerateAndSetDeploymentManifest(
 			consulManifest,
 			consulManifestGeneration,
@@ -59,53 +60,52 @@ var _ = Describe("KillVm", func() {
 	})
 
 	AfterEach(func() {
-		fmt.Println("AfterEach")
-		By("Fixing the release")
-		bosh.Command("cck", "--auto")
+		By("Stopping the agent runner")
+		runner.Stop()
+
+		// It is as fast to fix the deployment with cloudcheck and subsequently
+		// delete from a healthy state than to delete from an unhealthy state
+		By("Fixing the deployment with cloudcheck")
+		cckSession := bosh.Command("cloudcheck", "--auto")
+		Eventually(cckSession, 1*time.Minute, 1*time.Second).Should(Exit(0))
 
 		By("delete deployment")
-		bosh.Command("-n", "delete", "deployment", consulDeployment)
+		deleteSession := bosh.Command("-n", "delete", "deployment", consulDeployment)
+		Eventually(deleteSession, 5*time.Minute, 5*time.Second).Should(Exit(0))
 	})
 
 	Context("When a consul node is killed", func() {
 		It("Is still able to function on healthy vms", func() {
+			By("Creating client")
 			consulClient := runner.NewClient()
+			keyValueClient := consulClient.KV()
 
 			consatsKey := "consats-key"
 			consatsValue := []byte("consats-value")
 
-			keyValueClient := consulClient.KV()
-
+			By("Putting key-value pair")
 			pair := &capi.KVPair{Key: consatsKey, Value: consatsValue}
-			fmt.Println("Got keyvalue")
-			_, err := keyValueClient.Put(pair, nil)
-			Expect(err).ToNot(HaveOccurred())
-
-			fmt.Println("Starting consistently")
-			consistent := make(chan int)
-			go func() {
-				defer GinkgoRecover()
-				Consistently(func() ([]byte, error) {
-					fmt.Println("Consistent ping")
-					resultPair, _, err := keyValueClient.Get(consatsKey, nil)
-					if err != nil {
-						fmt.Printf("Error is %s\n", err)
-					}
-					fmt.Printf("Result pair is %s\n", resultPair.Value)
-					return resultPair.Value, err
-				}, 10, 1).Should(Equal(consatsValue))
-				close(consistent)
-			} ()
+			Eventually(func() error {
+				_, err := keyValueClient.Put(pair, nil)
+				return err
+			}, 30*time.Second, 5*time.Second).Should(Succeed())
 
 			turbulenceOperationTimeout := helpers.GetTurbulenceOperationTimeout(config)
 			turbulenceClient := client.NewClient(turbulenceUrl, turbulenceOperationTimeout)
 
-			fmt.Println("Killing indices")
-			err = turbulenceClient.KillIndices(consulDeployment, "consul_z1", []int{0})
+			By("Killing indices")
+			err := turbulenceClient.KillIndices(consulDeployment, "consul_z1", []int{0})
 			Expect(err).ToNot(HaveOccurred())
-			fmt.Println("Waiting test to finish")
-			<- consistent
-			fmt.Println("Exit test")
+
+			By("Checking for eventual consistency")
+			Eventually(func() ([]byte, error) {
+				By("trying to get key")
+				resultPair, _, err := keyValueClient.Get(consatsKey, nil)
+				if resultPair == nil {
+					return nil, err
+				}
+				return resultPair.Value, err
+			}, 30*time.Second, 5*time.Second).Should(Equal(consatsValue))
 		})
 	})
 })
