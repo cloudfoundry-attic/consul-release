@@ -118,7 +118,8 @@ cat > integration_config.json << EOF
   "turbulence_properties_stub_path": "./src/acceptance-tests/manifest-generation/bosh-lite-stubs/turbulence/property-overrides.yml",
   "cpi_release_url": "https://bosh.io/d/github.com/cppforlife/bosh-warden-cpi-release?v=21",
   "cpi_release_name": "bosh-warden-cpi",
-  "bind_address": "192.168.50.1"
+  "bind_address": "192.168.50.1",
+  "turbulence_release_url": "http://bosh.io/d/github.com/cppforlife/turbulence-release?v=0.4"
 }
 EOF
 export CONSUL_CONFIG=$PWD/integration_config.json

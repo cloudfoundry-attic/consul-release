@@ -16,7 +16,7 @@ type Config struct {
 	CPIReleaseUrl                  string `json:"cpi_release_url"`
 	CPIReleaseName                 string `json:"cpi_release_name"`
 	TurbulenceReleaseUrl           string `json:"turbulence_release_url"`
-	TurbulenceReleaseName          string `json:"turbulence_release_name"`
+	TurbulenceReleaseName          string
 	BoshOperationTimeout           string `json:"bosh_operation_timeout"`
 	TurbulenceOperationTimeout     string `json:"turbulence_operation_timeout"`
 }
@@ -39,6 +39,8 @@ func LoadConfig() Config {
 	if loadedConfig.IAASSettingsConsulStubPath == "" {
 		panic("missing consul IaaS settings stub path")
 	}
+
+	loadedConfig.TurbulenceReleaseName = "turbulence"
 
 	return *loadedConfig
 }
