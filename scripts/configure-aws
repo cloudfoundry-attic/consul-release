@@ -35,16 +35,16 @@ set +x
 set -x
 
 # deploy infrastructure
-if ! aws cloudformation describe-stacks --stack-name consul-buckets ; then
+if ! aws cloudformation describe-stacks --stack-name consul-buckets > /dev/null; then
   aws cloudformation create-stack \
     --stack-name consul-buckets \
     --template-body file://$script_dir/../templates/aws/consul-blobs-bucket.json \
-    --capabilities CAPABILITY_IAM
+    --capabilities CAPABILITY_IAM > /dev/null
 else
   aws cloudformation update-stack \
     --stack-name consul-buckets \
     --template-body file://$script_dir/../templates/aws/consul-blobs-bucket.json \
-    --capabilities CAPABILITY_IAM || true
+    --capabilities CAPABILITY_IAM > /dev/null || true
 fi
 
 mkdir -p ${deployment_dir}/artifacts/iam-users
