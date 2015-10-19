@@ -101,12 +101,12 @@ Run `bosh -d OUTPUT_MANIFEST_PATH deploy`.
 ## Running Tests
 
 We have written a test suite that exercises spinning up single/multiple consul server instances, scaling them,
-and perform rolling deploys. If you have already installed Go, you can run `EATS_CONFIG=[config_file.json] ./scripts/test_default`.
+and perform rolling deploys. If you have already installed Go, you can run `CONSATS_CONFIG=[config_file.json] ./scripts/test_default`.
 `./scripts/test_default` calls `./scripts/test`, which installs all dependancies and appends the release directory
 to the gopath. `./scripts/test_default` passes all test suites to `./scripts/test`. If you wish to run a specific test suite
 you can call `./scripts/test` directly like so: `CONSATS_CONFIG=[config_file.json] ./scripts/test src/acceptance_tests/deploy/`.
 
-The EATS_CONFIG environment variable points to a configuration file which specifies the endpoint of the BOSH
+The CONSATS_CONFIG environment variable points to a configuration file which specifies the endpoint of the BOSH
 director and the path to your iaas_settings stub. An example config json for BOSH-lite would look like:
 
 ```json
@@ -122,7 +122,7 @@ cat > integration_config.json << EOF
   "turbulence_release_url": "http://bosh.io/d/github.com/cppforlife/turbulence-release?v=0.4"
 }
 EOF
-export CONSUL_CONFIG=$PWD/integration_config.json
+export CONSATS_CONFIG=$PWD/integration_config.json
 ```
 
 The full set of config parameters is explained below:
