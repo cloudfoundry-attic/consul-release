@@ -9,7 +9,7 @@ import (
 	"github.com/onsi/gomega/gexec"
 )
 
-var _ = Describe("Scaling up Instances", func() {
+var _ = Describe("Scaling down Instances", func() {
 	var (
 		consulManifest  *helpers.Manifest
 		consulServerIPs []string
