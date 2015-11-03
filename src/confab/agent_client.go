@@ -23,6 +23,7 @@ type consulRPCClient interface {
 	InstallKey(key, token string) (KeyringResponse, error)
 	UseKey(key, token string) (KeyringResponse, error)
 	RemoveKey(key, token string) (KeyringResponse, error)
+	Leave() error
 }
 
 type AgentClient struct {
@@ -86,14 +87,14 @@ func (c AgentClient) IsLastNode() (bool, error) {
 func (c AgentClient) SetKeys(keys []string) error {
 	listKeysResponse, err := c.ConsulRPCClient.ListKeys(keyringToken)
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	for _, keyEntry := range listKeysResponse.Keys {
 		if !containsString(keys, keyEntry.Key) {
 			_, err := c.ConsulRPCClient.RemoveKey(keyEntry.Key, keyringToken)
 			if err != nil {
-				panic(err)
+				return err
 			}
 		}
 	}
@@ -101,16 +102,20 @@ func (c AgentClient) SetKeys(keys []string) error {
 	for _, key := range keys {
 		_, err := c.ConsulRPCClient.InstallKey(key, keyringToken)
 		if err != nil {
-			panic(err)
+			return err
 		}
 	}
 
 	_, err = c.ConsulRPCClient.UseKey(keys[0], keyringToken)
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	return nil
+}
+
+func (c AgentClient) Leave() error {
+	return c.ConsulRPCClient.Leave()
 }
 
 func containsString(elems []string, elem string) bool {

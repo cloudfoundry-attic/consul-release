@@ -240,6 +240,13 @@ var _ = Describe("agent client", func() {
 			consulRPCClient = new(fakes.FakeconsulRPCClient)
 			consulRPCClient.InstallKeyReturns(confab.KeyringResponse{}, nil)
 			consulRPCClient.UseKeyReturns(confab.KeyringResponse{}, nil)
+			consulRPCClient.ListKeysReturns(confab.KeyringResponse{
+				Keys: []agent.KeyringEntry{
+					{Key: "key3"},
+					{Key: "key4"},
+				},
+			}, nil)
+			consulRPCClient.RemoveKeyReturns(confab.KeyringResponse{}, nil)
 
 			client = confab.AgentClient{
 				ConsulRPCClient: consulRPCClient,
@@ -266,16 +273,6 @@ var _ = Describe("agent client", func() {
 		})
 
 		Context("when there are extra keys", func() {
-			BeforeEach(func() {
-				consulRPCClient.ListKeysReturns(confab.KeyringResponse{
-					Keys: []agent.KeyringEntry{
-						{Key: "key3"},
-						{Key: "key4"},
-					},
-				}, nil)
-				consulRPCClient.RemoveKeyReturns(confab.KeyringResponse{}, nil)
-			})
-
 			It("removes extra keys", func() {
 				Expect(client.SetKeys([]string{"key1", "key2"})).To(Succeed())
 				Expect(consulRPCClient.ListKeysCallCount()).To(Equal(1))
@@ -295,10 +292,69 @@ var _ = Describe("agent client", func() {
 
 		Context("failure cases", func() {
 			Context("when ListKeys returns an error", func() {
-				PIt("returns the error", func() {
-					consulRPCClient.InstallKeyReturns(confab.KeyringResponse{}, errors.New("list keys error"))
+				It("returns the error", func() {
+					consulRPCClient.ListKeysReturns(confab.KeyringResponse{}, errors.New("list keys error"))
 
+					Expect(client.SetKeys([]string{"key1"})).To(MatchError("list keys error"))
 				})
+			})
+
+			Context("when RemoveKeys returns an error", func() {
+				It("returns the error", func() {
+					consulRPCClient.ListKeysReturns(confab.KeyringResponse{
+						Keys: []agent.KeyringEntry{
+							{Key: "key3"},
+							{Key: "key4"},
+						},
+					}, nil)
+					consulRPCClient.RemoveKeyReturns(confab.KeyringResponse{}, errors.New("remove key error"))
+
+					Expect(client.SetKeys([]string{"key1"})).To(MatchError("remove key error"))
+				})
+			})
+
+			Context("when InstallKey returns an error", func() {
+				It("returns the error", func() {
+					consulRPCClient.InstallKeyReturns(confab.KeyringResponse{}, errors.New("install key error"))
+
+					Expect(client.SetKeys([]string{"key1"})).To(MatchError("install key error"))
+				})
+			})
+
+			Context("when UseKey returns an error", func() {
+				It("returns the error", func() {
+					consulRPCClient.UseKeyReturns(confab.KeyringResponse{}, errors.New("use key error"))
+
+					Expect(client.SetKeys([]string{"key1"})).To(MatchError("use key error"))
+				})
+			})
+		})
+	})
+
+	Describe("Leave", func() {
+		var (
+			consulRPCClient *fakes.FakeconsulRPCClient
+			client          confab.AgentClient
+		)
+
+		BeforeEach(func() {
+			consulRPCClient = new(fakes.FakeconsulRPCClient)
+			client = confab.AgentClient{
+				ConsulRPCClient: consulRPCClient,
+			}
+		})
+
+		It("leaves the cluster", func() {
+			Expect(client.Leave()).To(Succeed())
+			Expect(consulRPCClient.LeaveCallCount()).To(Equal(1))
+		})
+
+		Context("when RPCClient.leave returns an error", func() {
+			It("returns an error", func() {
+				consulRPCClient.LeaveReturns(errors.New("leave error"))
+
+				Expect(client.Leave()).To(MatchError("leave error"))
+				Expect(consulRPCClient.LeaveCallCount()).To(Equal(1))
 			})
 		})
 	})

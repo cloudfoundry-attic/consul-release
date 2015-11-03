@@ -53,6 +53,12 @@ type FakeconsulRPCClient struct {
 		result1 confab.KeyringResponse
 		result2 error
 	}
+	LeaveStub        func() error
+	leaveMutex       sync.RWMutex
+	leaveArgsForCall []struct{}
+	leaveReturns     struct {
+		result1 error
+	}
 }
 
 func (fake *FakeconsulRPCClient) Stats() (map[string]map[string]string, error) {
@@ -215,4 +221,28 @@ func (fake *FakeconsulRPCClient) RemoveKeyReturns(result1 confab.KeyringResponse
 	}{result1, result2}
 }
 
-//var _ confab.consulRPCClient = new(FakeconsulRPCClient)
+func (fake *FakeconsulRPCClient) Leave() error {
+	fake.leaveMutex.Lock()
+	fake.leaveArgsForCall = append(fake.leaveArgsForCall, struct{}{})
+	fake.leaveMutex.Unlock()
+	if fake.LeaveStub != nil {
+		return fake.LeaveStub()
+	} else {
+		return fake.leaveReturns.result1
+	}
+}
+
+func (fake *FakeconsulRPCClient) LeaveCallCount() int {
+	fake.leaveMutex.RLock()
+	defer fake.leaveMutex.RUnlock()
+	return len(fake.leaveArgsForCall)
+}
+
+func (fake *FakeconsulRPCClient) LeaveReturns(result1 error) {
+	fake.LeaveStub = nil
+	fake.leaveReturns = struct {
+		result1 error
+	}{result1}
+}
+
+// var _ confab.consulRPCClient = new(FakeconsulRPCClient)
