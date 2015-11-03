@@ -14,6 +14,15 @@ type FakeconsulRPCClient struct {
 		result1 map[string]map[string]string
 		result2 error
 	}
+	ListKeysStub        func(token string) (confab.KeyringResponse, error)
+	listKeysMutex       sync.RWMutex
+	listKeysArgsForCall []struct {
+		token string
+	}
+	listKeysReturns struct {
+		result1 confab.KeyringResponse
+		result2 error
+	}
 	InstallKeyStub        func(key, token string) (confab.KeyringResponse, error)
 	installKeyMutex       sync.RWMutex
 	installKeyArgsForCall []struct {
@@ -21,6 +30,26 @@ type FakeconsulRPCClient struct {
 		token string
 	}
 	installKeyReturns struct {
+		result1 confab.KeyringResponse
+		result2 error
+	}
+	UseKeyStub        func(key, token string) (confab.KeyringResponse, error)
+	useKeyMutex       sync.RWMutex
+	useKeyArgsForCall []struct {
+		key   string
+		token string
+	}
+	useKeyReturns struct {
+		result1 confab.KeyringResponse
+		result2 error
+	}
+	RemoveKeyStub        func(key, token string) (confab.KeyringResponse, error)
+	removeKeyMutex       sync.RWMutex
+	removeKeyArgsForCall []struct {
+		key   string
+		token string
+	}
+	removeKeyReturns struct {
 		result1 confab.KeyringResponse
 		result2 error
 	}
@@ -47,6 +76,39 @@ func (fake *FakeconsulRPCClient) StatsReturns(result1 map[string]map[string]stri
 	fake.StatsStub = nil
 	fake.statsReturns = struct {
 		result1 map[string]map[string]string
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeconsulRPCClient) ListKeys(token string) (confab.KeyringResponse, error) {
+	fake.listKeysMutex.Lock()
+	fake.listKeysArgsForCall = append(fake.listKeysArgsForCall, struct {
+		token string
+	}{token})
+	fake.listKeysMutex.Unlock()
+	if fake.ListKeysStub != nil {
+		return fake.ListKeysStub(token)
+	} else {
+		return fake.listKeysReturns.result1, fake.listKeysReturns.result2
+	}
+}
+
+func (fake *FakeconsulRPCClient) ListKeysCallCount() int {
+	fake.listKeysMutex.RLock()
+	defer fake.listKeysMutex.RUnlock()
+	return len(fake.listKeysArgsForCall)
+}
+
+func (fake *FakeconsulRPCClient) ListKeysArgsForCall(i int) string {
+	fake.listKeysMutex.RLock()
+	defer fake.listKeysMutex.RUnlock()
+	return fake.listKeysArgsForCall[i].token
+}
+
+func (fake *FakeconsulRPCClient) ListKeysReturns(result1 confab.KeyringResponse, result2 error) {
+	fake.ListKeysStub = nil
+	fake.listKeysReturns = struct {
+		result1 confab.KeyringResponse
 		result2 error
 	}{result1, result2}
 }
@@ -85,4 +147,72 @@ func (fake *FakeconsulRPCClient) InstallKeyReturns(result1 confab.KeyringRespons
 	}{result1, result2}
 }
 
-// var _ confab.consulRPCClient = new(FakeconsulRPCClient)
+func (fake *FakeconsulRPCClient) UseKey(key string, token string) (confab.KeyringResponse, error) {
+	fake.useKeyMutex.Lock()
+	fake.useKeyArgsForCall = append(fake.useKeyArgsForCall, struct {
+		key   string
+		token string
+	}{key, token})
+	fake.useKeyMutex.Unlock()
+	if fake.UseKeyStub != nil {
+		return fake.UseKeyStub(key, token)
+	} else {
+		return fake.useKeyReturns.result1, fake.useKeyReturns.result2
+	}
+}
+
+func (fake *FakeconsulRPCClient) UseKeyCallCount() int {
+	fake.useKeyMutex.RLock()
+	defer fake.useKeyMutex.RUnlock()
+	return len(fake.useKeyArgsForCall)
+}
+
+func (fake *FakeconsulRPCClient) UseKeyArgsForCall(i int) (string, string) {
+	fake.useKeyMutex.RLock()
+	defer fake.useKeyMutex.RUnlock()
+	return fake.useKeyArgsForCall[i].key, fake.useKeyArgsForCall[i].token
+}
+
+func (fake *FakeconsulRPCClient) UseKeyReturns(result1 confab.KeyringResponse, result2 error) {
+	fake.UseKeyStub = nil
+	fake.useKeyReturns = struct {
+		result1 confab.KeyringResponse
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeconsulRPCClient) RemoveKey(key string, token string) (confab.KeyringResponse, error) {
+	fake.removeKeyMutex.Lock()
+	fake.removeKeyArgsForCall = append(fake.removeKeyArgsForCall, struct {
+		key   string
+		token string
+	}{key, token})
+	fake.removeKeyMutex.Unlock()
+	if fake.RemoveKeyStub != nil {
+		return fake.RemoveKeyStub(key, token)
+	} else {
+		return fake.removeKeyReturns.result1, fake.removeKeyReturns.result2
+	}
+}
+
+func (fake *FakeconsulRPCClient) RemoveKeyCallCount() int {
+	fake.removeKeyMutex.RLock()
+	defer fake.removeKeyMutex.RUnlock()
+	return len(fake.removeKeyArgsForCall)
+}
+
+func (fake *FakeconsulRPCClient) RemoveKeyArgsForCall(i int) (string, string) {
+	fake.removeKeyMutex.RLock()
+	defer fake.removeKeyMutex.RUnlock()
+	return fake.removeKeyArgsForCall[i].key, fake.removeKeyArgsForCall[i].token
+}
+
+func (fake *FakeconsulRPCClient) RemoveKeyReturns(result1 confab.KeyringResponse, result2 error) {
+	fake.RemoveKeyStub = nil
+	fake.removeKeyReturns = struct {
+		result1 confab.KeyringResponse
+		result2 error
+	}{result1, result2}
+}
+
+//var _ confab.consulRPCClient = new(FakeconsulRPCClient)

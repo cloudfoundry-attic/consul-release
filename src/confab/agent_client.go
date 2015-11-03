@@ -4,7 +4,14 @@ import (
 	"errors"
 
 	"github.com/hashicorp/consul/api"
+	"github.com/hashicorp/consul/command/agent"
 )
+
+const keyringToken = ""
+
+type KeyringResponse struct {
+	Keys []agent.KeyringEntry
+}
 
 type consulAPIAgent interface {
 	Members(wan bool) ([]*api.AgentMember, error)
@@ -12,7 +19,10 @@ type consulAPIAgent interface {
 
 type consulRPCClient interface {
 	Stats() (map[string]map[string]string, error)
+	ListKeys(token string) (KeyringResponse, error)
 	InstallKey(key, token string) (KeyringResponse, error)
+	UseKey(key, token string) (KeyringResponse, error)
+	RemoveKey(key, token string) (KeyringResponse, error)
 }
 
 type AgentClient struct {
@@ -71,4 +81,44 @@ func (c AgentClient) IsLastNode() (bool, error) {
 	hasAllExpectedMembers := serversCount == len(c.ExpectedMembers)
 
 	return hasAllExpectedMembers, nil
+}
+
+func (c AgentClient) SetKeys(keys []string) error {
+	listKeysResponse, err := c.ConsulRPCClient.ListKeys(keyringToken)
+	if err != nil {
+		panic(err)
+	}
+
+	for _, keyEntry := range listKeysResponse.Keys {
+		if !containsString(keys, keyEntry.Key) {
+			_, err := c.ConsulRPCClient.RemoveKey(keyEntry.Key, keyringToken)
+			if err != nil {
+				panic(err)
+			}
+		}
+	}
+
+	for _, key := range keys {
+		_, err := c.ConsulRPCClient.InstallKey(key, keyringToken)
+		if err != nil {
+			panic(err)
+		}
+	}
+
+	_, err = c.ConsulRPCClient.UseKey(keys[0], keyringToken)
+	if err != nil {
+		panic(err)
+	}
+
+	return nil
+}
+
+func containsString(elems []string, elem string) bool {
+	for _, e := range elems {
+		if elem == e {
+			return true
+		}
+	}
+
+	return false
 }
