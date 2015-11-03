@@ -12,6 +12,7 @@ type consulAPIAgent interface {
 
 type consulRPCClient interface {
 	Stats() (map[string]map[string]string, error)
+	InstallKey(key, token string) (KeyringResponse, error)
 }
 
 type AgentClient struct {
@@ -19,17 +20,6 @@ type AgentClient struct {
 	ConsulAPIAgent  consulAPIAgent
 	ConsulRPCClient consulRPCClient
 }
-
-/*
-
-map[string]map[string]string{
-	"raft": map[string]string{
-		"commit_index": "x",
-		"last_log_index": "y",
-	}
-}
-
-*/
 
 func (c AgentClient) VerifyJoined() error {
 	members, err := c.ConsulAPIAgent.Members(false)
@@ -55,8 +45,30 @@ func (c AgentClient) VerifySynced() error {
 	}
 
 	if stats["raft"]["commit_index"] != stats["raft"]["last_log_index"] {
-		return errors.New("some error")
+		return errors.New("Log not in sync")
+	}
+
+	if stats["raft"]["commit_index"] == "0" {
+		return errors.New("Commit index must not be zero")
 	}
 
 	return nil
+}
+
+func (c AgentClient) IsLastNode() (bool, error) {
+	members, err := c.ConsulAPIAgent.Members(false)
+	if err != nil {
+		return false, err
+	}
+
+	var serversCount int
+	for _, member := range members {
+		if member.Tags["role"] == "consul" {
+			serversCount++
+		}
+	}
+
+	hasAllExpectedMembers := serversCount == len(c.ExpectedMembers)
+
+	return hasAllExpectedMembers, nil
 }

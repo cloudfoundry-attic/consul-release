@@ -21,6 +21,7 @@ var _ = Describe("agent client", func() {
 	// }
 
 	Describe("VerifyJoined", func() {
+		//TODO pull things out into a Before
 		Context("when the set of members includes at least one that we expect", func() {
 			It("succeeds", func() {
 				consulAPIAgent := new(fakes.FakeconsulAPIAgent)
@@ -118,7 +119,7 @@ var _ = Describe("agent client", func() {
 
 			It("returns an error", func() {
 				//TODO return a reasonably named error
-				Expect(client.VerifySynced()).To(MatchError("some error"))
+				Expect(client.VerifySynced()).To(MatchError("Log not in sync"))
 				Expect(consulRPCClient.StatsCallCount()).To(Equal(1))
 			})
 		})
@@ -138,5 +139,97 @@ var _ = Describe("agent client", func() {
 				Expect(consulRPCClient.StatsCallCount()).To(Equal(1))
 			})
 		})
+
+		Context("when the commit index is 0", func() {
+			BeforeEach(func() {
+				expectedStats = map[string]map[string]string{
+					"raft": map[string]string{
+						"commit_index":   "0",
+						"last_log_index": "0",
+					},
+				}
+
+				consulRPCClient = new(fakes.FakeconsulRPCClient)
+				consulRPCClient.StatsReturns(expectedStats, nil)
+
+				client = confab.AgentClient{
+					ConsulRPCClient: consulRPCClient,
+				}
+			})
+
+			It("immediately returns an error", func() {
+				Expect(client.VerifySynced()).To(MatchError("Commit index must not be zero"))
+				Expect(consulRPCClient.StatsCallCount()).To(Equal(1))
+			})
+		})
+	})
+
+	Describe("IsLastNode", func() {
+		var (
+			consulAPIAgent *fakes.FakeconsulAPIAgent
+			client         confab.AgentClient
+		)
+
+		BeforeEach(func() {
+			consulAPIAgent = new(fakes.FakeconsulAPIAgent)
+			consulAPIAgent.MembersReturns([]*api.AgentMember{
+				&api.AgentMember{Addr: "member1", Tags: map[string]string{"role": "consul"}},
+				&api.AgentMember{Addr: "member2", Tags: map[string]string{"role": "consul"}},
+				&api.AgentMember{Addr: "member3", Tags: map[string]string{"role": "consul"}}}, nil)
+
+			client = confab.AgentClient{
+				ExpectedMembers: []string{"member1", "member2", "member3"},
+				ConsulAPIAgent:  consulAPIAgent,
+			}
+		})
+
+		It("returns true", func() {
+			Expect(client.IsLastNode()).To(BeTrue())
+			Expect(consulAPIAgent.MembersCallCount()).To(Equal(1))
+		})
+
+		Context("When you are not the last node", func() {
+			BeforeEach(func() {
+				consulAPIAgent.MembersReturns([]*api.AgentMember{
+					&api.AgentMember{Addr: "member1", Tags: map[string]string{"role": "consul"}},
+					&api.AgentMember{Addr: "member2", Tags: map[string]string{"role": "consul"}}}, nil)
+			})
+
+			It("returns false", func() {
+				Expect(client.IsLastNode()).To(BeFalse())
+				Expect(consulAPIAgent.MembersCallCount()).To(Equal(1))
+			})
+
+			Context("when there are non-server members", func() {
+				BeforeEach(func() {
+					consulAPIAgent.MembersReturns([]*api.AgentMember{
+						&api.AgentMember{Addr: "member1", Tags: map[string]string{"role": "consul"}},
+						&api.AgentMember{Addr: "member2", Tags: map[string]string{"role": "node"}},
+						&api.AgentMember{Addr: "member3", Tags: map[string]string{"role": "consul"}}}, nil)
+				})
+
+				It("returns false", func() {
+					Expect(client.IsLastNode()).To(BeFalse())
+					Expect(consulAPIAgent.MembersCallCount()).To(Equal(1))
+				})
+
+			})
+		})
+
+		Context("When members returns an error", func() {
+			BeforeEach(func() {
+				consulAPIAgent.MembersReturns([]*api.AgentMember{}, errors.New("members error"))
+			})
+
+			It("returns an error", func() {
+				_, err := client.IsLastNode()
+				Expect(err).To(MatchError("members error"))
+				Expect(consulAPIAgent.MembersCallCount()).To(Equal(1))
+			})
+		})
+	})
+
+	Describe("SetKeys", func() {
+		XIt("it sets the correct keys")
 	})
 })
