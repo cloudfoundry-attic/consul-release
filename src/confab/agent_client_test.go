@@ -118,8 +118,7 @@ var _ = Describe("agent client", func() {
 			})
 
 			It("returns an error", func() {
-				//TODO return a reasonably named error
-				Expect(client.VerifySynced()).To(MatchError("Log not in sync"))
+				Expect(client.VerifySynced()).To(MatchError("log not in sync"))
 				Expect(consulRPCClient.StatsCallCount()).To(Equal(1))
 			})
 		})
@@ -158,7 +157,7 @@ var _ = Describe("agent client", func() {
 			})
 
 			It("immediately returns an error", func() {
-				Expect(client.VerifySynced()).To(MatchError("Commit index must not be zero"))
+				Expect(client.VerifySynced()).To(MatchError("commit index must not be zero"))
 				Expect(consulRPCClient.StatsCallCount()).To(Equal(1))
 			})
 		})

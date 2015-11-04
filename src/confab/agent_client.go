@@ -49,11 +49,11 @@ func (c AgentClient) VerifySynced() error {
 	}
 
 	if stats["raft"]["commit_index"] != stats["raft"]["last_log_index"] {
-		return errors.New("Log not in sync")
+		return errors.New("log not in sync")
 	}
 
 	if stats["raft"]["commit_index"] == "0" {
-		return errors.New("Commit index must not be zero")
+		return errors.New("commit index must not be zero")
 	}
 
 	return nil
