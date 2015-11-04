@@ -1,6 +1,9 @@
 package confab
 
-import "time"
+import (
+	"errors"
+	"time"
+)
 
 type agentRunner interface {
 	Run() error
@@ -21,6 +24,7 @@ type Controller struct {
 	MaxRetries     int
 	SyncRetryDelay time.Duration
 	EncryptKeys    []string
+	SSLDisabled    bool
 }
 
 func (c Controller) bootAgent() error {
@@ -79,9 +83,15 @@ func (c Controller) BootServer() error {
 		}
 	}
 
-	err = c.AgentClient.SetKeys(c.EncryptKeys)
-	if err != nil {
-		return err
+	if !c.SSLDisabled {
+		if len(c.EncryptKeys) == 0 {
+			return errors.New("encrypt keys cannot be empty if ssl is enabled")
+		}
+
+		err = c.AgentClient.SetKeys(c.EncryptKeys)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil

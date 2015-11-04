@@ -103,19 +103,42 @@ var _ = Describe("controller", func() {
 				Expect(agentClient.VerifySyncedCalls.CallCount).To(Equal(0))
 			})
 		})
-
-		It("sets the encryption keys used by the agent", func() {
-			Expect(controller.BootServer()).To(Succeed())
-			Expect(agentClient.SetKeysCall.Receives.Keys).To(Equal([]string{
-				"key 1", "key 2", "key 3"}))
-		})
-
-		Context("when setting keys errors", func() {
-			It("returns the error", func() {
-				agentClient.SetKeysCall.Returns.Error = errors.New("oh noes")
-				Expect(controller.BootServer()).To(MatchError("oh noes"))
+		Context("setting keys", func() {
+			It("sets the encryption keys used by the agent", func() {
+				Expect(controller.BootServer()).To(Succeed())
 				Expect(agentClient.SetKeysCall.Receives.Keys).To(Equal([]string{
 					"key 1", "key 2", "key 3"}))
+			})
+
+			Context("when setting keys errors", func() {
+				It("returns the error", func() {
+					agentClient.SetKeysCall.Returns.Error = errors.New("oh noes")
+					Expect(controller.BootServer()).To(MatchError("oh noes"))
+					Expect(agentClient.SetKeysCall.Receives.Keys).To(Equal([]string{
+						"key 1", "key 2", "key 3"}))
+				})
+			})
+
+			Context("when the server does not have ssl enabled", func() {
+				BeforeEach(func() {
+					controller.SSLDisabled = true
+				})
+
+				It("does not set keys", func() {
+					Expect(controller.BootServer()).To(Succeed())
+					Expect(agentClient.SetKeysCall.Receives.Keys).To(BeNil())
+				})
+			})
+
+			Context("when ssl is enabled but no keys are provided", func() {
+				BeforeEach(func() {
+					controller.EncryptKeys = []string{}
+				})
+
+				It("returns an error", func() {
+					Expect(controller.BootServer()).To(MatchError("encrypt keys cannot be empty if ssl is enabled"))
+					Expect(agentClient.SetKeysCall.Receives.Keys).To(BeNil())
+				})
 			})
 		})
 

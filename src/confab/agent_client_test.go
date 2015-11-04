@@ -6,7 +6,6 @@ import (
 	"errors"
 
 	"github.com/hashicorp/consul/api"
-	"github.com/hashicorp/consul/command/agent"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -238,15 +237,10 @@ var _ = Describe("agent client", func() {
 
 		BeforeEach(func() {
 			consulRPCClient = new(fakes.FakeconsulRPCClient)
-			consulRPCClient.InstallKeyReturns(confab.KeyringResponse{}, nil)
-			consulRPCClient.UseKeyReturns(confab.KeyringResponse{}, nil)
-			consulRPCClient.ListKeysReturns(confab.KeyringResponse{
-				Keys: []agent.KeyringEntry{
-					{Key: "key3"},
-					{Key: "key4"},
-				},
-			}, nil)
-			consulRPCClient.RemoveKeyReturns(confab.KeyringResponse{}, nil)
+			consulRPCClient.InstallKeyReturns(nil)
+			consulRPCClient.UseKeyReturns(nil)
+			consulRPCClient.ListKeysReturns([]string{"key3", "key4"}, nil)
+			consulRPCClient.RemoveKeyReturns(nil)
 
 			client = confab.AgentClient{
 				ConsulRPCClient: consulRPCClient,
@@ -257,43 +251,49 @@ var _ = Describe("agent client", func() {
 			Expect(client.SetKeys([]string{"key1", "key2"})).To(Succeed())
 			Expect(consulRPCClient.InstallKeyCallCount()).To(Equal(2))
 
-			key, token := consulRPCClient.InstallKeyArgsForCall(0)
+			key := consulRPCClient.InstallKeyArgsForCall(0)
 			Expect(key).To(Equal("key1"))
-			Expect(token).To(Equal(""))
 
-			key, token = consulRPCClient.InstallKeyArgsForCall(1)
+			key = consulRPCClient.InstallKeyArgsForCall(1)
 			Expect(key).To(Equal("key2"))
-			Expect(token).To(Equal(""))
 
 			Expect(consulRPCClient.UseKeyCallCount()).To(Equal(1))
 
-			key, token = consulRPCClient.UseKeyArgsForCall(0)
+			key = consulRPCClient.UseKeyArgsForCall(0)
 			Expect(key).To(Equal("key1"))
-			Expect(token).To(Equal(""))
 		})
 
 		Context("when there are extra keys", func() {
 			It("removes extra keys", func() {
 				Expect(client.SetKeys([]string{"key1", "key2"})).To(Succeed())
 				Expect(consulRPCClient.ListKeysCallCount()).To(Equal(1))
-				Expect(consulRPCClient.ListKeysArgsForCall(0)).To(Equal(""))
 
 				Expect(consulRPCClient.RemoveKeyCallCount()).To(Equal(2))
 
-				key, token := consulRPCClient.RemoveKeyArgsForCall(0)
+				key := consulRPCClient.RemoveKeyArgsForCall(0)
 				Expect(key).To(Equal("key3"))
-				Expect(token).To(Equal(""))
 
-				key, token = consulRPCClient.RemoveKeyArgsForCall(1)
+				key = consulRPCClient.RemoveKeyArgsForCall(1)
 				Expect(key).To(Equal("key4"))
-				Expect(token).To(Equal(""))
 			})
 		})
 
 		Context("failure cases", func() {
+			Context("when provided with a nil slice", func() {
+				It("returns a reasonably named error", func() {
+					Expect(client.SetKeys(nil)).To(MatchError("must provide a non-nil slice of keys"))
+				})
+			})
+
+			Context("when provided with an empty slice", func() {
+				It("returns a reasonably named error", func() {
+					Expect(client.SetKeys([]string{})).To(MatchError("must provide a non-empty slice of keys"))
+				})
+			})
+
 			Context("when ListKeys returns an error", func() {
 				It("returns the error", func() {
-					consulRPCClient.ListKeysReturns(confab.KeyringResponse{}, errors.New("list keys error"))
+					consulRPCClient.ListKeysReturns([]string{}, errors.New("list keys error"))
 
 					Expect(client.SetKeys([]string{"key1"})).To(MatchError("list keys error"))
 				})
@@ -301,13 +301,7 @@ var _ = Describe("agent client", func() {
 
 			Context("when RemoveKeys returns an error", func() {
 				It("returns the error", func() {
-					consulRPCClient.ListKeysReturns(confab.KeyringResponse{
-						Keys: []agent.KeyringEntry{
-							{Key: "key3"},
-							{Key: "key4"},
-						},
-					}, nil)
-					consulRPCClient.RemoveKeyReturns(confab.KeyringResponse{}, errors.New("remove key error"))
+					consulRPCClient.RemoveKeyReturns(errors.New("remove key error"))
 
 					Expect(client.SetKeys([]string{"key1"})).To(MatchError("remove key error"))
 				})
@@ -315,7 +309,7 @@ var _ = Describe("agent client", func() {
 
 			Context("when InstallKey returns an error", func() {
 				It("returns the error", func() {
-					consulRPCClient.InstallKeyReturns(confab.KeyringResponse{}, errors.New("install key error"))
+					consulRPCClient.InstallKeyReturns(errors.New("install key error"))
 
 					Expect(client.SetKeys([]string{"key1"})).To(MatchError("install key error"))
 				})
@@ -323,7 +317,7 @@ var _ = Describe("agent client", func() {
 
 			Context("when UseKey returns an error", func() {
 				It("returns the error", func() {
-					consulRPCClient.UseKeyReturns(confab.KeyringResponse{}, errors.New("use key error"))
+					consulRPCClient.UseKeyReturns(errors.New("use key error"))
 
 					Expect(client.SetKeys([]string{"key1"})).To(MatchError("use key error"))
 				})

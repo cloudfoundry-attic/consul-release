@@ -4,14 +4,7 @@ import (
 	"errors"
 
 	"github.com/hashicorp/consul/api"
-	"github.com/hashicorp/consul/command/agent"
 )
-
-const keyringToken = ""
-
-type KeyringResponse struct {
-	Keys []agent.KeyringEntry
-}
 
 type consulAPIAgent interface {
 	Members(wan bool) ([]*api.AgentMember, error)
@@ -19,10 +12,10 @@ type consulAPIAgent interface {
 
 type consulRPCClient interface {
 	Stats() (map[string]map[string]string, error)
-	ListKeys(token string) (KeyringResponse, error)
-	InstallKey(key, token string) (KeyringResponse, error)
-	UseKey(key, token string) (KeyringResponse, error)
-	RemoveKey(key, token string) (KeyringResponse, error)
+	ListKeys() ([]string, error)
+	InstallKey(key string) error
+	UseKey(key string) error
+	RemoveKey(key string) error
 	Leave() error
 }
 
@@ -85,14 +78,22 @@ func (c AgentClient) IsLastNode() (bool, error) {
 }
 
 func (c AgentClient) SetKeys(keys []string) error {
-	listKeysResponse, err := c.ConsulRPCClient.ListKeys(keyringToken)
+	if keys == nil {
+		return errors.New("must provide a non-nil slice of keys")
+	}
+
+	if len(keys) == 0 {
+		return errors.New("must provide a non-empty slice of keys")
+	}
+
+	existingKeys, err := c.ConsulRPCClient.ListKeys()
 	if err != nil {
 		return err
 	}
 
-	for _, keyEntry := range listKeysResponse.Keys {
-		if !containsString(keys, keyEntry.Key) {
-			_, err := c.ConsulRPCClient.RemoveKey(keyEntry.Key, keyringToken)
+	for _, key := range existingKeys {
+		if !containsString(keys, key) {
+			err := c.ConsulRPCClient.RemoveKey(key)
 			if err != nil {
 				return err
 			}
@@ -100,13 +101,13 @@ func (c AgentClient) SetKeys(keys []string) error {
 	}
 
 	for _, key := range keys {
-		_, err := c.ConsulRPCClient.InstallKey(key, keyringToken)
+		err := c.ConsulRPCClient.InstallKey(key)
 		if err != nil {
 			return err
 		}
 	}
 
-	_, err = c.ConsulRPCClient.UseKey(keys[0], keyringToken)
+	err = c.ConsulRPCClient.UseKey(keys[0])
 	if err != nil {
 		return err
 	}
