@@ -19,3 +19,90 @@
 [submodule "src/github.com/cloudfoundry-incubator/candiedyaml"]
 	path = src/github.com/cloudfoundry-incubator/candiedyaml
 	url = http://github.com/cloudfoundry-incubator/candiedyaml.git
+[submodule "src/github.com/armon/circbuf"]
+	path = src/github.com/armon/circbuf
+	url = git://github.com/armon/circbuf
+[submodule "src/github.com/armon/go-metrics"]
+	path = src/github.com/armon/go-metrics
+	url = git://github.com/armon/go-metrics
+[submodule "src/github.com/armon/go-radix"]
+	path = src/github.com/armon/go-radix
+	url = git://github.com/armon/go-radix
+[submodule "src/github.com/armon/gomdb"]
+	path = src/github.com/armon/gomdb
+	url = git://github.com/armon/gomdb
+[submodule "src/github.com/hashicorp/consul-migrate"]
+	path = src/github.com/hashicorp/consul-migrate
+	url = git://github.com/hashicorp/consul-migrate
+[submodule "src/github.com/hashicorp/go-checkpoint"]
+	path = src/github.com/hashicorp/go-checkpoint
+	url = git://github.com/hashicorp/go-checkpoint
+[submodule "src/github.com/hashicorp/go-cleanhttp"]
+	path = src/github.com/hashicorp/go-cleanhttp
+	url = git://github.com/hashicorp/go-cleanhttp
+[submodule "src/github.com/hashicorp/go-msgpack"]
+	path = src/github.com/hashicorp/go-msgpack
+	url = git://github.com/hashicorp/go-msgpack
+[submodule "src/github.com/hashicorp/go-syslog"]
+	path = src/github.com/hashicorp/go-syslog
+	url = git://github.com/hashicorp/go-syslog
+[submodule "src/github.com/hashicorp/golang-lru"]
+	path = src/github.com/hashicorp/golang-lru
+	url = git://github.com/hashicorp/golang-lru
+[submodule "src/github.com/hashicorp/hcl"]
+	path = src/github.com/hashicorp/hcl
+	url = git://github.com/hashicorp/hcl
+[submodule "src/github.com/hashicorp/go-multierror"]
+	path = src/github.com/hashicorp/go-multierror
+	url = git://github.com/hashicorp/go-multierror
+[submodule "src/github.com/hashicorp/errwrap"]
+	path = src/github.com/hashicorp/errwrap
+	url = git://github.com/hashicorp/errwrap
+[submodule "src/github.com/hashicorp/logutils"]
+	path = src/github.com/hashicorp/logutils
+	url = git://github.com/hashicorp/logutils
+[submodule "src/github.com/hashicorp/memberlist"]
+	path = src/github.com/hashicorp/memberlist
+	url = git://github.com/hashicorp/memberlist
+[submodule "src/github.com/hashicorp/raft"]
+	path = src/github.com/hashicorp/raft
+	url = git://github.com/hashicorp/raft
+[submodule "src/github.com/hashicorp/raft-boltdb"]
+	path = src/github.com/hashicorp/raft-boltdb
+	url = git://github.com/hashicorp/raft-boltdb
+[submodule "src/github.com/boltdb/bolt"]
+	path = src/github.com/boltdb/bolt
+	url = git://github.com/boltdb/bolt
+[submodule "src/github.com/hashicorp/raft-mdb"]
+	path = src/github.com/hashicorp/raft-mdb
+	url = git://github.com/hashicorp/raft-mdb
+[submodule "src/github.com/hashicorp/scada-client"]
+	path = src/github.com/hashicorp/scada-client
+	url = git://github.com/hashicorp/scada-client
+[submodule "src/github.com/hashicorp/net-rpc-msgpackrpc"]
+	path = src/github.com/hashicorp/net-rpc-msgpackrpc
+	url = git://github.com/hashicorp/net-rpc-msgpackrpc
+[submodule "src/github.com/hahicorp/serf"]
+	path = src/github.com/hahicorp/serf
+	url = git://github.com/hashicorp/serf
+[submodule "src/github.com/hashicorp/serf"]
+	path = src/github.com/hashicorp/serf
+	url = git://github.com/hashicorp/serf
+[submodule "src/github.com/hashicorp/yamux"]
+	path = src/github.com/hashicorp/yamux
+	url = git://github.com/hashicorp/yamux
+[submodule "src/github.com/inconshreveable/muxado"]
+	path = src/github.com/inconshreveable/muxado
+	url = git://github.com/inconshreveable/muxado
+[submodule "src/github.com/miekg/dns"]
+	path = src/github.com/miekg/dns
+	url = git://github.com/miekg/dns
+[submodule "src/github.com/mitchellh/cli"]
+	path = src/github.com/mitchellh/cli
+	url = git://github.com/mitchellh/cli
+[submodule "src/github.com/mitchellh/mapstructure"]
+	path = src/github.com/mitchellh/mapstructure
+	url = git://github.com/mitchellh/mapstructure
+[submodule "src/golang.org/x/crypto"]
+	path = src/golang.org/x/crypto
+	url = https://go.googlesource.com/crypto
