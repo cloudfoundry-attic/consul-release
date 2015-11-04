@@ -82,7 +82,7 @@ var _ = Describe("controller", func() {
 				AgentRunner:    agentRunner,
 				AgentClient:    agentClient,
 				MaxRetries:     10,
-				SyncRetryDelay: 10 * time.Millisecond,
+				SyncRetryDelay: time.Duration(0),
 				EncryptKeys:    []string{"key 1", "key 2", "key 3"},
 			}
 		})
@@ -103,6 +103,7 @@ var _ = Describe("controller", func() {
 				Expect(agentClient.VerifySyncedCalls.CallCount).To(Equal(0))
 			})
 		})
+
 		Context("setting keys", func() {
 			It("sets the encryption keys used by the agent", func() {
 				Expect(controller.BootServer()).To(Succeed())
@@ -152,6 +153,7 @@ var _ = Describe("controller", func() {
 			BeforeEach(func() {
 				agentClient.IsLastNodeCall.Returns.IsLastNode = true
 			})
+
 			It("checks that it is synced", func() {
 				Expect(controller.BootServer()).To(Succeed())
 				Expect(agentClient.VerifySyncedCalls.CallCount).To(Equal(1))
@@ -243,7 +245,7 @@ var _ = Describe("controller", func() {
 				AgentRunner:    agentRunner,
 				AgentClient:    agentClient,
 				MaxRetries:     10,
-				SyncRetryDelay: 10 * time.Millisecond,
+				SyncRetryDelay: time.Duration(0),
 				EncryptKeys:    []string{"key 1", "key 2", "key 3"},
 			}
 		})
