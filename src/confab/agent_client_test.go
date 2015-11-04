@@ -11,29 +11,32 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("agent client", func() {
-	// type agentClient interface {
-	// 	VerifyJoined() error
-	// 	VerifySynced() error
-	// 	IsLastNode() (bool, error)
-	// 	SetKeys([]string) error
-	//  Leave() error
-	// }
+var _ = Describe("AgentClient", func() {
+	var (
+		consulAPIAgent  *fakes.FakeconsulAPIAgent
+		consulRPCClient *fakes.FakeconsulRPCClient
+		client          confab.AgentClient
+	)
+
+	BeforeEach(func() {
+		consulAPIAgent = &fakes.FakeconsulAPIAgent{}
+		consulRPCClient = &fakes.FakeconsulRPCClient{}
+		client = confab.AgentClient{
+			ConsulAPIAgent:  consulAPIAgent,
+			ConsulRPCClient: consulRPCClient,
+		}
+	})
 
 	Describe("VerifyJoined", func() {
 		//TODO pull things out into a Before
 		Context("when the set of members includes at least one that we expect", func() {
 			It("succeeds", func() {
-				consulAPIAgent := new(fakes.FakeconsulAPIAgent)
 				consulAPIAgent.MembersReturns([]*api.AgentMember{
 					&api.AgentMember{Addr: "member1"},
 					&api.AgentMember{Addr: "member2"},
-					&api.AgentMember{Addr: "member3"}}, nil)
-
-				client := confab.AgentClient{
-					ExpectedMembers: []string{"member1", "member2", "member3"},
-					ConsulAPIAgent:  consulAPIAgent,
-				}
+					&api.AgentMember{Addr: "member3"},
+				}, nil)
+				client.ExpectedMembers = []string{"member1", "member2", "member3"}
 
 				Expect(client.VerifyJoined()).To(Succeed())
 				Expect(consulAPIAgent.MembersArgsForCall(0)).To(BeFalse())
@@ -41,16 +44,12 @@ var _ = Describe("agent client", func() {
 		})
 		Context("when the members are all strangers", func() {
 			It("returns an error", func() {
-				consulAPIAgent := new(fakes.FakeconsulAPIAgent)
 				consulAPIAgent.MembersReturns([]*api.AgentMember{
 					&api.AgentMember{Addr: "member1"},
 					&api.AgentMember{Addr: "member2"},
-					&api.AgentMember{Addr: "member3"}}, nil)
-
-				client := confab.AgentClient{
-					ExpectedMembers: []string{"member4", "member5"},
-					ConsulAPIAgent:  consulAPIAgent,
-				}
+					&api.AgentMember{Addr: "member3"},
+				}, nil)
+				client.ExpectedMembers = []string{"member4", "member5"}
 
 				Expect(client.VerifyJoined()).To(MatchError("no expected members"))
 				Expect(consulAPIAgent.MembersArgsForCall(0)).To(BeFalse())
@@ -58,13 +57,8 @@ var _ = Describe("agent client", func() {
 		})
 		Context("when the members call fails", func() {
 			It("returns an error", func() {
-				consulAPIAgent := new(fakes.FakeconsulAPIAgent)
 				consulAPIAgent.MembersReturns([]*api.AgentMember{}, errors.New("members call error"))
-
-				client := confab.AgentClient{
-					ExpectedMembers: []string{},
-					ConsulAPIAgent:  consulAPIAgent,
-				}
+				client.ExpectedMembers = []string{}
 
 				Expect(client.VerifyJoined()).To(MatchError("members call error"))
 				Expect(consulAPIAgent.MembersArgsForCall(0)).To(BeFalse())
@@ -73,26 +67,13 @@ var _ = Describe("agent client", func() {
 	})
 
 	Describe("VerifySynced", func() {
-		var (
-			expectedStats   map[string]map[string]string
-			consulRPCClient *fakes.FakeconsulRPCClient
-			client          confab.AgentClient
-		)
-
 		BeforeEach(func() {
-			expectedStats = map[string]map[string]string{
+			consulRPCClient.StatsReturns(map[string]map[string]string{
 				"raft": map[string]string{
 					"commit_index":   "2",
 					"last_log_index": "2",
 				},
-			}
-
-			consulRPCClient = new(fakes.FakeconsulRPCClient)
-			consulRPCClient.StatsReturns(expectedStats, nil)
-
-			client = confab.AgentClient{
-				ConsulRPCClient: consulRPCClient,
-			}
+			}, nil)
 		})
 
 		It("verifies the sync state of the raft log", func() {
@@ -102,19 +83,12 @@ var _ = Describe("agent client", func() {
 
 		Context("when the last_log_index never catches up", func() {
 			BeforeEach(func() {
-				expectedStats = map[string]map[string]string{
+				consulRPCClient.StatsReturns(map[string]map[string]string{
 					"raft": map[string]string{
 						"commit_index":   "2",
 						"last_log_index": "1",
 					},
-				}
-
-				consulRPCClient = new(fakes.FakeconsulRPCClient)
-				consulRPCClient.StatsReturns(expectedStats, nil)
-
-				client = confab.AgentClient{
-					ConsulRPCClient: consulRPCClient,
-				}
+				}, nil)
 			})
 
 			It("returns an error", func() {
@@ -125,12 +99,7 @@ var _ = Describe("agent client", func() {
 
 		Context("when the RPCClient returns an error", func() {
 			BeforeEach(func() {
-				consulRPCClient = new(fakes.FakeconsulRPCClient)
 				consulRPCClient.StatsReturns(nil, errors.New("RPC error"))
-
-				client = confab.AgentClient{
-					ConsulRPCClient: consulRPCClient,
-				}
 			})
 
 			It("immediately returns an error", func() {
@@ -141,19 +110,12 @@ var _ = Describe("agent client", func() {
 
 		Context("when the commit index is 0", func() {
 			BeforeEach(func() {
-				expectedStats = map[string]map[string]string{
+				consulRPCClient.StatsReturns(map[string]map[string]string{
 					"raft": map[string]string{
 						"commit_index":   "0",
 						"last_log_index": "0",
 					},
-				}
-
-				consulRPCClient = new(fakes.FakeconsulRPCClient)
-				consulRPCClient.StatsReturns(expectedStats, nil)
-
-				client = confab.AgentClient{
-					ConsulRPCClient: consulRPCClient,
-				}
+				}, nil)
 			})
 
 			It("immediately returns an error", func() {
@@ -164,22 +126,14 @@ var _ = Describe("agent client", func() {
 	})
 
 	Describe("IsLastNode", func() {
-		var (
-			consulAPIAgent *fakes.FakeconsulAPIAgent
-			client         confab.AgentClient
-		)
-
 		BeforeEach(func() {
-			consulAPIAgent = new(fakes.FakeconsulAPIAgent)
 			consulAPIAgent.MembersReturns([]*api.AgentMember{
 				&api.AgentMember{Addr: "member1", Tags: map[string]string{"role": "consul"}},
 				&api.AgentMember{Addr: "member2", Tags: map[string]string{"role": "consul"}},
-				&api.AgentMember{Addr: "member3", Tags: map[string]string{"role": "consul"}}}, nil)
+				&api.AgentMember{Addr: "member3", Tags: map[string]string{"role": "consul"}},
+			}, nil)
 
-			client = confab.AgentClient{
-				ExpectedMembers: []string{"member1", "member2", "member3"},
-				ConsulAPIAgent:  consulAPIAgent,
-			}
+			client.ExpectedMembers = []string{"member1", "member2", "member3"}
 		})
 
 		It("returns true", func() {
@@ -191,7 +145,8 @@ var _ = Describe("agent client", func() {
 			BeforeEach(func() {
 				consulAPIAgent.MembersReturns([]*api.AgentMember{
 					&api.AgentMember{Addr: "member1", Tags: map[string]string{"role": "consul"}},
-					&api.AgentMember{Addr: "member2", Tags: map[string]string{"role": "consul"}}}, nil)
+					&api.AgentMember{Addr: "member2", Tags: map[string]string{"role": "consul"}},
+				}, nil)
 			})
 
 			It("returns false", func() {
@@ -204,14 +159,14 @@ var _ = Describe("agent client", func() {
 					consulAPIAgent.MembersReturns([]*api.AgentMember{
 						&api.AgentMember{Addr: "member1", Tags: map[string]string{"role": "consul"}},
 						&api.AgentMember{Addr: "member2", Tags: map[string]string{"role": "node"}},
-						&api.AgentMember{Addr: "member3", Tags: map[string]string{"role": "consul"}}}, nil)
+						&api.AgentMember{Addr: "member3", Tags: map[string]string{"role": "consul"}},
+					}, nil)
 				})
 
 				It("returns false", func() {
 					Expect(client.IsLastNode()).To(BeFalse())
 					Expect(consulAPIAgent.MembersCallCount()).To(Equal(1))
 				})
-
 			})
 		})
 
@@ -229,21 +184,11 @@ var _ = Describe("agent client", func() {
 	})
 
 	Describe("SetKeys", func() {
-		var (
-			consulRPCClient *fakes.FakeconsulRPCClient
-			client          confab.AgentClient
-		)
-
 		BeforeEach(func() {
-			consulRPCClient = new(fakes.FakeconsulRPCClient)
 			consulRPCClient.InstallKeyReturns(nil)
 			consulRPCClient.UseKeyReturns(nil)
 			consulRPCClient.ListKeysReturns([]string{"key3", "key4"}, nil)
 			consulRPCClient.RemoveKeyReturns(nil)
-
-			client = confab.AgentClient{
-				ConsulRPCClient: consulRPCClient,
-			}
 		})
 
 		It("installs the given keys", func() {
@@ -325,18 +270,6 @@ var _ = Describe("agent client", func() {
 	})
 
 	Describe("Leave", func() {
-		var (
-			consulRPCClient *fakes.FakeconsulRPCClient
-			client          confab.AgentClient
-		)
-
-		BeforeEach(func() {
-			consulRPCClient = new(fakes.FakeconsulRPCClient)
-			client = confab.AgentClient{
-				ConsulRPCClient: consulRPCClient,
-			}
-		})
-
 		It("leaves the cluster", func() {
 			Expect(client.Leave()).To(Succeed())
 			Expect(consulRPCClient.LeaveCallCount()).To(Equal(1))
