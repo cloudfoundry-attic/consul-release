@@ -28,7 +28,6 @@ var _ = Describe("AgentClient", func() {
 	})
 
 	Describe("VerifyJoined", func() {
-		//TODO pull things out into a Before
 		Context("when the set of members includes at least one that we expect", func() {
 			It("succeeds", func() {
 				consulAPIAgent.MembersReturns([]*api.AgentMember{

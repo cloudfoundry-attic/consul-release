@@ -107,7 +107,10 @@ var _ = Describe("controller", func() {
 			It("sets the encryption keys used by the agent", func() {
 				Expect(controller.BootServer()).To(Succeed())
 				Expect(agentClient.SetKeysCall.Receives.Keys).To(Equal([]string{
-					"key 1", "key 2", "key 3"}))
+					"key 1",
+					"key 2",
+					"key 3",
+				}))
 			})
 
 			Context("when setting keys errors", func() {
@@ -115,7 +118,10 @@ var _ = Describe("controller", func() {
 					agentClient.SetKeysCall.Returns.Error = errors.New("oh noes")
 					Expect(controller.BootServer()).To(MatchError("oh noes"))
 					Expect(agentClient.SetKeysCall.Receives.Keys).To(Equal([]string{
-						"key 1", "key 2", "key 3"}))
+						"key 1",
+						"key 2",
+						"key 3",
+					}))
 				})
 			})
 
