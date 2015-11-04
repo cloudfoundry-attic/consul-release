@@ -18,11 +18,16 @@ type agentClient interface {
 	Leave() error
 }
 
+type clock interface {
+	Sleep(time.Duration)
+}
+
 type Controller struct {
 	AgentRunner    agentRunner
 	AgentClient    agentClient
 	MaxRetries     int
 	SyncRetryDelay time.Duration
+	SyncRetryClock clock
 	EncryptKeys    []string
 	SSLDisabled    bool
 }
@@ -40,8 +45,7 @@ func (c Controller) bootAgent() error {
 				return err
 			}
 
-			//TODO write a proper test for timing
-			time.Sleep(c.SyncRetryDelay)
+			c.SyncRetryClock.Sleep(c.SyncRetryDelay)
 			continue
 		}
 
@@ -74,8 +78,7 @@ func (c Controller) BootServer() error {
 					return err
 				}
 
-				//TODO write a proper test for timing
-				time.Sleep(c.SyncRetryDelay)
+				c.SyncRetryClock.Sleep(c.SyncRetryDelay)
 				continue
 			}
 

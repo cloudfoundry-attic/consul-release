@@ -12,35 +12,40 @@ import (
 
 var _ = Describe("controller", func() {
 	var (
+		clock       *fakes.Clock
 		agentRunner *fakes.AgentRunner
 		agentClient *fakes.AgentClient
 		controller  confab.Controller
 	)
 
+	BeforeEach(func() {
+		clock = &fakes.Clock{}
+
+		agentClient = &fakes.AgentClient{}
+		agentClient.VerifyJoinedCalls.Returns.Errors = []error{nil}
+		agentClient.VerifySyncedCalls.Returns.Errors = []error{nil}
+
+		agentRunner = &fakes.AgentRunner{}
+		agentRunner.RunCalls.Returns.Errors = []error{nil}
+
+		controller = confab.Controller{
+			AgentClient:    agentClient,
+			AgentRunner:    agentRunner,
+			MaxRetries:     10,
+			SyncRetryDelay: 10 * time.Millisecond,
+			SyncRetryClock: clock,
+			EncryptKeys:    []string{"key 1", "key 2", "key 3"},
+		}
+	})
+
 	Describe("StopAgent", func() {
-		BeforeEach(func() {
-			agentClient = &fakes.AgentClient{}
-			agentClient.VerifyJoinedCalls.Returns.Errors = []error{nil}
-			agentClient.VerifySyncedCalls.Returns.Errors = []error{nil}
-
-			agentRunner = &fakes.AgentRunner{}
-			agentRunner.RunCalls.Returns.Errors = []error{nil}
-
-			controller = confab.Controller{
-				AgentClient: agentClient,
-				AgentRunner: agentRunner,
-			}
-		})
-
 		It("tells client to leave the cluster", func() {
 			Expect(controller.StopAgent()).To(Succeed())
-
 			Expect(agentClient.LeaveCall.CallCount).To(Equal(1))
 		})
 
 		It("tells the runner to stop the agent", func() {
 			Expect(controller.StopAgent()).To(Succeed())
-
 			Expect(agentRunner.StopCall.CallCount).To(Equal(1))
 		})
 
@@ -51,7 +56,6 @@ var _ = Describe("controller", func() {
 
 			It("immediately returns an error", func() {
 				Expect(controller.StopAgent()).To(MatchError("leave error"))
-
 				Expect(agentClient.LeaveCall.CallCount).To(Equal(1))
 			})
 		})
@@ -63,30 +67,12 @@ var _ = Describe("controller", func() {
 
 			It("immediately returns an error", func() {
 				Expect(controller.StopAgent()).To(MatchError("stop error"))
-
 				Expect(agentRunner.StopCall.CallCount).To(Equal(1))
 			})
 		})
 	})
 
 	Describe("BootServer", func() {
-		BeforeEach(func() {
-			agentRunner = &fakes.AgentRunner{}
-			agentRunner.RunCalls.Returns.Errors = []error{nil}
-
-			agentClient = &fakes.AgentClient{}
-			agentClient.VerifyJoinedCalls.Returns.Errors = []error{nil}
-			agentClient.VerifySyncedCalls.Returns.Errors = []error{nil}
-
-			controller = confab.Controller{
-				AgentRunner:    agentRunner,
-				AgentClient:    agentClient,
-				MaxRetries:     10,
-				SyncRetryDelay: time.Duration(0),
-				EncryptKeys:    []string{"key 1", "key 2", "key 3"},
-			}
-		})
-
 		It("launches the consul agent", func() {
 			Expect(controller.BootServer()).To(Succeed())
 			Expect(agentRunner.RunCalls.CallCount).To(Equal(1))
@@ -168,6 +154,8 @@ var _ = Describe("controller", func() {
 
 					Expect(controller.BootServer()).To(Succeed())
 					Expect(agentClient.VerifySyncedCalls.CallCount).To(Equal(10))
+					Expect(clock.SleepCall.CallCount).To(Equal(9))
+					Expect(clock.SleepCall.Receives.Duration).To(Equal(10 * time.Millisecond))
 				})
 			})
 
@@ -214,11 +202,14 @@ var _ = Describe("controller", func() {
 
 				Expect(controller.BootServer()).To(Succeed())
 				Expect(agentClient.VerifyJoinedCalls.CallCount).To(Equal(10))
+				Expect(clock.SleepCall.CallCount).To(Equal(9))
+				Expect(clock.SleepCall.Receives.Duration).To(Equal(10 * time.Millisecond))
 			})
 		})
 
 		Context("joining never succeeds within MaxRetries", func() {
 			It("immediately returns an error", func() {
+				agentClient.VerifyJoinedCalls.Returns.Errors = make([]error, 10)
 				agentClient.VerifyJoinedCalls.Returns.Errors = make([]error, 10)
 				for i := 0; i < 9; i++ {
 					agentClient.VerifyJoinedCalls.Returns.Errors[i] = errors.New("some error")
@@ -227,29 +218,11 @@ var _ = Describe("controller", func() {
 
 				Expect(controller.BootServer()).To(MatchError("the final error"))
 				Expect(agentClient.VerifyJoinedCalls.CallCount).To(Equal(10))
-
 				Expect(agentClient.VerifySyncedCalls.CallCount).To(Equal(0))
 			})
 		})
 	})
 	Describe("BootClient", func() {
-		BeforeEach(func() {
-			agentRunner = &fakes.AgentRunner{}
-			agentRunner.RunCalls.Returns.Errors = []error{nil}
-
-			agentClient = &fakes.AgentClient{}
-			agentClient.VerifyJoinedCalls.Returns.Errors = []error{nil}
-			agentClient.VerifySyncedCalls.Returns.Errors = []error{nil}
-
-			controller = confab.Controller{
-				AgentRunner:    agentRunner,
-				AgentClient:    agentClient,
-				MaxRetries:     10,
-				SyncRetryDelay: time.Duration(0),
-				EncryptKeys:    []string{"key 1", "key 2", "key 3"},
-			}
-		})
-
 		It("launches the consul agent", func() {
 			Expect(controller.BootClient()).To(Succeed())
 			Expect(agentRunner.RunCalls.CallCount).To(Equal(1))
@@ -279,6 +252,8 @@ var _ = Describe("controller", func() {
 
 				Expect(controller.BootClient()).To(Succeed())
 				Expect(agentClient.VerifyJoinedCalls.CallCount).To(Equal(10))
+				Expect(clock.SleepCall.CallCount).To(Equal(9))
+				Expect(clock.SleepCall.Receives.Duration).To(Equal(10 * time.Millisecond))
 			})
 		})
 
