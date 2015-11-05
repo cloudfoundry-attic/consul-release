@@ -2,12 +2,14 @@ package confab
 
 import (
 	"errors"
+	"log"
 	"time"
 )
 
 type agentRunner interface {
 	Run() error
 	Stop() error
+	Wait() error
 }
 
 type agentClient interface {
@@ -30,6 +32,7 @@ type Controller struct {
 	SyncRetryClock clock
 	EncryptKeys    []string
 	SSLDisabled    bool
+	Logger         *log.Logger
 }
 
 func (c Controller) bootAgent() error {
@@ -101,14 +104,15 @@ func (c Controller) BootServer() error {
 }
 
 func (c Controller) StopAgent() error {
-	err := c.AgentClient.Leave()
-	if err != nil {
-		return err
+	if err := c.AgentClient.Leave(); err != nil {
+		c.Logger.Printf("%s", err)
+		if err = c.AgentRunner.Stop(); err != nil {
+			c.Logger.Printf("%s", err)
+		}
 	}
 
-	err = c.AgentRunner.Stop()
-	if err != nil {
-		return err
+	if err := c.AgentRunner.Wait(); err != nil {
+		c.Logger.Printf("%s", err)
 	}
 
 	return nil

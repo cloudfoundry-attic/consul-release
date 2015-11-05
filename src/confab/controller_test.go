@@ -1,9 +1,11 @@
 package confab_test
 
 import (
+	"bytes"
 	"confab"
 	"confab/fakes"
 	"errors"
+	"log"
 	"time"
 
 	. "github.com/onsi/ginkgo"
@@ -16,6 +18,7 @@ var _ = Describe("controller", func() {
 		agentRunner *fakes.AgentRunner
 		agentClient *fakes.AgentClient
 		controller  confab.Controller
+		logBuffer   *bytes.Buffer
 	)
 
 	BeforeEach(func() {
@@ -28,6 +31,8 @@ var _ = Describe("controller", func() {
 		agentRunner = &fakes.AgentRunner{}
 		agentRunner.RunCalls.Returns.Errors = []error{nil}
 
+		logBuffer = &bytes.Buffer{}
+
 		controller = confab.Controller{
 			AgentClient:    agentClient,
 			AgentRunner:    agentRunner,
@@ -35,6 +40,7 @@ var _ = Describe("controller", func() {
 			SyncRetryDelay: 10 * time.Millisecond,
 			SyncRetryClock: clock,
 			EncryptKeys:    []string{"key 1", "key 2", "key 3"},
+			Logger:         log.New(logBuffer, "[Test]", 0),
 		}
 	})
 
@@ -43,31 +49,56 @@ var _ = Describe("controller", func() {
 			Expect(controller.StopAgent()).To(Succeed())
 			Expect(agentClient.LeaveCall.CallCount).To(Equal(1))
 		})
-
-		It("tells the runner to stop the agent", func() {
+		It("waits for the agent to stop", func() {
 			Expect(controller.StopAgent()).To(Succeed())
-			Expect(agentRunner.StopCall.CallCount).To(Equal(1))
+			Expect(agentRunner.WaitCall.CallCount).To(Equal(1))
 		})
 
-		Context("The client returns an error", func() {
+		Context("when the agent client Leave() returns an error", func() {
 			BeforeEach(func() {
 				agentClient.LeaveCall.Returns.Error = errors.New("leave error")
 			})
 
-			It("immediately returns an error", func() {
-				Expect(controller.StopAgent()).To(MatchError("leave error"))
-				Expect(agentClient.LeaveCall.CallCount).To(Equal(1))
+			It("tells the runner to stop the agent", func() {
+				Expect(controller.StopAgent()).To(Succeed())
+				Expect(agentRunner.StopCall.CallCount).To(Equal(1))
+			})
+
+			It("logs the error", func() {
+				Expect(controller.StopAgent()).To(Succeed())
+				Expect(logBuffer.String()).To(ContainSubstring("leave error"))
+			})
+
+			Context("when agent runner Stop() returns an error", func() {
+				BeforeEach(func() {
+					agentRunner.StopCall.Returns.Error = errors.New("stop error")
+				})
+
+				It("swallows the error", func() {
+					Expect(controller.StopAgent()).To(Succeed())
+					Expect(agentRunner.StopCall.CallCount).To(Equal(1))
+				})
+
+				It("logs the error", func() {
+					Expect(controller.StopAgent()).To(Succeed())
+					Expect(logBuffer.String()).To(ContainSubstring("stop error"))
+				})
 			})
 		})
 
-		Context("The runner returns an error", func() {
+		Context("when agent runner Wait() returns an error", func() {
 			BeforeEach(func() {
-				agentRunner.StopCall.Returns.Error = errors.New("stop error")
+				agentRunner.WaitCall.Returns.Error = errors.New("wait error")
 			})
 
-			It("immediately returns an error", func() {
-				Expect(controller.StopAgent()).To(MatchError("stop error"))
-				Expect(agentRunner.StopCall.CallCount).To(Equal(1))
+			It("swallows the error", func() {
+				Expect(controller.StopAgent()).To(Succeed())
+				Expect(agentRunner.WaitCall.CallCount).To(Equal(1))
+			})
+
+			It("logs the error", func() {
+				Expect(controller.StopAgent()).To(Succeed())
+				Expect(logBuffer.String()).To(ContainSubstring("wait error"))
 			})
 		})
 	})

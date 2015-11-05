@@ -14,6 +14,13 @@ type AgentRunner struct {
 			Error error
 		}
 	}
+
+	WaitCall struct {
+		CallCount int
+		Returns   struct {
+			Error error
+		}
+	}
 }
 
 func (r *AgentRunner) Run() error {
@@ -25,6 +32,11 @@ func (r *AgentRunner) Run() error {
 func (r *AgentRunner) Stop() error {
 	r.StopCall.CallCount++
 	return r.StopCall.Returns.Error
+}
+
+func (r *AgentRunner) Wait() error {
+	r.WaitCall.CallCount++
+	return r.WaitCall.Returns.Error
 }
 
 type AgentClient struct {
