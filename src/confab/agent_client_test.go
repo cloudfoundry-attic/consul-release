@@ -41,6 +41,7 @@ var _ = Describe("AgentClient", func() {
 				Expect(consulAPIAgent.MembersArgsForCall(0)).To(BeFalse())
 			})
 		})
+
 		Context("when the members are all strangers", func() {
 			It("returns an error", func() {
 				consulAPIAgent.MembersReturns([]*api.AgentMember{
@@ -54,6 +55,7 @@ var _ = Describe("AgentClient", func() {
 				Expect(consulAPIAgent.MembersArgsForCall(0)).To(BeFalse())
 			})
 		})
+
 		Context("when the members call fails", func() {
 			It("returns an error", func() {
 				consulAPIAgent.MembersReturns([]*api.AgentMember{}, errors.New("members call error"))

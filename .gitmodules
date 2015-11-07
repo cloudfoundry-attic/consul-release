@@ -106,3 +106,6 @@
 [submodule "src/golang.org/x/crypto"]
 	path = src/golang.org/x/crypto
 	url = https://go.googlesource.com/crypto
+[submodule "src/github.com/pivotal-golang/clock"]
+	path = src/github.com/pivotal-golang/clock
+	url = https://github.com/pivotal-golang/clock.git

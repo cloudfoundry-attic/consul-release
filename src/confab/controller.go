@@ -58,12 +58,12 @@ func (c Controller) bootAgent() error {
 	return nil
 }
 
-func (c Controller) BootClient() error {
+func (c Controller) BootAgent() error {
 	return c.bootAgent()
 }
 
-func (c Controller) BootServer() error {
-	err := c.bootAgent()
+func (c Controller) ConfigureServer() error {
+	err := c.bootAgent() // TODO: this should be removed, BootAgent needs to be called explictly
 	if err != nil {
 		return err
 	}
@@ -106,6 +106,7 @@ func (c Controller) BootServer() error {
 func (c Controller) StopAgent() error {
 	if err := c.AgentClient.Leave(); err != nil {
 		c.Logger.Printf("%s", err)
+
 		if err = c.AgentRunner.Stop(); err != nil {
 			c.Logger.Printf("%s", err)
 		}

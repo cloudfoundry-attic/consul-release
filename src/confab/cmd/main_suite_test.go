@@ -1,4 +1,4 @@
-package confab_test
+package main_test
 
 import (
 	. "github.com/onsi/ginkgo"
@@ -8,18 +8,22 @@ import (
 	"testing"
 )
 
-func TestConfab(t *testing.T) {
+func TestMain(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "confab")
+	RunSpecs(t, "confab/cmd")
 }
 
 var (
 	pathToFakeAgent string
+	pathToConfab    string
 )
 
 var _ = BeforeSuite(func() {
 	var err error
 	pathToFakeAgent, err = gexec.Build("confab/fakes/agent")
+	Expect(err).NotTo(HaveOccurred())
+
+	pathToConfab, err = gexec.Build("confab/cmd")
 	Expect(err).NotTo(HaveOccurred())
 })
 

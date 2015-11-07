@@ -82,6 +82,7 @@ var _ = Describe("AgentRunner", func() {
 			// Stderr:    os.Stderr,
 		}
 	})
+
 	AfterEach(func() {
 		os.Remove(runner.PIDFile)
 		os.RemoveAll(runner.ConfigDir)
