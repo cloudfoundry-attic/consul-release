@@ -259,5 +259,30 @@ var _ = Describe("confab", func() {
 				Expect(session.Err.Contents()).To(ContainSubstring("usage: confab COMMAND OPTIONS"))
 			})
 		})
+
+		Context("when the pid file contains the pid of a running process", func() {
+			It("prints an error and exits status 1", func() {
+				// some test setup....
+				myPID := os.Getpid()
+				Expect(ioutil.WriteFile(pidFile.Name(), []byte(fmt.Sprintf("%d", myPID)), 0644)).To(Succeed())
+
+				cmd := exec.Command(pathToConfab,
+					"start",
+					"--server=false",
+					"--pid-file", pidFile.Name(),
+					"--agent-path", pathToFakeAgent,
+					"--consul-config-dir", consulConfigDir,
+					"--expected-member", "member-1",
+					"--expected-member", "member-2",
+					"--expected-member", "member-3",
+				)
+				session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+				Expect(err).NotTo(HaveOccurred())
+				Eventually(session, "5s").Should(gexec.Exit(1))
+
+				Expect(session.Err.Contents()).To(ContainSubstring("error booting consul agent"))
+				Expect(session.Err.Contents()).To(ContainSubstring("already running"))
+			})
+		})
 	})
 })

@@ -85,7 +85,7 @@ func main() {
 	}
 	consulAPIClient, err := api.NewClient(api.DefaultConfig())
 	if err != nil {
-		panic(err)
+		panic(err) // not tested, NewClient never errors
 	}
 
 	agentClient := confab.AgentClient{
@@ -107,7 +107,8 @@ func main() {
 
 	err = controller.BootAgent()
 	if err != nil {
-		panic(err)
+		stderr.Printf("error booting consul agent: %s", err)
+		os.Exit(1)
 	}
 
 	if !isServer {
@@ -115,7 +116,7 @@ func main() {
 	}
 	rpcClient, err := agent.NewRPCClient("localhost:8400")
 	if err != nil {
-		panic(err)
+		panic(err) // TODO: test drive this out to look like lines 110-111
 	}
 	agentClient.ConsulRPCClient = &confab.RPCClient{
 		*rpcClient,
@@ -123,7 +124,7 @@ func main() {
 
 	err = controller.ConfigureServer()
 	if err != nil {
-		panic(err)
+		panic(err) // TODO: test drive this out to look like lines 110-111
 	}
 }
 
