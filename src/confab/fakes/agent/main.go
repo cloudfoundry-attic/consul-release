@@ -49,11 +49,12 @@ func main() {
 
 	// read input options provided to us by the test
 	var inputOptions struct {
-		Slow       bool
-		WaitForHUP bool
-		RunClient  bool
-		RunServer  bool
-		Members    []string
+		Slow          bool
+		WaitForHUP    bool
+		RunClient     bool
+		RunServer     bool
+		Members       []string
+		FailRPCServer bool
 	}
 	if optionsBytes, err := ioutil.ReadFile(filepath.Join(configDir, "options.json")); err == nil {
 		json.Unmarshal(optionsBytes, &inputOptions)
@@ -80,11 +81,16 @@ func main() {
 		}.Serve()
 	}
 
+	tcpAddr := ""
+	if !inputOptions.FailRPCServer {
+		tcpAddr = "127.0.0.1:8400"
+	}
+
 	if inputOptions.RunServer {
 		fmt.Println("running server")
 		ServerListener{
 			HTTPAddr: "127.0.0.1:8500",
-			TCPAddr:  "127.0.0.1:8400",
+			TCPAddr:  tcpAddr,
 			Members:  inputOptions.Members,
 		}.Serve()
 	}
@@ -152,16 +158,6 @@ func (sl ServerListener) Serve() {
 		panic(err)
 	}
 
-	tcpAddr, err := net.ResolveTCPAddr("tcp", sl.TCPAddr)
-	if err != nil {
-		panic(err)
-	}
-
-	tcpListener, err := net.ListenTCP("tcp", tcpAddr)
-	if err != nil {
-		panic(err)
-	}
-
 	triggerClose := make(chan struct{})
 
 	mux := http.NewServeMux()
@@ -183,24 +179,42 @@ func (sl ServerListener) Serve() {
 
 	go server.Serve(httpListener)
 
-	mockAgent := new(FakeAgentBackend)
-	agentRPCServer := agent.NewAgentRPC(mockAgent, tcpListener,
-		os.Stderr, agent.NewLogWriter(42))
-	go func() {
-		var useKeyCalled bool
-		for {
-			if mockAgent.UseKeyCallCount() > 0 && !useKeyCalled {
-				fmt.Println("UseKey called")
-				useKeyCalled = true
-			}
+	var mockAgent *FakeAgentBackend
+	var agentRPCServer *agent.AgentRPC
+	if sl.TCPAddr != "" {
 
-			time.Sleep(1 * time.Second)
+		tcpAddr, err := net.ResolveTCPAddr("tcp", sl.TCPAddr)
+		if err != nil {
+			panic(err)
 		}
-	}()
+
+		tcpListener, err := net.ListenTCP("tcp", tcpAddr)
+		if err != nil {
+			panic(err)
+		}
+
+		mockAgent = new(FakeAgentBackend)
+		agentRPCServer = agent.NewAgentRPC(mockAgent, tcpListener,
+			os.Stderr, agent.NewLogWriter(42))
+
+		go func() {
+			var useKeyCalled bool
+			for {
+				if mockAgent.UseKeyCallCount() > 0 && !useKeyCalled {
+					fmt.Println("UseKey called")
+					useKeyCalled = true
+				}
+
+				time.Sleep(1 * time.Second)
+			}
+		}()
+	}
 
 	<-triggerClose
 	<-triggerClose
 	time.Sleep(1 * time.Second)
 	httpListener.Close()
-	agentRPCServer.Shutdown()
+	if agentRPCServer != nil {
+		agentRPCServer.Shutdown()
+	}
 }

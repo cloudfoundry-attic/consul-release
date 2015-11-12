@@ -116,7 +116,8 @@ func main() {
 	}
 	rpcClient, err := agent.NewRPCClient("localhost:8400")
 	if err != nil {
-		panic(err) // TODO: test drive this out to look like lines 110-111
+		stderr.Printf("error connecting to RPC server: %s", err)
+		os.Exit(1)
 	}
 	agentClient.ConsulRPCClient = &confab.RPCClient{
 		*rpcClient,

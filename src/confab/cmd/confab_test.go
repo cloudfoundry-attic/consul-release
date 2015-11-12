@@ -284,5 +284,29 @@ var _ = Describe("confab", func() {
 				Expect(session.Err.Contents()).To(ContainSubstring("already running"))
 			})
 		})
+
+		Context("when the rpc connection cannot be created", func() {
+			It("returns an error and exists with status 1", func() {
+
+				options := []byte(`{ "RunClient": true, "Members": ["member-1", "member-2", "member-3"], "FailRPCServer": true }`)
+				Expect(ioutil.WriteFile(filepath.Join(consulConfigDir, "options.json"), options, 0600)).To(Succeed())
+
+				cmd := exec.Command(pathToConfab,
+					"start",
+					"--server=true",
+					"--pid-file", pidFile.Name(),
+					"--agent-path", pathToFakeAgent,
+					"--consul-config-dir", consulConfigDir,
+					"--expected-member", "member-1",
+					"--expected-member", "member-2",
+					"--expected-member", "member-3",
+				)
+				session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+				Expect(err).NotTo(HaveOccurred())
+				Eventually(session, "5s").Should(gexec.Exit(1))
+
+				Expect(session.Err.Contents()).To(ContainSubstring("error connecting to RPC server"))
+			})
+		})
 	})
 })
