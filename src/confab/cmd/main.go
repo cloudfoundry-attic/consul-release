@@ -27,7 +27,7 @@ func (ss *stringSlice) Set(value string) error {
 }
 
 var (
-	nodeType        string
+	isServer        bool
 	agentPath       string
 	consulConfigDir string
 	pidFile         string
@@ -40,7 +40,7 @@ var (
 
 func main() {
 	flagSet := flag.NewFlagSet("flags", flag.ContinueOnError)
-	flagSet.StringVar(&nodeType, "node-type", "", "client or server")
+	flagSet.BoolVar(&isServer, "server", false, "whether to start the agent in server mode")
 	flagSet.StringVar(&agentPath, "agent-path", "", "path to the on-filesystem consul `executable`")
 	flagSet.StringVar(&consulConfigDir, "consul-config-dir", "", "path to consul configuration `directory`")
 	flagSet.StringVar(&pidFile, "pid-file", "", "path to consul PID `file`")
@@ -105,31 +105,25 @@ func main() {
 		Logger:         nil,
 	}
 
-	switch nodeType {
-	case "client":
-		err = controller.BootAgent()
-		if err != nil {
-			panic(err)
-		}
-	case "server":
-		err = controller.BootAgent()
-		if err != nil {
-			panic(err)
-		}
-		rpcClient, err := agent.NewRPCClient("localhost:8400")
-		if err != nil {
-			panic(err)
-		}
-		agentClient.ConsulRPCClient = &confab.RPCClient{
-			*rpcClient,
-		}
+	err = controller.BootAgent()
+	if err != nil {
+		panic(err)
+	}
 
-		err = controller.ConfigureServer()
-		if err != nil {
-			panic(err)
-		}
-	default:
-		panic("unhandled default case")
+	if !isServer {
+		return
+	}
+	rpcClient, err := agent.NewRPCClient("localhost:8400")
+	if err != nil {
+		panic(err)
+	}
+	agentClient.ConsulRPCClient = &confab.RPCClient{
+		*rpcClient,
+	}
+
+	err = controller.ConfigureServer()
+	if err != nil {
+		panic(err)
 	}
 }
 

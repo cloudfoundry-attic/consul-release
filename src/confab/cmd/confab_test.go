@@ -12,6 +12,7 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega/gbytes"
 	"github.com/onsi/gomega/gexec"
 )
 
@@ -51,7 +52,7 @@ var _ = Describe("confab", func() {
 			It("starts a consul agent as a client", func() {
 				cmd := exec.Command(pathToConfab,
 					"start",
-					"--node-type", "client",
+					"--server=false",
 					"--pid-file", pidFile.Name(),
 					"--agent-path", pathToFakeAgent,
 					"--consul-config-dir", consulConfigDir,
@@ -105,7 +106,7 @@ var _ = Describe("confab", func() {
 			It("starts a consul agent as a server", func() {
 				cmd := exec.Command(pathToConfab,
 					"start",
-					"--node-type", "server",
+					"--server=true",
 					"--pid-file", pidFile.Name(),
 					"--agent-path", pathToFakeAgent,
 					"--consul-config-dir", consulConfigDir,
@@ -140,6 +141,8 @@ var _ = Describe("confab", func() {
 						fmt.Sprintf("-config-dir=%s", consulConfigDir),
 					},
 				}))
+
+				Expect(session.Out).To(gbytes.Say("UseKey called"))
 			})
 		})
 	})
@@ -175,12 +178,12 @@ var _ = Describe("confab", func() {
 		Context("when no command is provided", func() {
 			It("returns a non-zero status code and prints usage", func() {
 				cmd := exec.Command(pathToConfab,
-					"--node-type", "client",
+					"--server=false",
 				)
 				session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
 				Expect(err).NotTo(HaveOccurred())
 				Eventually(session, "5s").Should(gexec.Exit(1))
-				Expect(session.Err.Contents()).To(ContainSubstring("invalid COMMAND \"--node-type\""))
+				Expect(session.Err.Contents()).To(ContainSubstring("invalid COMMAND \"--server=false\""))
 				Expect(session.Err.Contents()).To(ContainSubstring("usage: confab COMMAND OPTIONS"))
 			})
 		})

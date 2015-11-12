@@ -186,6 +186,17 @@ func (sl ServerListener) Serve() {
 	mockAgent := new(FakeAgentBackend)
 	agentRPCServer := agent.NewAgentRPC(mockAgent, tcpListener,
 		os.Stderr, agent.NewLogWriter(42))
+	go func() {
+		var useKeyCalled bool
+		for {
+			if mockAgent.UseKeyCallCount() > 0 && !useKeyCalled {
+				fmt.Println("UseKey called")
+				useKeyCalled = true
+			}
+
+			time.Sleep(1 * time.Second)
+		}
+	}()
 
 	<-triggerClose
 	<-triggerClose
