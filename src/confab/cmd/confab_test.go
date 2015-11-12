@@ -8,11 +8,25 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strconv"
+	"syscall"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
 )
+
+func killProcessWithPIDFile(pidFilePath string) {
+	pidFileContents, err := ioutil.ReadFile(pidFilePath)
+	Expect(err).NotTo(HaveOccurred())
+
+	pid, err := strconv.Atoi(string(pidFileContents))
+	Expect(err).NotTo(HaveOccurred())
+
+	process, err := os.FindProcess(pid)
+	Expect(err).NotTo(HaveOccurred())
+
+	process.Signal(syscall.SIGKILL)
+}
 
 var _ = Describe("confab", func() {
 	var (
@@ -73,12 +87,22 @@ var _ = Describe("confab", func() {
 		})
 
 		Context("for a server", func() {
+			var (
+				session *gexec.Session
+			)
 			BeforeEach(func() {
 				options := []byte(`{ "RunServer": true, "Members": ["member-1", "member-2", "member-3"] }`)
 				Expect(ioutil.WriteFile(filepath.Join(consulConfigDir, "options.json"), options, 0600)).To(Succeed())
 			})
+			AfterEach(func() {
+				killProcessWithPIDFile(pidFile.Name())
+				if session.Command == nil || session.Command.Process == nil {
+					return
+				}
+				session.Kill()
+			})
 
-			PIt("starts a consul agent as a server", func() {
+			It("starts a consul agent as a server", func() {
 				cmd := exec.Command(pathToConfab,
 					"start",
 					"--node-type", "server",
@@ -91,7 +115,8 @@ var _ = Describe("confab", func() {
 					"--encryption-key", "key-1",
 					"--encryption-key", "key-2",
 				)
-				session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+				var err error
+				session, err = gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
 				Expect(err).NotTo(HaveOccurred())
 				Eventually(session, "5s").Should(gexec.Exit(0))
 

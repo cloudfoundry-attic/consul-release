@@ -35,7 +35,7 @@ type Controller struct {
 	Logger         *log.Logger
 }
 
-func (c Controller) bootAgent() error {
+func (c Controller) BootAgent() error {
 	err := c.AgentRunner.Run()
 	if err != nil {
 		return err
@@ -58,16 +58,7 @@ func (c Controller) bootAgent() error {
 	return nil
 }
 
-func (c Controller) BootAgent() error {
-	return c.bootAgent()
-}
-
 func (c Controller) ConfigureServer() error {
-	err := c.bootAgent() // TODO: this should be removed, BootAgent needs to be called explictly
-	if err != nil {
-		return err
-	}
-
 	lastNode, err := c.AgentClient.IsLastNode()
 	if err != nil {
 		return err

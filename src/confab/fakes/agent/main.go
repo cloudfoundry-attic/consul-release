@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bufio"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -15,6 +14,7 @@ import (
 	"time"
 
 	"github.com/hashicorp/consul/api"
+	"github.com/hashicorp/consul/command/agent"
 )
 
 type outputData struct {
@@ -166,7 +166,6 @@ func (sl ServerListener) Serve() {
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
-		fmt.Println(req)
 		var members []api.AgentMember
 		for _, member := range sl.Members {
 			members = append(members, api.AgentMember{
@@ -184,26 +183,13 @@ func (sl ServerListener) Serve() {
 
 	go server.Serve(httpListener)
 
-	go func() {
-		for {
-			conn, err := tcpListener.AcceptTCP()
-			if err != nil {
-				panic(err)
-			}
-			message, err := bufio.NewReader(conn).ReadString('\n')
-			if err != nil {
-				panic(err)
-			}
-			fmt.Print("Message Received:", string(message))
-		}
-	}()
+	mockAgent := new(FakeAgentBackend)
+	agentRPCServer := agent.NewAgentRPC(mockAgent, tcpListener,
+		os.Stderr, agent.NewLogWriter(42))
 
-	for {
-		time.Sleep(1 * time.Second)
-	}
 	<-triggerClose
 	<-triggerClose
 	time.Sleep(1 * time.Second)
 	httpListener.Close()
-	tcpListener.Close()
+	agentRPCServer.Shutdown()
 }

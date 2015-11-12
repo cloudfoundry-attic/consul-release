@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/hashicorp/consul/api"
+	"github.com/hashicorp/consul/command/agent"
 	"github.com/pivotal-golang/clock"
 )
 
@@ -95,7 +96,7 @@ func main() {
 
 	controller := confab.Controller{
 		AgentRunner:    &agentRunner,
-		AgentClient:    agentClient,
+		AgentClient:    &agentClient,
 		MaxRetries:     10,
 		SyncRetryDelay: 1 * time.Second,
 		SyncRetryClock: clock.NewClock(),
@@ -111,9 +112,17 @@ func main() {
 			panic(err)
 		}
 	case "server":
-		// TODO:
-		// - explictly call controller.BootAgent()
-		// - create consul RPC client (this has to happen after boot, because it creates connection)
+		err = controller.BootAgent()
+		if err != nil {
+			panic(err)
+		}
+		rpcClient, err := agent.NewRPCClient("localhost:8400")
+		if err != nil {
+			panic(err)
+		}
+		agentClient.ConsulRPCClient = &confab.RPCClient{
+			*rpcClient,
+		}
 
 		err = controller.ConfigureServer()
 		if err != nil {

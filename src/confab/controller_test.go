@@ -155,14 +155,14 @@ var _ = Describe("controller", func() {
 	})
 
 	Describe("ConfigureServer", func() {
-		It("launches the consul agent", func() {
+		It("does not launch the consul agent", func() {
 			Expect(controller.ConfigureServer()).To(Succeed())
-			Expect(agentRunner.RunCalls.CallCount).To(Equal(1))
+			Expect(agentRunner.RunCalls.CallCount).To(Equal(0))
 		})
 
-		It("checks that the agent has joined a cluster", func() {
+		It("does not check that the agent has joined a cluster", func() {
 			Expect(controller.ConfigureServer()).To(Succeed())
-			Expect(agentClient.VerifyJoinedCalls.CallCount).To(Equal(1))
+			Expect(agentClient.VerifyJoinedCalls.CallCount).To(Equal(0))
 		})
 
 		Context("when it is not the last node in the cluster", func() {
@@ -264,45 +264,5 @@ var _ = Describe("controller", func() {
 				})
 			})
 		})
-
-		Context("when starting the agent fails", func() {
-			It("immediately returns an error", func() {
-				agentRunner.RunCalls.Returns.Errors = []error{errors.New("some error")}
-
-				Expect(controller.ConfigureServer()).To(MatchError("some error"))
-				Expect(agentRunner.RunCalls.CallCount).To(Equal(1))
-				Expect(agentClient.VerifyJoinedCalls.CallCount).To(Equal(0))
-			})
-		})
-
-		Context("joining fails at first but later succeeds", func() {
-			It("retries until it joins", func() {
-				agentClient.VerifyJoinedCalls.Returns.Errors = make([]error, 10)
-				for i := 0; i < 9; i++ {
-					agentClient.VerifyJoinedCalls.Returns.Errors[i] = errors.New("some error")
-				}
-
-				Expect(controller.ConfigureServer()).To(Succeed())
-				Expect(agentClient.VerifyJoinedCalls.CallCount).To(Equal(10))
-				Expect(clock.SleepCall.CallCount).To(Equal(9))
-				Expect(clock.SleepCall.Receives.Duration).To(Equal(10 * time.Millisecond))
-			})
-		})
-
-		Context("joining never succeeds within MaxRetries", func() {
-			It("immediately returns an error", func() {
-				agentClient.VerifyJoinedCalls.Returns.Errors = make([]error, 10)
-				agentClient.VerifyJoinedCalls.Returns.Errors = make([]error, 10)
-				for i := 0; i < 9; i++ {
-					agentClient.VerifyJoinedCalls.Returns.Errors[i] = errors.New("some error")
-				}
-				agentClient.VerifyJoinedCalls.Returns.Errors[9] = errors.New("the final error")
-
-				Expect(controller.ConfigureServer()).To(MatchError("the final error"))
-				Expect(agentClient.VerifyJoinedCalls.CallCount).To(Equal(10))
-				Expect(agentClient.VerifySyncedCalls.CallCount).To(Equal(0))
-			})
-		})
 	})
-
 })
