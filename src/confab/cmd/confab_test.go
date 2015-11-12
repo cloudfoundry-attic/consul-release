@@ -286,7 +286,7 @@ var _ = Describe("confab", func() {
 		})
 
 		Context("when the rpc connection cannot be created", func() {
-			It("returns an error and exists with status 1", func() {
+			It("returns an error and exits with status 1", func() {
 
 				options := []byte(`{ "RunClient": true, "Members": ["member-1", "member-2", "member-3"], "FailRPCServer": true }`)
 				Expect(ioutil.WriteFile(filepath.Join(consulConfigDir, "options.json"), options, 0600)).To(Succeed())

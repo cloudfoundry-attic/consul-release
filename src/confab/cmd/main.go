@@ -125,7 +125,8 @@ func main() {
 
 	err = controller.ConfigureServer()
 	if err != nil {
-		panic(err) // TODO: test drive this out to look like lines 110-111
+		stderr.Printf("error connecting to RPC server: %s", err)
+		os.Exit(1) // not tested; it is challenging with the current fake agent.
 	}
 }
 
