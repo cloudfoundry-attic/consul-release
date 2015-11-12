@@ -82,9 +82,6 @@
 [submodule "src/github.com/hashicorp/net-rpc-msgpackrpc"]
 	path = src/github.com/hashicorp/net-rpc-msgpackrpc
 	url = git://github.com/hashicorp/net-rpc-msgpackrpc
-[submodule "src/github.com/hahicorp/serf"]
-	path = src/github.com/hahicorp/serf
-	url = git://github.com/hashicorp/serf
 [submodule "src/github.com/hashicorp/serf"]
 	path = src/github.com/hashicorp/serf
 	url = git://github.com/hashicorp/serf
