@@ -109,3 +109,24 @@
 [submodule "src/github.com/pivotal-golang/clock"]
 	path = src/github.com/pivotal-golang/clock
 	url = https://github.com/pivotal-golang/clock.git
+[submodule "src/github.com/fsouza/go-dockerclient"]
+	path = src/github.com/fsouza/go-dockerclient
+	url = git://github.com/fsouza/go-dockerclient
+[submodule "src/github.com/hashicorp/go-immutable-radix"]
+	path = src/github.com/hashicorp/go-immutable-radix
+	url = git://github.com/hashicorp/go-immutable-radix/
+[submodule "src/github.com/hashicorp/go-memdb"]
+	path = src/github.com/hashicorp/go-memdb
+	url = git://github.com/hashicorp/go-memdb/
+[submodule "src/github.com/mitchellh/gox"]
+	path = src/github.com/mitchellh/gox
+	url = git://github.com/mitchellh/gox/
+[submodule "src/github.com/mitchellh/iochan"]
+	path = src/github.com/mitchellh/iochan
+	url = git://github.com/mitchellh/iochan/
+[submodule "src/github.com/ryanuber/columnize"]
+	path = src/github.com/ryanuber/columnize
+	url = git://github.com/ryanuber/columnize
+[submodule "src/golang.org/x/tools"]
+	path = src/golang.org/x/tools
+	url = git://github.com/golang/tools/
