@@ -40,7 +40,7 @@ if [ ! -z "$7" ]; then
   usage
 fi
 
-if [ ! -f "${director_uuid}" ]; then
+if [ ! -e "${director_uuid}" ] || [ -d "${director_uuid}" ]; then
   >&2 echo "Director UUID stub '${director_uuid}' is not a regular file"
   usage
 fi

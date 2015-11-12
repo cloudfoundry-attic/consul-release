@@ -1,0 +1,18 @@
+#!/bin/bash
+
+set -eux
+
+root_dir=$(cd $(dirname "${0}")/.. && pwd)
+
+stubs_dir="${root_dir}/manifest-generation/bosh-lite-stubs"
+
+export DIRECTOR_UUID=$(bosh status --uuid)
+
+pushd "${root_dir}"
+  ./scripts/generate-consul-deployment-manifest \
+    <(echo "director_uuid: ${DIRECTOR_UUID}") \
+    "${stubs_dir}/instance-count-overrides.yml" \
+    "${stubs_dir}/persistent-disk-overrides.yml" \
+    "${stubs_dir}/iaas-settings-consul.yml" \
+    "${stubs_dir}/property-overrides.yml"
+popd
