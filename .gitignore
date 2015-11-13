@@ -21,3 +21,4 @@ pkg
 integration_config.json
 src/confab/cmd/cmd
 src/confab/fakes/agent/agent
+bosh-lite

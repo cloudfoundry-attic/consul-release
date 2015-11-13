@@ -71,7 +71,7 @@ jobs:
 properties:
   consul:
     encrypt_keys: (( property_overrides.consul.encrypt_keys ))
-    require_ssl: true
+    require_ssl: (( property_overrides.consul.require_ssl || true ))
     ca_cert: (( property_overrides.consul.ca_cert || nil ))
     server_cert: (( property_overrides.consul.server_cert || nil ))
     server_key: (( property_overrides.consul.server_key || nil ))
