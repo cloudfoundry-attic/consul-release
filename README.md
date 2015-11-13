@@ -98,16 +98,44 @@ Output the result of the above command to a file: `./scripts/generate_consul_dep
 
 Run `bosh -d OUTPUT_MANIFEST_PATH deploy`.
 
-## Running Tests
+## Acceptance Tests
 
-We have written a test suite that exercises spinning up single/multiple consul server instances, scaling them,
-and perform rolling deploys. If you have already installed Go, you can run `CONSATS_CONFIG=[config_file.json] ./scripts/test_default`.
-`./scripts/test_default` calls `./scripts/test`, which installs all dependancies and appends the release directory
-to the gopath. `./scripts/test_default` passes all test suites to `./scripts/test`. If you wish to run a specific test suite
-you can call `./scripts/test` directly like so: `CONSATS_CONFIG=[config_file.json] ./scripts/test src/acceptance_tests/deploy/`.
+The acceptance tests deploy a new consul cluster and exercise a variety of features, including scaling the number of nodes, as well as destructive testing to verify resilience.
 
-The CONSATS_CONFIG environment variable points to a configuration file which specifies the endpoint of the BOSH
-director and the path to your iaas_settings stub. An example config json for BOSH-lite would look like:
+### Prerequisites
+
+The following should be installed on the local machine:
+
+- Consul
+- Golang
+
+If using homebrew, these can be installed with:
+
+```
+brew install consul go
+```
+
+### Running the tests
+
+Run all the tests with:
+
+```
+CONSATS_CONFIG=[config_file.json] ./scripts/test_default
+```
+
+Run a specific set of tests with:
+
+```
+CONSATS_CONFIG=[config_file.json] ./scripts/test <some test packages>
+```
+
+The `CONSATS_CONFIG` environment variable points to a configuration file which specifies the endpoint of the BOSH director and the path to your `iaas_settings` stub.
+
+See below for more information on the contents of this configuration file.
+
+### Test config
+
+An example config json for BOSH-lite would look like:
 
 ```json
 cat > integration_config.json << EOF

@@ -9,7 +9,7 @@ stubs_dir="${root_dir}/manifest-generation/bosh-lite-stubs"
 DIRECTOR_UUID=$(bosh status --uuid)
 export DIRECTOR_UUID
 
-pushd "${root_dir}"
+pushd "${root_dir}" > /dev/null
   mkdir -p bosh-lite
 
   ./scripts/generate-consul-deployment-manifest \
@@ -19,5 +19,5 @@ pushd "${root_dir}"
     "${stubs_dir}/iaas-settings-consul.yml" \
     "${stubs_dir}/property-overrides.yml" > bosh-lite/consul.yml
 
-  bosh deployment bosh-lite/consul.yml
-popd
+    bosh deployment bosh-lite/consul.yml
+popd > /dev/null
