@@ -14,6 +14,7 @@ templates:
 packages:
   - consul-common
   - consul
+  - confab
 
 properties:
   consul.agent.mode:

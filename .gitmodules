@@ -1,24 +1,12 @@
-[submodule "src/github.com/cloudfoundry-incubator/cf-test-helpers"]
-	path = src/github.com/cloudfoundry-incubator/cf-test-helpers
-	url = git://github.com/cloudfoundry-incubator/cf-test-helpers.git
-[submodule "src/github.com/nu7hatch/gouuid"]
-	path = src/github.com/nu7hatch/gouuid
-	url = git://github.com/nu7hatch/gouuid.git
-[submodule "src/github.com/tedsuo/ifrit"]
-	path = src/github.com/tedsuo/ifrit
-	url = git://github.com/tedsuo/ifrit.git
 [submodule "src/github.com/onsi/ginkgo"]
 	path = src/github.com/onsi/ginkgo
-	url = http://github.com/onsi/ginkgo.git
+	url = https://github.com/onsi/ginkgo
 [submodule "src/github.com/onsi/gomega"]
 	path = src/github.com/onsi/gomega
-	url = http://github.com/onsi/gomega.git
+	url = https://github.com/onsi/gomega
 [submodule "src/github.com/hashicorp/consul"]
 	path = src/github.com/hashicorp/consul
-	url = http://github.com/njbennett/consul.git
-[submodule "src/github.com/cloudfoundry-incubator/candiedyaml"]
-	path = src/github.com/cloudfoundry-incubator/candiedyaml
-	url = http://github.com/cloudfoundry-incubator/candiedyaml.git
+	url = https://github.com/njbennett/consul
 [submodule "src/github.com/armon/circbuf"]
 	path = src/github.com/armon/circbuf
 	url = git://github.com/armon/circbuf
@@ -28,12 +16,6 @@
 [submodule "src/github.com/armon/go-radix"]
 	path = src/github.com/armon/go-radix
 	url = git://github.com/armon/go-radix
-[submodule "src/github.com/armon/gomdb"]
-	path = src/github.com/armon/gomdb
-	url = git://github.com/armon/gomdb
-[submodule "src/github.com/hashicorp/consul-migrate"]
-	path = src/github.com/hashicorp/consul-migrate
-	url = git://github.com/hashicorp/consul-migrate
 [submodule "src/github.com/hashicorp/go-checkpoint"]
 	path = src/github.com/hashicorp/go-checkpoint
 	url = git://github.com/hashicorp/go-checkpoint
@@ -73,9 +55,6 @@
 [submodule "src/github.com/boltdb/bolt"]
 	path = src/github.com/boltdb/bolt
 	url = git://github.com/boltdb/bolt
-[submodule "src/github.com/hashicorp/raft-mdb"]
-	path = src/github.com/hashicorp/raft-mdb
-	url = git://github.com/hashicorp/raft-mdb
 [submodule "src/github.com/hashicorp/scada-client"]
 	path = src/github.com/hashicorp/scada-client
 	url = git://github.com/hashicorp/scada-client
@@ -105,7 +84,7 @@
 	url = https://go.googlesource.com/crypto
 [submodule "src/github.com/pivotal-golang/clock"]
 	path = src/github.com/pivotal-golang/clock
-	url = https://github.com/pivotal-golang/clock.git
+	url = https://github.com/pivotal-golang/clock
 [submodule "src/github.com/fsouza/go-dockerclient"]
 	path = src/github.com/fsouza/go-dockerclient
 	url = git://github.com/fsouza/go-dockerclient
@@ -115,15 +94,18 @@
 [submodule "src/github.com/hashicorp/go-memdb"]
 	path = src/github.com/hashicorp/go-memdb
 	url = git://github.com/hashicorp/go-memdb/
-[submodule "src/github.com/mitchellh/gox"]
-	path = src/github.com/mitchellh/gox
-	url = git://github.com/mitchellh/gox/
-[submodule "src/github.com/mitchellh/iochan"]
-	path = src/github.com/mitchellh/iochan
-	url = git://github.com/mitchellh/iochan/
 [submodule "src/github.com/ryanuber/columnize"]
 	path = src/github.com/ryanuber/columnize
 	url = git://github.com/ryanuber/columnize
-[submodule "src/golang.org/x/tools"]
-	path = src/golang.org/x/tools
-	url = git://github.com/golang/tools/
+[submodule "src/github.com/cloudfoundry-incubator/candiedyaml"]
+	path = src/github.com/cloudfoundry-incubator/candiedyaml
+	url = https://github.com/cloudfoundry-incubator/candiedyaml
+[submodule "src/github.com/cloudfoundry-incubator/cf-test-helpers"]
+	path = src/github.com/cloudfoundry-incubator/cf-test-helpers
+	url = git://github.com/cloudfoundry-incubator/cf-test-helpers.git
+[submodule "src/github.com/nu7hatch/gouuid"]
+	path = src/github.com/nu7hatch/gouuid
+	url = git://github.com/nu7hatch/gouuid.git
+[submodule "src/github.com/tedsuo/ifrit"]
+	path = src/github.com/tedsuo/ifrit
+	url = git://github.com/tedsuo/ifrit.git
