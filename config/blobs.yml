@@ -7,3 +7,7 @@ consul/consul_0.5.2_linux_amd64.zip:
   object_id: e6f14d67-938c-4d31-bc9a-a4d425bd8557
   sha: b3ae610c670fc3b81737d44724ebde969da66ebf
   size: 4803609
+golang_1.5/go1.5.1.linux-amd64.tar.gz:
+  object_id: a7a109fc-ea2f-4854-ba29-2b321f4c1bcf
+  sha: 46eecd290d8803887dec718c691cc243f2175fe0
+  size: 77875767
