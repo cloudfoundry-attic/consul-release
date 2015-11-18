@@ -67,66 +67,116 @@ func main() {
 		printUsageAndExit("\"pid-file\" cannot be empty", flagSet)
 	}
 
-	_, err = os.Stat(consulConfigDir)
-	if err != nil {
-		printUsageAndExit(fmt.Sprintf("\"consul-config-dir\" %q could not be found", consulConfigDir), flagSet)
+	if command == "start" {
+		_, err = os.Stat(consulConfigDir)
+		if err != nil {
+			printUsageAndExit(fmt.Sprintf("\"consul-config-dir\" %q could not be found", consulConfigDir), flagSet)
+		}
+
+		if len(expectedMembers) == 0 {
+			printUsageAndExit("at least one \"expected-member\" must be provided", flagSet)
+		}
+
+		agentRunner := confab.AgentRunner{
+			Path:      path,
+			PIDFile:   pidFile,
+			ConfigDir: consulConfigDir,
+			Stdout:    os.Stdout,
+			Stderr:    os.Stderr,
+		}
+		consulAPIClient, err := api.NewClient(api.DefaultConfig())
+		if err != nil {
+			panic(err) // not tested, NewClient never errors
+		}
+
+		agentClient := confab.AgentClient{
+			ExpectedMembers: expectedMembers,
+			ConsulAPIAgent:  consulAPIClient.Agent(),
+			ConsulRPCClient: nil,
+		}
+
+		controller := confab.Controller{
+			AgentRunner:    &agentRunner,
+			AgentClient:    &agentClient,
+			MaxRetries:     10,
+			SyncRetryDelay: 1 * time.Second,
+			SyncRetryClock: clock.NewClock(),
+			EncryptKeys:    encryptionKeys,
+			SSLDisabled:    false,
+			Logger:         stdout,
+		}
+
+		err = controller.BootAgent()
+		if err != nil {
+			stderr.Printf("error booting consul agent: %s", err)
+			os.Exit(1)
+		}
+
+		if !isServer {
+			return
+		}
+		rpcClient, err := agent.NewRPCClient("localhost:8400")
+		if err != nil {
+			stderr.Printf("error connecting to RPC server: %s", err)
+			os.Exit(1)
+		}
+		agentClient.ConsulRPCClient = &confab.RPCClient{
+			*rpcClient,
+		}
+
+		err = controller.ConfigureServer()
+		if err != nil {
+			stderr.Printf("error connecting to RPC server: %s", err)
+			os.Exit(1) // not tested; it is challenging with the current fake agent.
+		}
 	}
 
-	if len(expectedMembers) == 0 {
-		printUsageAndExit("at least one \"expected-member\" must be provided", flagSet)
-	}
+	if command == "stop" {
+		agentRunner := confab.AgentRunner{
+			Path:      path,
+			PIDFile:   pidFile,
+			ConfigDir: "",
+			Stdout:    os.Stdout,
+			Stderr:    os.Stderr,
+		}
 
-	agentRunner := confab.AgentRunner{
-		Path:      path,
-		PIDFile:   pidFile,
-		ConfigDir: consulConfigDir,
-		Stdout:    os.Stdout,
-		Stderr:    os.Stderr,
-	}
-	consulAPIClient, err := api.NewClient(api.DefaultConfig())
-	if err != nil {
-		panic(err) // not tested, NewClient never errors
-	}
+		consulAPIClient, err := api.NewClient(api.DefaultConfig())
+		if err != nil {
+			panic(err) // not tested, NewClient never errors
+		}
 
-	agentClient := confab.AgentClient{
-		ExpectedMembers: expectedMembers,
-		ConsulAPIAgent:  consulAPIClient.Agent(),
-		ConsulRPCClient: nil,
-	}
+		agentClient := confab.AgentClient{
+			ExpectedMembers: nil,
+			ConsulAPIAgent:  consulAPIClient.Agent(),
+			ConsulRPCClient: nil,
+		}
 
-	controller := confab.Controller{
-		AgentRunner:    &agentRunner,
-		AgentClient:    &agentClient,
-		MaxRetries:     10,
-		SyncRetryDelay: 1 * time.Second,
-		SyncRetryClock: clock.NewClock(),
-		EncryptKeys:    encryptionKeys,
-		SSLDisabled:    false,
-		Logger:         nil,
-	}
+		controller := confab.Controller{
+			AgentRunner:    &agentRunner,
+			AgentClient:    &agentClient,
+			MaxRetries:     10,
+			SyncRetryDelay: 1 * time.Second,
+			SyncRetryClock: clock.NewClock(),
+			EncryptKeys:    nil,
+			SSLDisabled:    false,
+			Logger:         stdout,
+		}
+		rpcClient, err := agent.NewRPCClient("localhost:8400")
+		if err != nil {
+			stderr.Printf("error connecting to RPC server: %s", err)
+			os.Exit(1)
+		}
+		agentClient.ConsulRPCClient = &confab.RPCClient{
+			*rpcClient,
+		}
 
-	err = controller.BootAgent()
-	if err != nil {
-		stderr.Printf("error booting consul agent: %s", err)
-		os.Exit(1)
-	}
-
-	if !isServer {
-		return
-	}
-	rpcClient, err := agent.NewRPCClient("localhost:8400")
-	if err != nil {
-		stderr.Printf("error connecting to RPC server: %s", err)
-		os.Exit(1)
-	}
-	agentClient.ConsulRPCClient = &confab.RPCClient{
-		*rpcClient,
-	}
-
-	err = controller.ConfigureServer()
-	if err != nil {
-		stderr.Printf("error connecting to RPC server: %s", err)
-		os.Exit(1) // not tested; it is challenging with the current fake agent.
+		stdout.Printf("MAIN: stopping agent")
+		err = controller.StopAgent()
+		if err != nil {
+			stderr.Printf("error stopping agent: %s", err)
+			os.Exit(1)
+		}
+		stdout.Printf("MAIN: stopped agent")
 	}
 }
 

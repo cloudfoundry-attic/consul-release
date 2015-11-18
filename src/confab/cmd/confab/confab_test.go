@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"net"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -27,6 +28,25 @@ func killProcessWithPIDFile(pidFilePath string) {
 	Expect(err).NotTo(HaveOccurred())
 
 	process.Signal(syscall.SIGKILL)
+}
+
+func pidIsForRunningProcess(pidFilePath string) bool {
+	pidFileContents, err := ioutil.ReadFile(pidFilePath)
+	if err != nil {
+		return false
+	}
+
+	pid, err := strconv.Atoi(string(pidFileContents))
+	if err != nil {
+		return false
+	}
+
+	process, err := os.FindProcess(pid)
+	if err != nil {
+		return false
+	}
+
+	return process.Signal(syscall.Signal(0)) == nil
 }
 
 var _ = Describe("confab", func() {
@@ -144,6 +164,83 @@ var _ = Describe("confab", func() {
 
 				Expect(session.Out).To(gbytes.Say("UseKey called"))
 			})
+		})
+	})
+
+	Context("when stopping", func() {
+		var (
+			serverSession *gexec.Session
+		)
+
+		BeforeEach(func() {
+			options := []byte(`{ "RunServer": true, "Members": ["member-1", "member-2", "member-3"], "StayAlive": true }`)
+			Expect(ioutil.WriteFile(filepath.Join(consulConfigDir, "options.json"), options, 0600)).To(Succeed())
+		})
+		AfterEach(func() {
+			Expect(serverSession).To(gexec.Exit(0))
+		})
+
+		It("stops the consul agent", func() {
+			cmd := exec.Command(pathToConfab,
+				"start",
+				"--server=true",
+				"--pid-file", pidFile.Name(),
+				"--agent-path", pathToFakeAgent,
+				"--consul-config-dir", consulConfigDir,
+				"--expected-member", "member-1",
+				"--expected-member", "member-2",
+				"--expected-member", "member-3",
+				"--encryption-key", "key-1",
+				"--encryption-key", "key-2",
+			)
+			var err error
+			serverSession, err = gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+			Expect(err).NotTo(HaveOccurred())
+
+			Eventually(func() error {
+				conn, err := net.Dial("tcp", "localhost:8400")
+				if err == nil {
+					conn.Close()
+				}
+				return err
+			}, "5s").Should(Succeed())
+
+			cmd = exec.Command(pathToConfab,
+				"stop",
+				"--pid-file", pidFile.Name(),
+				"--agent-path", pathToFakeAgent,
+			)
+
+			stopSession, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+			Expect(err).NotTo(HaveOccurred())
+
+			Eventually(func() bool {
+				return pidIsForRunningProcess(pidFile.Name())
+			}, "5s").Should(BeFalse())
+			Eventually(stopSession, "5s").Should(gexec.Exit(0))
+
+			pidFileContents, err := ioutil.ReadFile(pidFile.Name())
+			Expect(err).NotTo(HaveOccurred())
+
+			pid, err := strconv.Atoi(string(pidFileContents))
+			Expect(err).NotTo(HaveOccurred())
+
+			fakeOutput, err := ioutil.ReadFile(filepath.Join(consulConfigDir, "fake-output.json"))
+			Expect(err).NotTo(HaveOccurred())
+
+			var decodedFakeOutput map[string]interface{}
+			err = json.Unmarshal(fakeOutput, &decodedFakeOutput)
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(decodedFakeOutput).To(Equal(map[string]interface{}{
+				"PID": float64(pid),
+				"Args": []interface{}{
+					"agent",
+					fmt.Sprintf("-config-dir=%s", consulConfigDir),
+				},
+			}))
+
+			Expect(serverSession.Out).To(gbytes.Say("Leave called"))
 		})
 	})
 

@@ -51,6 +51,7 @@ func main() {
 	var inputOptions struct {
 		Slow          bool
 		WaitForHUP    bool
+		StayAlive     bool
 		RunClient     bool
 		RunServer     bool
 		Members       []string
@@ -68,7 +69,7 @@ func main() {
 	}
 
 	if inputOptions.WaitForHUP {
-		for i := 0; i < 10; i++ {
+		for {
 			time.Sleep(time.Second)
 		}
 	}
@@ -89,9 +90,10 @@ func main() {
 	if inputOptions.RunServer {
 		fmt.Println("running server")
 		ServerListener{
-			HTTPAddr: "127.0.0.1:8500",
-			TCPAddr:  tcpAddr,
-			Members:  inputOptions.Members,
+			HTTPAddr:  "127.0.0.1:8500",
+			TCPAddr:   tcpAddr,
+			Members:   inputOptions.Members,
+			StayAlive: inputOptions.StayAlive,
 		}.Serve()
 	}
 }
@@ -147,9 +149,10 @@ func (cl ClientListener) Serve() {
 }
 
 type ServerListener struct {
-	HTTPAddr string
-	TCPAddr  string
-	Members  []string
+	HTTPAddr  string
+	TCPAddr   string
+	Members   []string
+	StayAlive bool
 }
 
 func (sl ServerListener) Serve() {
@@ -169,7 +172,9 @@ func (sl ServerListener) Serve() {
 			})
 		}
 		json.NewEncoder(w).Encode(members)
-		triggerClose <- struct{}{}
+		if !sl.StayAlive {
+			triggerClose <- struct{}{}
+		}
 	})
 
 	server := &http.Server{
@@ -203,6 +208,20 @@ func (sl ServerListener) Serve() {
 				if mockAgent.UseKeyCallCount() > 0 && !useKeyCalled {
 					fmt.Println("UseKey called")
 					useKeyCalled = true
+				}
+
+				time.Sleep(1 * time.Second)
+			}
+		}()
+
+		go func() {
+			var leaveCalled bool
+			for {
+				if mockAgent.LeaveCallCount() > 0 && !leaveCalled {
+					fmt.Println("Leave called")
+					leaveCalled = true
+					triggerClose <- struct{}{}
+					triggerClose <- struct{}{}
 				}
 
 				time.Sleep(1 * time.Second)

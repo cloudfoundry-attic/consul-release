@@ -10,7 +10,7 @@ import (
 
 func TestMain(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "confab/cmd")
+	RunSpecs(t, "confab/cmd/confab")
 }
 
 var (
@@ -23,7 +23,7 @@ var _ = BeforeSuite(func() {
 	pathToFakeAgent, err = gexec.Build("confab/fakes/agent")
 	Expect(err).NotTo(HaveOccurred())
 
-	pathToConfab, err = gexec.Build("confab/cmd")
+	pathToConfab, err = gexec.Build("confab/cmd/confab")
 	Expect(err).NotTo(HaveOccurred())
 })
 
