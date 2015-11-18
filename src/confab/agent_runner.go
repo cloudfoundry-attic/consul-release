@@ -44,6 +44,10 @@ func (r *AgentRunner) Run() error {
 		return fmt.Errorf("consul_agent is already running, please stop it first")
 	}
 
+	if _, err := os.Stat(r.ConfigDir); os.IsNotExist(err) {
+		return fmt.Errorf("Config dir does not exist: %s", r.ConfigDir)
+	}
+
 	r.cmd = exec.Command(r.Path,
 		"agent",
 		fmt.Sprintf("-config-dir=%s", r.ConfigDir))

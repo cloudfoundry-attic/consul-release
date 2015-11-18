@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"math/rand"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -281,6 +282,16 @@ var _ = Describe("AgentRunner", func() {
 			It("returns the error and does not create a pid file", func() {
 				runner.Path = "/tmp/not-a-thing-we-can-launch"
 				Expect(runner.Run()).To(MatchError(ContainSubstring("no such file or directory")))
+
+				_, err := os.Stat(runner.PIDFile)
+				Expect(err).To(HaveOccurred())
+			})
+		})
+
+		Context("when the ConfigDir is missing", func() {
+			It("returns an error immediately, without starting a process", func() {
+				runner.ConfigDir = fmt.Sprintf("/tmp/this-directory-does-not-existi-%x", rand.Int31())
+				Expect(runner.Run()).To(MatchError(ContainSubstring("Config dir does not exist")))
 
 				_, err := os.Stat(runner.PIDFile)
 				Expect(err).To(HaveOccurred())
