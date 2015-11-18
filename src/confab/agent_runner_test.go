@@ -258,7 +258,7 @@ var _ = Describe("AgentRunner", func() {
 			})
 			Context("when the pid file points to a non-existent process", func() {
 				It("overwrites the stale pid file and succeeds", func() {
-					Expect(ioutil.WriteFile(runner.PIDFile, []byte("some-pid"), 0666)).To(Succeed())
+					Expect(ioutil.WriteFile(runner.PIDFile, []byte("-1"), 0666)).To(Succeed())
 
 					Expect(runner.Run()).To(Succeed())
 					pidFileContents, err := ioutil.ReadFile(runner.PIDFile)

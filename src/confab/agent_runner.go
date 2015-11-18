@@ -31,7 +31,11 @@ func isRunningProcess(pidFilePath string) bool {
 		return false
 	}
 
-	_, err = os.FindProcess(pid)
+	proc, err := os.FindProcess(pid)
+	if err != nil {
+		return false
+	}
+	err = proc.Signal(syscall.Signal(0))
 	return err == nil
 }
 
