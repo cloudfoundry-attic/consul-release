@@ -2,7 +2,7 @@
 name: confab
 
 dependencies:
-  - golang
+  - golang1.5
 
 files:
   - github.com/fsouza/go-dockerclient/external/github.com/docker/docker/pkg/units/*.go # this doesn't get populated automatically for some unknown reason

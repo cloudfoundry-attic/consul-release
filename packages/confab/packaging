@@ -2,7 +2,7 @@ set -eux
 
 package_name=confab
 
-export GOROOT=$(readlink -nf /var/vcap/packages/golang)
+export GOROOT=$(readlink -nf /var/vcap/packages/golang1.5)
 export GOPATH=$BOSH_INSTALL_TARGET
 export PATH=$GOROOT/bin:$PATH
 
