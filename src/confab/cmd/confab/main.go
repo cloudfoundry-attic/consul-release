@@ -39,6 +39,8 @@ var (
 )
 
 func main() {
+	var controller confab.Controller
+
 	flagSet := flag.NewFlagSet("flags", flag.ContinueOnError)
 	flagSet.BoolVar(&isServer, "server", false, "whether to start the agent in server mode")
 	flagSet.StringVar(&agentPath, "agent-path", "", "path to the on-filesystem consul `executable`")
@@ -48,146 +50,121 @@ func main() {
 	flagSet.Var(&encryptionKeys, "encryption-key", "`key` used to encrypt consul traffic")
 
 	if len(os.Args) < 2 {
-		printUsageAndExit("invalid number of arguments", flagSet)
-	}
-
-	command := os.Args[1]
-	if !validCommand(command) {
-		printUsageAndExit(fmt.Sprintf("invalid COMMAND %q", command), flagSet)
+		printUsageAndExit("invalid number of arguments", flagSet, controller)
 	}
 
 	flagSet.Parse(os.Args[2:])
 
 	path, err := exec.LookPath(agentPath)
 	if err != nil {
-		printUsageAndExit(fmt.Sprintf("\"agent-path\" %q cannot be found", agentPath), flagSet)
+		printUsageAndExit(fmt.Sprintf("\"agent-path\" %q cannot be found", agentPath), flagSet, controller)
 	}
 
 	if len(pidFile) == 0 {
-		printUsageAndExit("\"pid-file\" cannot be empty", flagSet)
+		printUsageAndExit("\"pid-file\" cannot be empty", flagSet, controller)
 	}
 
-	if command == "start" {
-		_, err = os.Stat(consulConfigDir)
-		if err != nil {
-			printUsageAndExit(fmt.Sprintf("\"consul-config-dir\" %q could not be found", consulConfigDir), flagSet)
-		}
-
-		if len(expectedMembers) == 0 {
-			printUsageAndExit("at least one \"expected-member\" must be provided", flagSet)
-		}
-
-		agentRunner := confab.AgentRunner{
-			Path:      path,
-			PIDFile:   pidFile,
-			ConfigDir: consulConfigDir,
-			Stdout:    os.Stdout,
-			Stderr:    os.Stderr,
-		}
-		consulAPIClient, err := api.NewClient(api.DefaultConfig())
-		if err != nil {
-			panic(err) // not tested, NewClient never errors
-		}
-
-		agentClient := confab.AgentClient{
-			ExpectedMembers: expectedMembers,
-			ConsulAPIAgent:  consulAPIClient.Agent(),
-			ConsulRPCClient: nil,
-		}
-
-		controller := confab.Controller{
-			AgentRunner:    &agentRunner,
-			AgentClient:    &agentClient,
-			MaxRetries:     10,
-			SyncRetryDelay: 1 * time.Second,
-			SyncRetryClock: clock.NewClock(),
-			EncryptKeys:    encryptionKeys,
-			SSLDisabled:    false,
-			Logger:         stdout,
-		}
-
-		err = controller.BootAgent()
-		if err != nil {
-			stderr.Printf("error booting consul agent: %s", err)
-			os.Exit(1)
-		}
-
-		if !isServer {
-			return
-		}
-		rpcClient, err := agent.NewRPCClient("localhost:8400")
-		if err != nil {
-			stderr.Printf("error connecting to RPC server: %s", err)
-			os.Exit(1)
-		}
-		agentClient.ConsulRPCClient = &confab.RPCClient{
-			*rpcClient,
-		}
-
-		err = controller.ConfigureServer()
-		if err != nil {
-			stderr.Printf("error connecting to RPC server: %s", err)
-			os.Exit(1) // not tested; it is challenging with the current fake agent.
-		}
+	agentRunner := &confab.AgentRunner{
+		Path:      path,
+		PIDFile:   pidFile,
+		ConfigDir: consulConfigDir,
+		Stdout:    os.Stdout,
+		Stderr:    os.Stderr,
 	}
 
-	if command == "stop" {
-		agentRunner := confab.AgentRunner{
-			Path:      path,
-			PIDFile:   pidFile,
-			ConfigDir: "",
-			Stdout:    os.Stdout,
-			Stderr:    os.Stderr,
-		}
+	consulAPIClient, err := api.NewClient(api.DefaultConfig())
+	if err != nil {
+		panic(err) // not tested, NewClient never errors
+	}
 
-		consulAPIClient, err := api.NewClient(api.DefaultConfig())
-		if err != nil {
-			panic(err) // not tested, NewClient never errors
-		}
+	agentClient := &confab.AgentClient{
+		ExpectedMembers: expectedMembers,
+		ConsulAPIAgent:  consulAPIClient.Agent(),
+		ConsulRPCClient: nil,
+	}
 
-		agentClient := confab.AgentClient{
-			ExpectedMembers: nil,
-			ConsulAPIAgent:  consulAPIClient.Agent(),
-			ConsulRPCClient: nil,
-		}
+	controller = confab.Controller{
+		AgentRunner:    agentRunner,
+		AgentClient:    agentClient,
+		MaxRetries:     10,
+		SyncRetryDelay: 1 * time.Second,
+		SyncRetryClock: clock.NewClock(),
+		EncryptKeys:    encryptionKeys,
+		SSLDisabled:    false,
+		Logger:         stdout,
+	}
 
-		controller := confab.Controller{
-			AgentRunner:    &agentRunner,
-			AgentClient:    &agentClient,
-			MaxRetries:     10,
-			SyncRetryDelay: 1 * time.Second,
-			SyncRetryClock: clock.NewClock(),
-			EncryptKeys:    nil,
-			SSLDisabled:    false,
-			Logger:         stdout,
-		}
-		rpcClient, err := agent.NewRPCClient("localhost:8400")
-		if err != nil {
-			stderr.Printf("error connecting to RPC server: %s", err)
-			os.Exit(1)
-		}
-		agentClient.ConsulRPCClient = &confab.RPCClient{
-			*rpcClient,
-		}
-
-		stdout.Printf("MAIN: stopping agent")
-		err = controller.StopAgent()
-		if err != nil {
-			stderr.Printf("error stopping agent: %s", err)
-			os.Exit(1)
-		}
-		stdout.Printf("MAIN: stopped agent")
+	switch os.Args[1] {
+	case "start":
+		start(flagSet, path, controller, agentClient)
+	case "stop":
+		stop(path, controller, agentClient)
+	default:
+		printUsageAndExit(fmt.Sprintf("invalid COMMAND %q", os.Args[1]), flagSet, controller)
 	}
 }
 
-func printUsageAndExit(message string, flagSet *flag.FlagSet) {
+func start(flagSet *flag.FlagSet, path string, controller confab.Controller, agentClient *confab.AgentClient) {
+	_, err := os.Stat(consulConfigDir)
+	if err != nil {
+		printUsageAndExit(fmt.Sprintf("\"consul-config-dir\" %q could not be found", consulConfigDir), flagSet, controller)
+	}
+
+	if len(expectedMembers) == 0 {
+		printUsageAndExit("at least one \"expected-member\" must be provided", flagSet, controller)
+	}
+
+	err = controller.BootAgent()
+	if err != nil {
+		stderr.Printf("error booting consul agent: %s", err)
+		exit(controller, 1)
+	}
+
+	if isServer {
+		configureServer(controller, agentClient)
+	}
+}
+
+func configureServer(controller confab.Controller, agentClient *confab.AgentClient) {
+	rpcClient, err := agent.NewRPCClient("localhost:8400")
+	if err != nil {
+		stderr.Printf("error connecting to RPC server: %s", err)
+		exit(controller, 1)
+	}
+
+	agentClient.ConsulRPCClient = &confab.RPCClient{*rpcClient}
+	err = controller.ConfigureServer()
+	if err != nil {
+		stderr.Printf("error configuring server: %s", err)
+		exit(controller, 1)
+	}
+}
+
+func stop(path string, controller confab.Controller, agentClient *confab.AgentClient) {
+	rpcClient, err := agent.NewRPCClient("localhost:8400")
+	if err != nil {
+		stderr.Printf("error connecting to RPC server: %s", err)
+		exit(controller, 1)
+	}
+
+	agentClient.ConsulRPCClient = &confab.RPCClient{*rpcClient}
+	stdout.Printf("MAIN: stopping agent")
+	err = controller.StopAgent()
+	if err != nil {
+		stderr.Printf("error stopping agent: %s", err)
+		exit(controller, 1)
+	}
+	stdout.Printf("MAIN: stopped agent")
+}
+
+func printUsageAndExit(message string, flagSet *flag.FlagSet, controller confab.Controller) {
 	stderr.Printf("%s\n\n", message)
 	stderr.Println("usage: confab COMMAND OPTIONS\n")
 	stderr.Println("COMMAND: \"start\" or \"stop\"")
 	stderr.Println("\nOPTIONS:")
 	flagSet.PrintDefaults()
 	stderr.Println()
-	os.Exit(1)
+	exit(controller, 1)
 }
 
 func validCommand(command string) bool {
@@ -198,4 +175,9 @@ func validCommand(command string) bool {
 	}
 
 	return false
+}
+
+func exit(controller confab.Controller, code int) {
+	controller.StopAgent()
+	os.Exit(code)
 }

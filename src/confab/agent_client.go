@@ -116,6 +116,10 @@ func (c AgentClient) SetKeys(keys []string) error {
 }
 
 func (c AgentClient) Leave() error {
+	if c.ConsulRPCClient == nil {
+		return errors.New("consul rpc client is nil")
+	}
+
 	return c.ConsulRPCClient.Leave()
 }
 

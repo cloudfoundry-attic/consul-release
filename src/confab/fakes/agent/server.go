@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"net"
 	"net/http"
 	"os"
@@ -49,7 +48,6 @@ func (s *Server) Serve() error {
 }
 
 func (s *Server) ServeHTTP() {
-	fmt.Println("serving HTTP")
 	mux := http.NewServeMux()
 	mux.HandleFunc("/v1/agent/members", func(w http.ResponseWriter, req *http.Request) {
 		var members []api.AgentMember
@@ -70,21 +68,23 @@ func (s *Server) ServeHTTP() {
 }
 
 func (s *Server) ServeTCP() {
-	fmt.Println("serving TCP")
 	mockAgent := new(FakeAgentBackend)
 	agentRPCServer := agent.NewAgentRPC(mockAgent, s.TCPListener, os.Stderr, agent.NewLogWriter(42))
 
 	var (
-		useKeyCallCount int
-		leaveCallCount  int
+		useKeyCallCount     int
+		installKeyCallCount int
+		leaveCallCount      int
 	)
 
 	for {
 		switch {
 		case mockAgent.UseKeyCallCount() > useKeyCallCount:
-			fmt.Println("UseKey attempted to increment")
 			useKeyCallCount++
 			s.OutputWriter.UseKeyCalled()
+		case mockAgent.InstallKeyCallCount() > installKeyCallCount:
+			installKeyCallCount++
+			s.OutputWriter.InstallKeyCalled()
 		case mockAgent.LeaveCallCount() > leaveCallCount:
 			leaveCallCount++
 			s.OutputWriter.LeaveCalled()

@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 )
 
@@ -13,14 +12,14 @@ type OutputWriter struct {
 }
 
 type OutputData struct {
-	Args            []string
-	PID             int
-	LeaveCallCount  int
-	UseKeyCallCount int
+	Args                []string
+	PID                 int
+	LeaveCallCount      int
+	UseKeyCallCount     int
+	InstallKeyCallCount int
 }
 
 func NewOutputWriter(filepath string, pid int, args []string) *OutputWriter {
-	fmt.Println("filepath:", filepath)
 	ow := &OutputWriter{
 		filepath: filepath,
 		data: OutputData{
@@ -41,6 +40,8 @@ func (ow *OutputWriter) run() {
 		switch <-ow.callCountChan {
 		case "leave":
 			ow.data.LeaveCallCount++
+		case "installkey":
+			ow.data.InstallKeyCallCount++
 		case "usekey":
 			ow.data.UseKeyCallCount++
 		case "exit":
@@ -69,6 +70,10 @@ func (ow *OutputWriter) LeaveCalled() {
 
 func (ow *OutputWriter) UseKeyCalled() {
 	ow.callCountChan <- "usekey"
+}
+
+func (ow *OutputWriter) InstallKeyCalled() {
+	ow.callCountChan <- "installkey"
 }
 
 func (ow *OutputWriter) Exit() {

@@ -284,5 +284,13 @@ var _ = Describe("AgentClient", func() {
 				Expect(consulRPCClient.LeaveCallCount()).To(Equal(1))
 			})
 		})
+
+		Context("when the RCPClient has never been set", func() {
+			It("returns an error", func() {
+				client.ConsulRPCClient = nil
+
+				Expect(client.Leave()).To(MatchError("consul rpc client is nil"))
+			})
+		})
 	})
 })
