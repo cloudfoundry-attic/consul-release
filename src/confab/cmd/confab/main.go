@@ -117,7 +117,11 @@ func start(flagSet *flag.FlagSet, path string, controller confab.Controller, age
 	err = controller.BootAgent()
 	if err != nil {
 		stderr.Printf("error booting consul agent: %s", err)
-		exit(controller, 1)
+
+		// DO NOT call StopAgent:
+		//   - the agent may aleady be running
+		//   - the pidfile may contain the PID of another running process
+		os.Exit(1)
 	}
 
 	if isServer {
@@ -148,13 +152,9 @@ func stop(path string, controller confab.Controller, agentClient *confab.AgentCl
 	}
 
 	agentClient.ConsulRPCClient = &confab.RPCClient{*rpcClient}
-	stdout.Printf("MAIN: stopping agent")
-	err = controller.StopAgent()
-	if err != nil {
-		stderr.Printf("error stopping agent: %s", err)
-		exit(controller, 1)
-	}
-	stdout.Printf("MAIN: stopped agent")
+	stderr.Printf("stopping agent")
+	controller.StopAgent()
+	stderr.Printf("stopped agent")
 }
 
 func printUsageAndExit(message string, flagSet *flag.FlagSet, controller confab.Controller) {

@@ -97,11 +97,11 @@ var _ = Describe("controller", func() {
 
 	Describe("StopAgent", func() {
 		It("tells client to leave the cluster", func() {
-			Expect(controller.StopAgent()).To(Succeed())
+			controller.StopAgent()
 			Expect(agentClient.LeaveCall.CallCount).To(Equal(1))
 		})
 		It("waits for the agent to stop", func() {
-			Expect(controller.StopAgent()).To(Succeed())
+			controller.StopAgent()
 			Expect(agentRunner.WaitCall.CallCount).To(Equal(1))
 		})
 
@@ -111,12 +111,12 @@ var _ = Describe("controller", func() {
 			})
 
 			It("tells the runner to stop the agent", func() {
-				Expect(controller.StopAgent()).To(Succeed())
+				controller.StopAgent()
 				Expect(agentRunner.StopCall.CallCount).To(Equal(1))
 			})
 
 			It("logs the error", func() {
-				Expect(controller.StopAgent()).To(Succeed())
+				controller.StopAgent()
 				Expect(logBuffer.String()).To(ContainSubstring("leave error"))
 			})
 
@@ -125,13 +125,8 @@ var _ = Describe("controller", func() {
 					agentRunner.StopCall.Returns.Error = errors.New("stop error")
 				})
 
-				It("swallows the error", func() {
-					Expect(controller.StopAgent()).To(Succeed())
-					Expect(agentRunner.StopCall.CallCount).To(Equal(1))
-				})
-
 				It("logs the error", func() {
-					Expect(controller.StopAgent()).To(Succeed())
+					controller.StopAgent()
 					Expect(logBuffer.String()).To(ContainSubstring("stop error"))
 				})
 			})
@@ -142,13 +137,8 @@ var _ = Describe("controller", func() {
 				agentRunner.WaitCall.Returns.Error = errors.New("wait error")
 			})
 
-			It("swallows the error", func() {
-				Expect(controller.StopAgent()).To(Succeed())
-				Expect(agentRunner.WaitCall.CallCount).To(Equal(1))
-			})
-
 			It("logs the error", func() {
-				Expect(controller.StopAgent()).To(Succeed())
+				controller.StopAgent()
 				Expect(logBuffer.String()).To(ContainSubstring("wait error"))
 			})
 		})

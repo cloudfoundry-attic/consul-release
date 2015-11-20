@@ -94,7 +94,7 @@ func (c Controller) ConfigureServer() error {
 	return nil
 }
 
-func (c Controller) StopAgent() error {
+func (c Controller) StopAgent() {
 	c.Logger.Printf("%s", "STOPAGENT: calling AgentClient.Leave()")
 	if err := c.AgentClient.Leave(); err != nil {
 		c.Logger.Printf("%s", err)
@@ -112,6 +112,4 @@ func (c Controller) StopAgent() error {
 		c.Logger.Printf("%s", err)
 	}
 	c.Logger.Printf("%s", "STOPAGENT: called AgentClient.Wait()")
-
-	return nil
 }
