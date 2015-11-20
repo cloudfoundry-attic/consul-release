@@ -76,7 +76,7 @@ var _ = Describe("AgentRunner", func() {
 		pidFileName := pidFile.Name()
 
 		runner = confab.AgentRunner{
-			Path:      pathToFakeAgent,
+			Path:      pathToFakeProcess,
 			ConfigDir: configDir,
 			PIDFile:   pidFileName,
 			// Stdout:    os.Stdout,  // uncomment this to see output from test agent
@@ -223,7 +223,7 @@ var _ = Describe("AgentRunner", func() {
 		})
 
 		It("returns without waiting for the process to exit", func() {
-			Expect(ioutil.WriteFile(filepath.Join(runner.ConfigDir, "options.json"), []byte(`{ "slow": true }`), 0600)).To(Succeed())
+			Expect(ioutil.WriteFile(filepath.Join(runner.ConfigDir, "options.json"), []byte(`{ "WaitForHUP": true }`), 0600)).To(Succeed())
 			done := make(chan struct{})
 			go func() {
 				runner.Run()
@@ -232,6 +232,9 @@ var _ = Describe("AgentRunner", func() {
 			Eventually(done, "1s").Should(Receive())
 
 			Eventually(func() bool { return processIsRunning(runner) }).Should(BeTrue())
+
+			err := runner.Stop()
+			Expect(err).NotTo(HaveOccurred())
 		})
 
 		It("wires up the stdout and stderr pipes", func() {

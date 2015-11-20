@@ -14,12 +14,12 @@ func TestConfab(t *testing.T) {
 }
 
 var (
-	pathToFakeAgent string
+	pathToFakeProcess string
 )
 
 var _ = BeforeSuite(func() {
 	var err error
-	pathToFakeAgent, err = gexec.Build("confab/fakes/agent")
+	pathToFakeProcess, err = gexec.Build("confab/fakes/process")
 	Expect(err).NotTo(HaveOccurred())
 })
 

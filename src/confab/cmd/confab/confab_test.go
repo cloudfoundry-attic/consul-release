@@ -31,22 +31,54 @@ func killProcessWithPIDFile(pidFilePath string) {
 }
 
 func pidIsForRunningProcess(pidFilePath string) bool {
+	pid, err := getPID(pidFilePath)
+	if err != nil {
+		return false
+	}
+
+	running, err := isPIDRunning(pid)
+	if err != nil {
+		return false
+	}
+
+	return running
+}
+
+func getPID(pidFilePath string) (int, error) {
 	pidFileContents, err := ioutil.ReadFile(pidFilePath)
 	if err != nil {
-		return false
+		return 0, err
 	}
 
-	pid, err := strconv.Atoi(string(pidFileContents))
-	if err != nil {
-		return false
-	}
+	return strconv.Atoi(string(pidFileContents))
+}
 
+func isPIDRunning(pid int) (bool, error) {
 	process, err := os.FindProcess(pid)
 	if err != nil {
-		return false
+		return false, err
 	}
 
-	return process.Signal(syscall.Signal(0)) == nil
+	if err := process.Signal(syscall.Signal(0)); err != nil {
+		return false, err
+	}
+
+	return true, nil
+}
+
+func fakeAgentOutput(configDir string) (map[string]interface{}, error) {
+	fakeOutput, err := ioutil.ReadFile(filepath.Join(configDir, "fake-output.json"))
+	if err != nil {
+		return nil, err
+	}
+
+	var decodedFakeOutput map[string]interface{}
+	err = json.Unmarshal(fakeOutput, &decodedFakeOutput)
+	if err != nil {
+		return nil, err
+	}
+
+	return decodedFakeOutput, nil
 }
 
 var _ = Describe("confab", func() {
@@ -63,11 +95,61 @@ var _ = Describe("confab", func() {
 		pidFile, err = ioutil.TempFile("", "fake-pid-file")
 		Expect(err).NotTo(HaveOccurred())
 
-		options := []byte(`{ "RunClient": true, "Members": ["member-1", "member-2", "member-3"] }`)
-		Expect(ioutil.WriteFile(filepath.Join(consulConfigDir, "options.json"), options, 0600)).To(Succeed())
+		options := []byte(`{"Members": ["member-1", "member-2", "member-3"]}`)
+		err = ioutil.WriteFile(filepath.Join(consulConfigDir, "options.json"), options, 0600)
+		Expect(err).NotTo(HaveOccurred())
+	})
+
+	Context("when managing the entire process lifecycle", func() {
+		It("starts and stops the consul process as a daemon", func() {
+			start := exec.Command(pathToConfab,
+				"start",
+				"--server=false",
+				"--pid-file", pidFile.Name(),
+				"--agent-path", pathToFakeAgent,
+				"--consul-config-dir", consulConfigDir,
+				"--expected-member", "member-1",
+				"--expected-member", "member-2",
+				"--expected-member", "member-3",
+			)
+			Eventually(start.Run, "10s").Should(Succeed())
+
+			pid, err := getPID(pidFile.Name())
+			Expect(err).NotTo(HaveOccurred())
+			Expect(isPIDRunning(pid)).To(BeTrue())
+
+			stop := exec.Command(pathToConfab,
+				"stop",
+				"--server=false",
+				"--pid-file", pidFile.Name(),
+				"--agent-path", pathToFakeAgent,
+				"--consul-config-dir", consulConfigDir,
+				"--expected-member", "member-1",
+				"--expected-member", "member-2",
+				"--expected-member", "member-3",
+			)
+			Eventually(stop.Run, "10s").Should(Succeed())
+
+			_, err = isPIDRunning(pid)
+			Expect(err).To(MatchError(ContainSubstring("process already finished")))
+
+			Expect(fakeAgentOutput(consulConfigDir)).To(Equal(map[string]interface{}{
+				"PID": float64(pid),
+				"Args": []interface{}{
+					"agent",
+					fmt.Sprintf("-config-dir=%s", consulConfigDir),
+				},
+				"LeaveCallCount":  float64(1),
+				"UseKeyCallCount": float64(0),
+			}))
+		})
 	})
 
 	Context("when starting", func() {
+		AfterEach(func() {
+			killProcessWithPIDFile(pidFile.Name())
+		})
+
 		Context("for a client", func() {
 			It("starts a consul agent as a client", func() {
 				cmd := exec.Command(pathToConfab,
@@ -80,29 +162,20 @@ var _ = Describe("confab", func() {
 					"--expected-member", "member-2",
 					"--expected-member", "member-3",
 				)
-				session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
-				Expect(err).NotTo(HaveOccurred())
-				Eventually(session, "5s").Should(gexec.Exit(0))
+				Eventually(cmd.Run, "10s").Should(Succeed())
 
-				pidFileContents, err := ioutil.ReadFile(pidFile.Name())
+				pid, err := getPID(pidFile.Name())
 				Expect(err).NotTo(HaveOccurred())
+				Expect(isPIDRunning(pid)).To(BeTrue())
 
-				pid, err := strconv.Atoi(string(pidFileContents))
-				Expect(err).NotTo(HaveOccurred())
-
-				fakeOutput, err := ioutil.ReadFile(filepath.Join(consulConfigDir, "fake-output.json"))
-				Expect(err).NotTo(HaveOccurred())
-
-				var decodedFakeOutput map[string]interface{}
-				err = json.Unmarshal(fakeOutput, &decodedFakeOutput)
-				Expect(err).NotTo(HaveOccurred())
-
-				Expect(decodedFakeOutput).To(Equal(map[string]interface{}{
+				Expect(fakeAgentOutput(consulConfigDir)).To(Equal(map[string]interface{}{
 					"PID": float64(pid),
 					"Args": []interface{}{
 						"agent",
 						fmt.Sprintf("-config-dir=%s", consulConfigDir),
 					},
+					"LeaveCallCount":  float64(0),
+					"UseKeyCallCount": float64(0),
 				}))
 			})
 		})
@@ -123,7 +196,7 @@ var _ = Describe("confab", func() {
 				session.Kill()
 			})
 
-			It("starts a consul agent as a server", func() {
+			FIt("starts a consul agent as a server", func() {
 				cmd := exec.Command(pathToConfab,
 					"start",
 					"--server=true",
@@ -136,30 +209,23 @@ var _ = Describe("confab", func() {
 					"--encryption-key", "key-1",
 					"--encryption-key", "key-2",
 				)
-				var err error
-				session, err = gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
-				Expect(err).NotTo(HaveOccurred())
-				Eventually(session, "5s").Should(gexec.Exit(0))
+				cmd.Stdout = os.Stdout
+				Eventually(cmd.Run, "5s").Should(Succeed())
 
-				pidFileContents, err := ioutil.ReadFile(pidFile.Name())
+				pid, err := getPID(pidFile.Name())
 				Expect(err).NotTo(HaveOccurred())
+				Expect(isPIDRunning(pid)).To(BeTrue())
 
-				pid, err := strconv.Atoi(string(pidFileContents))
-				Expect(err).NotTo(HaveOccurred())
-
-				fakeOutput, err := ioutil.ReadFile(filepath.Join(consulConfigDir, "fake-output.json"))
-				Expect(err).NotTo(HaveOccurred())
-
-				var decodedFakeOutput map[string]interface{}
-				err = json.Unmarshal(fakeOutput, &decodedFakeOutput)
-				Expect(err).NotTo(HaveOccurred())
-
-				Expect(decodedFakeOutput).To(Equal(map[string]interface{}{
+				Eventually(func() (map[string]interface{}, error) {
+					return fakeAgentOutput(consulConfigDir)
+				}, "2s").Should(Equal(map[string]interface{}{
 					"PID": float64(pid),
 					"Args": []interface{}{
 						"agent",
 						fmt.Sprintf("-config-dir=%s", consulConfigDir),
 					},
+					"LeaveCallCount":  float64(0),
+					"UseKeyCallCount": float64(2),
 				}))
 
 				Expect(session.Out).To(gbytes.Say("UseKey called"))
