@@ -21,26 +21,34 @@ const COMMAND_TIMEOUT = "15s"
 
 var _ = Describe("confab", func() {
 	var (
+		tempDir         string
 		consulConfigDir string
 		pidFile         *os.File
 	)
 
 	BeforeEach(func() {
 		var err error
-		consulConfigDir, err = ioutil.TempDir("", "fake-agent-config-dir")
+		tempDir, err = ioutil.TempDir("", "testing")
 		Expect(err).NotTo(HaveOccurred())
 
-		pidFile, err = ioutil.TempFile("", "fake-pid-file")
+		consulConfigDir, err = ioutil.TempDir(tempDir, "fake-agent-config-dir")
+		Expect(err).NotTo(HaveOccurred())
+
+		pidFile, err = ioutil.TempFile(tempDir, "fake-pid-file")
 		Expect(err).NotTo(HaveOccurred())
 
 		options := []byte(`{"Members": ["member-1", "member-2", "member-3"]}`)
 		err = ioutil.WriteFile(filepath.Join(consulConfigDir, "options.json"), options, 0600)
 		Expect(err).NotTo(HaveOccurred())
+
 	})
 
 	AfterEach(func() {
 		killProcessAttachedToPort(8400)
 		killProcessAttachedToPort(8500)
+
+		err := os.RemoveAll(tempDir)
+		Expect(err).NotTo(HaveOccurred())
 	})
 
 	Context("when managing the entire process lifecycle", func() {
@@ -71,7 +79,7 @@ var _ = Describe("confab", func() {
 				"--expected-member", "member-2",
 				"--expected-member", "member-3",
 			)
-			Eventually(stop.Run, "10s").Should(Succeed())
+			Eventually(stop.Run, COMMAND_TIMEOUT, COMMAND_TIMEOUT).Should(Succeed())
 
 			_, err = isPIDRunning(pid)
 			Expect(err).To(MatchError(ContainSubstring("process already finished")))

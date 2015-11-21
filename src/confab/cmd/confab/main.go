@@ -50,18 +50,18 @@ func main() {
 	flagSet.Var(&encryptionKeys, "encryption-key", "`key` used to encrypt consul traffic")
 
 	if len(os.Args) < 2 {
-		printUsageAndExit("invalid number of arguments", flagSet, controller)
+		printUsageAndExit("invalid number of arguments", flagSet)
 	}
 
 	flagSet.Parse(os.Args[2:])
 
 	path, err := exec.LookPath(agentPath)
 	if err != nil {
-		printUsageAndExit(fmt.Sprintf("\"agent-path\" %q cannot be found", agentPath), flagSet, controller)
+		printUsageAndExit(fmt.Sprintf("\"agent-path\" %q cannot be found", agentPath), flagSet)
 	}
 
 	if len(pidFile) == 0 {
-		printUsageAndExit("\"pid-file\" cannot be empty", flagSet, controller)
+		printUsageAndExit("\"pid-file\" cannot be empty", flagSet)
 	}
 
 	agentRunner := &confab.AgentRunner{
@@ -100,18 +100,18 @@ func main() {
 	case "stop":
 		stop(path, controller, agentClient)
 	default:
-		printUsageAndExit(fmt.Sprintf("invalid COMMAND %q", os.Args[1]), flagSet, controller)
+		printUsageAndExit(fmt.Sprintf("invalid COMMAND %q", os.Args[1]), flagSet)
 	}
 }
 
 func start(flagSet *flag.FlagSet, path string, controller confab.Controller, agentClient *confab.AgentClient) {
 	_, err := os.Stat(consulConfigDir)
 	if err != nil {
-		printUsageAndExit(fmt.Sprintf("\"consul-config-dir\" %q could not be found", consulConfigDir), flagSet, controller)
+		printUsageAndExit(fmt.Sprintf("\"consul-config-dir\" %q could not be found", consulConfigDir), flagSet)
 	}
 
 	if len(expectedMembers) == 0 {
-		printUsageAndExit("at least one \"expected-member\" must be provided", flagSet, controller)
+		printUsageAndExit("at least one \"expected-member\" must be provided", flagSet)
 	}
 
 	err = controller.BootAgent()
@@ -157,14 +157,14 @@ func stop(path string, controller confab.Controller, agentClient *confab.AgentCl
 	stderr.Printf("stopped agent")
 }
 
-func printUsageAndExit(message string, flagSet *flag.FlagSet, controller confab.Controller) {
+func printUsageAndExit(message string, flagSet *flag.FlagSet) {
 	stderr.Printf("%s\n\n", message)
 	stderr.Println("usage: confab COMMAND OPTIONS\n")
 	stderr.Println("COMMAND: \"start\" or \"stop\"")
 	stderr.Println("\nOPTIONS:")
 	flagSet.PrintDefaults()
 	stderr.Println()
-	exit(controller, 1)
+	os.Exit(1)
 }
 
 func validCommand(command string) bool {
