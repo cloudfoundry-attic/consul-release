@@ -91,21 +91,6 @@
 [submodule "src/github.com/hashicorp/go-memdb"]
 	path = src/confab/vendor/github.com/hashicorp/go-memdb
 	url = git://github.com/hashicorp/go-memdb/
-[submodule "src/github.com/ryanuber/columnize"]
-	path = src/confab/vendor/github.com/ryanuber/columnize
-	url = git://github.com/ryanuber/columnize
-[submodule "src/github.com/cloudfoundry-incubator/candiedyaml"]
-	path = src/confab/vendor/github.com/cloudfoundry-incubator/candiedyaml
-	url = https://github.com/cloudfoundry-incubator/candiedyaml
-[submodule "src/github.com/cloudfoundry-incubator/cf-test-helpers"]
-	path = src/confab/vendor/github.com/cloudfoundry-incubator/cf-test-helpers
-	url = git://github.com/cloudfoundry-incubator/cf-test-helpers.git
-[submodule "src/github.com/nu7hatch/gouuid"]
-	path = src/confab/vendor/github.com/nu7hatch/gouuid
-	url = git://github.com/nu7hatch/gouuid.git
-[submodule "src/github.com/tedsuo/ifrit"]
-	path = src/github.com/tedsuo/ifrit
-	url = git://github.com/tedsuo/ifrit.git
 [submodule "src/github.com/fsouza/go-dockerclient"]
 	path = src/confab/vendor/github.com/fsouza/go-dockerclient
 	url = git://github.com/fsouza/go-dockerclient
