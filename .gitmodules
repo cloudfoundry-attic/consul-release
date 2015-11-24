@@ -85,9 +85,6 @@
 [submodule "src/github.com/pivotal-golang/clock"]
 	path = src/github.com/pivotal-golang/clock
 	url = https://github.com/pivotal-golang/clock
-[submodule "src/github.com/fsouza/go-dockerclient"]
-	path = src/github.com/fsouza/go-dockerclient
-	url = git://github.com/fsouza/go-dockerclient
 [submodule "src/github.com/hashicorp/go-immutable-radix"]
 	path = src/github.com/hashicorp/go-immutable-radix
 	url = git://github.com/hashicorp/go-immutable-radix/
@@ -109,3 +106,6 @@
 [submodule "src/github.com/tedsuo/ifrit"]
 	path = src/github.com/tedsuo/ifrit
 	url = git://github.com/tedsuo/ifrit.git
+[submodule "src/github.com/fsouza/go-dockerclient"]
+	path = src/github.com/fsouza/go-dockerclient
+	url = git://github.com/fsouza/go-dockerclient
