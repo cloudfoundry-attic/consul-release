@@ -95,6 +95,58 @@ var _ = Describe("confab", func() {
 				"InstallKeyCallCount": float64(0),
 			}))
 		})
+
+		Context("when ssl-disabled is set to true", func() {
+			It("does not set encryption keys", func() {
+				start := exec.Command(pathToConfab,
+					"start",
+					"--server",
+					"--pid-file", pidFile.Name(),
+					"--agent-path", pathToFakeAgent,
+					"--consul-config-dir", consulConfigDir,
+					"--expected-member", "member-1",
+					"--expected-member", "member-2",
+					"--expected-member", "member-3",
+					"--encryption-key", "key-1",
+					"--encryption-key", "key-2",
+					"--ssl-disabled",
+				)
+				Eventually(start.Run, COMMAND_TIMEOUT, COMMAND_TIMEOUT).Should(Succeed())
+
+				pid, err := getPID(pidFile.Name())
+				Expect(err).NotTo(HaveOccurred())
+				Expect(isPIDRunning(pid)).To(BeTrue())
+
+				stop := exec.Command(pathToConfab,
+					"stop",
+					"--server",
+					"--pid-file", pidFile.Name(),
+					"--agent-path", pathToFakeAgent,
+					"--consul-config-dir", consulConfigDir,
+					"--expected-member", "member-1",
+					"--expected-member", "member-2",
+					"--expected-member", "member-3",
+					"--encryption-key", "key-1",
+					"--encryption-key", "key-2",
+					"--ssl-disabled",
+				)
+				Eventually(stop.Run, COMMAND_TIMEOUT, COMMAND_TIMEOUT).Should(Succeed())
+
+				_, err = isPIDRunning(pid)
+				Expect(err).To(MatchError(ContainSubstring("process already finished")))
+
+				Expect(fakeAgentOutput(consulConfigDir)).To(Equal(map[string]interface{}{
+					"PID": float64(pid),
+					"Args": []interface{}{
+						"agent",
+						fmt.Sprintf("-config-dir=%s", consulConfigDir),
+					},
+					"LeaveCallCount":      float64(1),
+					"UseKeyCallCount":     float64(0),
+					"InstallKeyCallCount": float64(0),
+				}))
+			})
+		})
 	})
 
 	Context("when starting", func() {
@@ -389,6 +441,18 @@ var _ = Describe("confab", func() {
 				cmd.Stderr = buffer
 				Eventually(cmd.Run, COMMAND_TIMEOUT, COMMAND_TIMEOUT).ShouldNot(Succeed())
 				Expect(buffer).To(ContainSubstring("error connecting to RPC server"))
+			})
+		})
+
+		Context("when an invalid flag is provided", func() {
+			It("exits and prints usage", func() {
+				cmd := exec.Command(pathToConfab, "start", "--banana")
+				buffer := bytes.NewBuffer([]byte{})
+				cmd.Stderr = buffer
+
+				Eventually(cmd.Run, COMMAND_TIMEOUT, COMMAND_TIMEOUT).ShouldNot(Succeed())
+				Expect(buffer).To(ContainSubstring("flag provided but not defined: -banana"))
+				Expect(buffer).NotTo(ContainSubstring("usage: confab COMMAND OPTIONS"))
 			})
 		})
 	})

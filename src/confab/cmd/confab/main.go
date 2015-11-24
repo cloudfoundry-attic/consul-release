@@ -28,6 +28,7 @@ func (ss *stringSlice) Set(value string) error {
 
 var (
 	isServer        bool
+	sslDisabled     bool
 	agentPath       string
 	consulConfigDir string
 	pidFile         string
@@ -43,6 +44,7 @@ func main() {
 
 	flagSet := flag.NewFlagSet("flags", flag.ContinueOnError)
 	flagSet.BoolVar(&isServer, "server", false, "whether to start the agent in server mode")
+	flagSet.BoolVar(&sslDisabled, "ssl-disabled", false, "whether to run the server without ssl")
 	flagSet.StringVar(&agentPath, "agent-path", "", "path to the on-filesystem consul `executable`")
 	flagSet.StringVar(&consulConfigDir, "consul-config-dir", "", "path to consul configuration `directory`")
 	flagSet.StringVar(&pidFile, "pid-file", "", "path to consul PID `file`")
@@ -53,7 +55,9 @@ func main() {
 		printUsageAndExit("invalid number of arguments", flagSet)
 	}
 
-	flagSet.Parse(os.Args[2:])
+	if err := flagSet.Parse(os.Args[2:]); err != nil {
+		os.Exit(1)
+	}
 
 	path, err := exec.LookPath(agentPath)
 	if err != nil {
@@ -90,7 +94,7 @@ func main() {
 		SyncRetryDelay: 1 * time.Second,
 		SyncRetryClock: clock.NewClock(),
 		EncryptKeys:    encryptionKeys,
-		SSLDisabled:    false,
+		SSLDisabled:    sslDisabled,
 		Logger:         stdout,
 	}
 

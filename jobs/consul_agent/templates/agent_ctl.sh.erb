@@ -135,6 +135,7 @@ EOF
           -encryption-key <%= string_to_encrypt_key(key) %> \
         <% end %> \
       <% end %> \
+      <% if !p("consul.require_ssl") %> -ssl-disabled <% end %> \
       2> >(tee -a ${LOG_DIR}/consul_agent.stderr.log | logger -p user.error -t vcap.consul-agent) \
       1> >(tee -a ${LOG_DIR}/consul_agent.stdout.log | logger -p user.info  -t vcap.consul-agent)
 
