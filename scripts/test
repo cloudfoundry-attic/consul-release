@@ -1,23 +1,10 @@
-#!/bin/sh
+#!/bin/bash -eux
 
-set -eux
+function main() {
+	local scripts_dir
+	scripts_dir=$(cd "$(dirname "${0}")" && pwd)
 
-my_dir=$(cd "$(dirname "${0}")" && pwd)
-root_dir=$(cd "${my_dir}/.." && pwd)
+	bash -c "${scripts_dir}/../src/acceptance-tests/scripts/test $@"
+}
 
-export GOPATH="${root_dir}:${GOPATH}"
-export PATH="${root_dir}/bin:${PATH}"
-
-# Bosh-lite manifest generation should always work.
-"${my_dir}/generate-bosh-lite-manifest" > /dev/null
-
-# install ginkgo
-go install -v github.com/onsi/ginkgo/ginkgo
-
-# Run acceptance tests
-ginkgo \
-    -r \
-    -race \
-    -randomizeAllSpecs \
-    -randomizeSuites \
-    "$@"
+main "$@"

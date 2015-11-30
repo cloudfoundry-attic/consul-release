@@ -1,9 +1,10 @@
-#!/bin/sh
+#!/bin/bash -eux
 
-set -eux
+function main() {
+	local root_dir
+	root_dir="$(cd "$(dirname "${0}")/.." && pwd)"
 
-root_dir=$(cd $(dirname $0)/.. && pwd)
+	bash -c "${root_dir}/scripts/test \"$@\" \"${root_dir}/src/acceptance-tests\""
+}
 
-${root_dir}/scripts/test \
-    "$@" \
-    "$root_dir/src/acceptance-tests"
+main "$@"

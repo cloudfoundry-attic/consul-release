@@ -14,6 +14,9 @@ import (
 	. "github.com/onsi/gomega"
 )
 
+const defaultDataDirPrefix = "consul_data"
+const defaultConfigDirPrefix = "consul_config"
+
 type AgentRunner struct {
 	consulProcess ifrit.Process
 	running       bool
@@ -24,9 +27,6 @@ type AgentRunner struct {
 
 	mutex *sync.RWMutex
 }
-
-const defaultDataDirPrefix = "consul_data"
-const defaultConfigDirPrefix = "consul_config"
 
 func NewAgentRunner(serverIps []string, bindAddress string) *AgentRunner {
 	Expect(len(serverIps)).NotTo(Equal(0))

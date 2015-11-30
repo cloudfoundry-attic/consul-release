@@ -3,7 +3,7 @@ name: (( name_overrides.deployment_name ))
 releases:
   - name: (( name_overrides.turbulence.release_name ))
     version: latest
-  - name: (( name_overrides.cpi.release_name ))
+  - name: (( name_overrides.warden_cpi.release_name ))
     version: latest
 
 compilation:
@@ -38,8 +38,8 @@ jobs:
     templates:
       - name: turbulence_api
         release: (( name_overrides.turbulence.release_name ))
-      - name: cpi
-        release: (( name_overrides.cpi.release_name ))
+      - name: warden_cpi
+        release: (( name_overrides.warden_cpi.release_name ))
     instances: (( instance_count_overrides.api.instances || 1 ))
     persistent_disk: (( persistent_disk_overrides.api || 1024 ))
     resource_pool: turbulence
@@ -60,7 +60,7 @@ properties:
       password: (( property_overrides.turbulence_api.director.password ))
       ca_cert: (( property_overrides.turbulence_api.director.ca_cert ))
 
-  cpi: (( property_overrides.cpi || nil ))
+  warden_cpi: (( property_overrides.warden_cpi || nil ))
   aws: (( property_overrides.aws || nil ))
   registry: (( property_overrides.registry || nil ))
   blobstore:
@@ -77,7 +77,7 @@ name_defaults:
   deployment_name: turbulence
   turbulence:
     release_name: turbulence
-  cpi:
+  warden_cpi:
     release_name: bosh-warden-cpi
 
 iaas_settings: (( merge ))
@@ -86,7 +86,7 @@ persistent_disk_overrides: (( merge ))
 property_overrides: (( merge ))
 name_overrides:
   deployment_name: (( merge || name_defaults.deployment_name ))
-  turbulence: 
+  turbulence:
     release_name: (( merge || name_defaults.turbulence.release_name ))
-  cpi: 
-    release_name: (( merge || name_defaults.cpi.release_name ))
+  warden_cpi:
+    release_name: (( merge || name_defaults.warden_cpi.release_name ))

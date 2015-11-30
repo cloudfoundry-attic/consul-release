@@ -40,14 +40,14 @@ var _ = BeforeSuite(func() {
 	boshOperationTimeout := helpers.GetBoshOperationTimeout(config)
 	bosh = helpers.NewBosh(gemfilePath, goPath, config.BoshTarget, boshOperationTimeout)
 
-	consulManifestGeneration = filepath.Join(goPath, "src", "acceptance-tests", "scripts", "generate-consul-deployment-manifest")
+	consulManifestGeneration = filepath.Join(goPath, "scripts", "generate-consul-deployment-manifest")
 
 	err := os.Chdir(goPath)
 	Expect(err).ToNot(HaveOccurred())
 
 	directorUUIDStub = bosh.TargetDeployment()
 	createConsulStub()
-	bosh.CreateAndUploadRelease(goPath, consulRelease)
+	bosh.CreateAndUploadRelease(filepath.Join(goPath, "..", ".."), consulRelease)
 })
 
 var _ = AfterSuite(func() {

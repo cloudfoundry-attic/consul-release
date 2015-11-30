@@ -94,3 +94,30 @@
 [submodule "src/github.com/fsouza/go-dockerclient"]
 	path = src/confab/vendor/github.com/fsouza/go-dockerclient
 	url = git://github.com/fsouza/go-dockerclient
+[submodule "src/acceptance-tests/vendor/github.com/onsi/ginkgo"]
+	path = src/acceptance-tests/vendor/github.com/onsi/ginkgo
+	url = git://github.com/onsi/ginkgo
+[submodule "src/acceptance-tests/vendor/github.com/cloudfoundry-incubator/candiedyaml"]
+	path = src/acceptance-tests/vendor/github.com/cloudfoundry-incubator/candiedyaml
+	url = git://github.com/cloudfoundry-incubator/candiedyaml
+[submodule "src/acceptance-tests/vendor/github.com/hashicorp/consul"]
+	path = src/acceptance-tests/vendor/github.com/hashicorp/consul
+	url = git://github.com/hashicorp/consul
+[submodule "src/acceptance-tests/vendor/github.com/hashicorp/go-cleanhttp"]
+	path = src/acceptance-tests/vendor/github.com/hashicorp/go-cleanhttp
+	url = git://github.com/hashicorp/go-cleanhttp
+[submodule "src/acceptance-tests/vendor/github.com/hashicorp/serf"]
+	path = src/acceptance-tests/vendor/github.com/hashicorp/serf
+	url = git://github.com/hashicorp/serf
+[submodule "src/acceptance-tests/vendor/github.com/onsi/gomega"]
+	path = src/acceptance-tests/vendor/github.com/onsi/gomega
+	url = git://github.com/onsi/gomega
+[submodule "src/acceptance-tests/vendor/github.com/tedsuo/ifrit"]
+	path = src/acceptance-tests/vendor/github.com/tedsuo/ifrit
+	url = git://github.com/tedsuo/ifrit
+[submodule "src/acceptance-tests/vendor/github.com/cloudfoundry-incubator/cf-test-helpers"]
+	path = src/acceptance-tests/vendor/github.com/cloudfoundry-incubator/cf-test-helpers
+	url = git://github.com/cloudfoundry-incubator/cf-test-helpers
+[submodule "src/acceptance-tests/vendor/github.com/nu7hatch/gouuid"]
+	path = src/acceptance-tests/vendor/github.com/nu7hatch/gouuid
+	url = git://github.com/nu7hatch/gouuid

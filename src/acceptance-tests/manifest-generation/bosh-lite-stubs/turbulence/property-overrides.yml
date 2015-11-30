@@ -78,7 +78,7 @@ property_overrides:
         9JpGUkpLi0wGcVfceVLiZooxVGIQTFJj8Yu6fnTM2ZbD0xwFDyrYM92uWg==
         -----END CERTIFICATE-----
 
-  cpi:
+  warden_cpi:
     warden:
       connect_network: tcp
       connect_address: 10.254.50.4:7777

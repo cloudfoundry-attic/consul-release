@@ -144,10 +144,10 @@ cat > integration_config.json << EOF
   "iaas_settings_consul_stub_path": "./src/acceptance-tests/manifest-generation/bosh-lite-stubs/iaas-settings-consul.yml",
   "iaas_settings_turbulence_stub_path": "./src/acceptance-tests/manifest-generation/bosh-lite-stubs/iaas-settings-turbulence.yml",
   "turbulence_properties_stub_path": "./src/acceptance-tests/manifest-generation/bosh-lite-stubs/turbulence/property-overrides.yml",
-  "cpi_release_url": "https://bosh.io/d/github.com/cppforlife/bosh-warden-cpi-release?v=21",
+  "cpi_release_location": "https://bosh.io/d/github.com/cppforlife/bosh-warden-cpi-release?v=28",
   "cpi_release_name": "bosh-warden-cpi",
   "bind_address": "192.168.50.1",
-  "turbulence_release_url": "http://bosh.io/d/github.com/cppforlife/turbulence-release?v=0.4"
+  "turbulence_release_location": "http://bosh.io/d/github.com/cppforlife/turbulence-release?v=0.4"
 }
 EOF
 export CONSATS_CONFIG=$PWD/integration_config.json
@@ -159,8 +159,8 @@ The full set of config parameters is explained below:
 * `iaas_settings_consul_stub_path` (required) Stub containing iaas settings for the consul deployment.
 * `iaas_settings_turbulence_stub_path` (required for turbulence tests) Stub containing iaas setting for the turbulence deployment.
 * `turbulence_properties_stub_path` (required for turbulence tests) Stub containing property overrides for the turbulence deployment.
-* `cpi_release_url` (required for turbulence tests) CPI for the current BOSH director being used to deploy tests with.
-* `cpi_release_name` (required for turbulence tests) Name for the `cpi_release_url` parameter
+* `cpi_release_location` (required for turbulence tests) CPI for the current BOSH director being used to deploy tests with (version 28 or higher required).
+* `cpi_release_name` (required for turbulence tests) Name for the `cpi_release_location` parameter
 * `bosh_operation_timeout` (optional) Time to wait for BOSH commands to exit before erroring out. (default time is 5 min if not specified)
 * `turbulence_operation_timeout` (optional) Time to wait for Turbulence operations to succeed before erroring out. (default time is 5 min if not specified)
 

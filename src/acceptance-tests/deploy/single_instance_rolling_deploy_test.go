@@ -44,55 +44,63 @@ var _ = Describe("Single Instance Rolling deploys", func() {
 	})
 
 	AfterEach(func() {
-		By("delete deployment")
-		runner.Stop()
-		bosh.Command("-n", "delete", "deployment", consulDeployment)
+		By("delete deployment", func() {
+			runner.Stop()
+			bosh.Command("-n", "delete", "deployment", consulDeployment)
+		})
 	})
 
 	It("Saves data after a rolling deploy", func() {
-		By("setting a persistent value")
-		consatsClient := runner.NewClient()
-
 		consatsKey := "consats-key"
 		consatsValue := []byte("consats-value")
 
-		keyValueClient := consatsClient.KV()
+		By("setting a persistent value", func() {
+			consatsClient := runner.NewClient()
+			keyValueClient := consatsClient.KV()
+			pair := &capi.KVPair{Key: consatsKey, Value: consatsValue}
+			_, err := keyValueClient.Put(pair, nil)
+			Expect(err).ToNot(HaveOccurred())
 
-		pair := &capi.KVPair{Key: consatsKey, Value: consatsValue}
-		_, err := keyValueClient.Put(pair, nil)
-		Expect(err).ToNot(HaveOccurred())
+			resultPair, _, err := keyValueClient.Get(consatsKey, nil)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(resultPair.Value).To(Equal(consatsValue))
 
-		resultPair, _, err := keyValueClient.Get(consatsKey, nil)
-		Expect(err).ToNot(HaveOccurred())
-		Expect(resultPair.Value).To(Equal(consatsValue))
-
-		// generate new stub that overwrites a property
-		consulStub := fmt.Sprintf(`---
+			// generate new stub that overwrites a property
+			consulStub := fmt.Sprintf(`---
 property_overrides:
   consul:
     server_cert: something different
     require_ssl: false
 `)
 
-		consulRollingDeployStub := helpers.WriteStub(consulStub)
+			consulRollingDeployStub := helpers.WriteStub(consulStub)
 
-		bosh.GenerateAndSetDeploymentManifest(
-			consulManifest,
-			consulManifestGeneration,
-			directorUUIDStub,
-			helpers.InstanceCount1NodeStubPath,
-			helpers.PersistentDiskStubPath,
-			config.IAASSettingsConsulStubPath,
-			consulRollingDeployStub,
-			consulNameOverrideStub,
-		)
+			bosh.GenerateAndSetDeploymentManifest(
+				consulManifest,
+				consulManifestGeneration,
+				directorUUIDStub,
+				helpers.InstanceCount1NodeStubPath,
+				helpers.PersistentDiskStubPath,
+				config.IAASSettingsConsulStubPath,
+				consulRollingDeployStub,
+				consulNameOverrideStub,
+			)
+		})
 
-		By("deploying")
-		Expect(bosh.Command("-n", "deploy")).To(gexec.Exit(0))
+		By("deploying", func() {
+			Expect(bosh.Command("-n", "deploy")).To(gexec.Exit(0))
+		})
 
-		By("reading the value from consul")
-		resultPair, _, err = keyValueClient.Get(consatsKey, nil)
-		Expect(err).ToNot(HaveOccurred())
-		Expect(resultPair.Value).To(Equal(consatsValue))
+		By("reading the value from consul", func() {
+			runner.Stop()
+			runner = helpers.NewAgentRunner(consulServerIPs, config.BindAddress)
+			runner.Start()
+
+			consatsClient := runner.NewClient()
+			keyValueClient := consatsClient.KV()
+			resultPair, _, err := keyValueClient.Get(consatsKey, nil)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(resultPair.Value).To(Equal(consatsValue))
+		})
 	})
 })

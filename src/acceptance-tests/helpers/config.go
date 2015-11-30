@@ -13,9 +13,9 @@ type Config struct {
 	IAASSettingsConsulStubPath     string `json:"iaas_settings_consul_stub_path"`
 	IAASSettingsTurbulenceStubPath string `json:"iaas_settings_turbulence_stub_path"`
 	TurbulencePropertiesStubPath   string `json:"turbulence_properties_stub_path"`
-	CPIReleaseUrl                  string `json:"cpi_release_url"`
+	CPIReleaseLocation             string `json:"cpi_release_location"`
 	CPIReleaseName                 string `json:"cpi_release_name"`
-	TurbulenceReleaseUrl           string `json:"turbulence_release_url"`
+	TurbulenceReleaseLocation      string `json:"turbulence_release_location"`
 	TurbulenceReleaseName          string
 	BoshOperationTimeout           string `json:"bosh_operation_timeout"`
 	TurbulenceOperationTimeout     string `json:"turbulence_operation_timeout"`

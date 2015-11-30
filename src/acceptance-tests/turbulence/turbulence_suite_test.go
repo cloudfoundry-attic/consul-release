@@ -44,8 +44,8 @@ var _ = BeforeSuite(func() {
 
 	bosh = helpers.NewBosh(gemfilePath, goPath, config.BoshTarget, boshOperationTimeout)
 
-	turbulenceManifestGeneration = filepath.Join(goPath, "src", "acceptance-tests", "scripts", "generate_turbulence_deployment_manifest")
-	consulManifestGeneration = filepath.Join(goPath, "src", "acceptance-tests", "scripts", "generate-consul-deployment-manifest")
+	turbulenceManifestGeneration = filepath.Join(goPath, "scripts", "generate_turbulence_deployment_manifest")
+	consulManifestGeneration = filepath.Join(goPath, "scripts", "generate-consul-deployment-manifest")
 
 	directorUUIDStub = bosh.TargetDeployment()
 
@@ -69,13 +69,13 @@ var _ = BeforeSuite(func() {
 	)
 
 	By("uploading the turbulence release")
-	Expect(bosh.Command("-n", "upload", "release", config.TurbulenceReleaseUrl)).To(Exit(0))
+	Expect(bosh.Command("-n", "upload", "release", config.TurbulenceReleaseLocation)).To(Exit(0))
 
 	By("deploying the turbulence release")
 	Expect(bosh.Command("-n", "deploy")).To(Exit(0))
 
 	createConsulStub()
-	bosh.CreateAndUploadRelease(goPath, consulRelease)
+	bosh.CreateAndUploadRelease(filepath.Join(goPath, "..", ".."), consulRelease)
 })
 
 var _ = AfterSuite(func() {
@@ -111,7 +111,7 @@ name_overrides:
   deployment_name: %s
   turbulence:
     release_name: %s
-  cpi:
+  warden_cpi:
     release_name: %s
 `, turbulenceDeployment, config.TurbulenceReleaseName, config.CPIReleaseName)
 
@@ -120,13 +120,13 @@ name_overrides:
 
 func uploadBoshCpiRelease() {
 	By("Downloading remote release")
-	if config.CPIReleaseUrl == "" {
-		panic("missing required cpi release url")
+	if config.CPIReleaseLocation == "" {
+		panic("missing required cpi release location")
 	}
 
 	if config.CPIReleaseName == "" {
-		panic("missing required cpi release name")
+		panic("missing required warden_cpi release name")
 	}
 
-	Expect(bosh.Command("-n", "upload", "release", config.CPIReleaseUrl, "--skip-if-exists")).To(Exit(0))
+	Expect(bosh.Command("-n", "upload", "release", config.CPIReleaseLocation, "--skip-if-exists")).To(Exit(0))
 }
