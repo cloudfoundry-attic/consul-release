@@ -98,6 +98,10 @@ Output the result of the above command to a file: `./scripts/generate_consul_dep
 
 Run `bosh -d OUTPUT_MANIFEST_PATH deploy`.
 
+## Confab Tests
+
+Run the `confab` tests by executing the `src/confab/scripts/test` executable.
+
 ## Acceptance Tests
 
 The acceptance tests deploy a new consul cluster and exercise a variety of features, including scaling the number of nodes, as well as destructive testing to verify resilience.
@@ -115,7 +119,7 @@ If using homebrew, these can be installed with:
 brew install consul go
 ```
 
-### Running the tests
+### Running the CONSATS
 
 Run all the tests with:
 
@@ -133,7 +137,7 @@ The `CONSATS_CONFIG` environment variable points to a configuration file which s
 
 See below for more information on the contents of this configuration file.
 
-### Test config
+### CONSATS config
 
 An example config json for BOSH-lite would look like:
 

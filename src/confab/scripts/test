@@ -1,0 +1,10 @@
+#!/bin/bash -eu
+
+function main() {
+	local dir
+	dir="$(cd "$(dirname "${0}")/.." && pwd)"
+
+  ginkgo -skipPackage=vendor -r "${dir}" "$@"
+}
+
+main "$@"
