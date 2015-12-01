@@ -34,6 +34,7 @@ var (
 	pidFile         string
 	expectedMembers stringSlice
 	encryptionKeys  stringSlice
+	recursors       stringSlice
 
 	stdout = log.New(os.Stdout, "", 0)
 	stderr = log.New(os.Stderr, "", 0)
@@ -48,8 +49,9 @@ func main() {
 	flagSet.StringVar(&agentPath, "agent-path", "", "path to the on-filesystem consul `executable`")
 	flagSet.StringVar(&consulConfigDir, "consul-config-dir", "", "path to consul configuration `directory`")
 	flagSet.StringVar(&pidFile, "pid-file", "", "path to consul PID `file`")
-	flagSet.Var(&expectedMembers, "expected-member", "address `list` of the expected members")
-	flagSet.Var(&encryptionKeys, "encryption-key", "`key` used to encrypt consul traffic")
+	flagSet.Var(&expectedMembers, "expected-member", "address `list` of the expected members, may be specified multiple times")
+	flagSet.Var(&encryptionKeys, "encryption-key", "`key` used to encrypt consul traffic, may be specified multiple times")
+	flagSet.Var(&recursors, "recursor", "specifies the address of an upstream DNS `server`, may be specified multiple times")
 
 	if len(os.Args) < 2 {
 		printUsageAndExit("invalid number of arguments", flagSet)
@@ -72,6 +74,7 @@ func main() {
 		Path:      path,
 		PIDFile:   pidFile,
 		ConfigDir: consulConfigDir,
+		Recursors: recursors,
 		Stdout:    os.Stdout,
 		Stderr:    os.Stderr,
 	}

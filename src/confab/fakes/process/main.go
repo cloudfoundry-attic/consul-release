@@ -12,6 +12,18 @@ import (
 	"time"
 )
 
+type stringSlice []string
+
+func (ss *stringSlice) String() string {
+	return fmt.Sprintf("%s", *ss)
+}
+
+func (ss *stringSlice) Set(value string) error {
+	*ss = append(*ss, value)
+
+	return nil
+}
+
 type outputData struct {
 	Args []string
 	PID  int
@@ -33,8 +45,10 @@ func main() {
 	}
 
 	var configDir string
+	var recursors stringSlice
 	flagSet := flag.NewFlagSet("", flag.ExitOnError)
 	flagSet.StringVar(&configDir, "config-dir", "", "config directory")
+	flagSet.Var(&recursors, "recursor", "recursor")
 	flagSet.Parse(data.Args[1:])
 	if configDir == "" {
 		log.Fatal("missing required config-dir flag")

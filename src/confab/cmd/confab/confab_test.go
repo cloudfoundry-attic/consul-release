@@ -62,6 +62,8 @@ var _ = Describe("confab", func() {
 				"--expected-member", "member-1",
 				"--expected-member", "member-2",
 				"--expected-member", "member-3",
+				"--recursor", "8.8.8.8",
+				"--recursor", "10.0.2.3",
 			)
 			Eventually(start.Run, COMMAND_TIMEOUT, COMMAND_TIMEOUT).Should(Succeed())
 
@@ -89,6 +91,8 @@ var _ = Describe("confab", func() {
 				"Args": []interface{}{
 					"agent",
 					fmt.Sprintf("-config-dir=%s", consulConfigDir),
+					"-recursor=8.8.8.8",
+					"-recursor=10.0.2.3",
 				},
 				"LeaveCallCount":      float64(1),
 				"UseKeyCallCount":     float64(0),

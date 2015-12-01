@@ -78,6 +78,7 @@ var _ = Describe("AgentRunner", func() {
 		runner = confab.AgentRunner{
 			Path:      pathToFakeProcess,
 			ConfigDir: configDir,
+			Recursors: []string{"8.8.8.8", "10.0.2.3"},
 			PIDFile:   pidFileName,
 			// Stdout:    os.Stdout,  // uncomment this to see output from test agent
 			// Stderr:    os.Stderr,
@@ -219,6 +220,8 @@ var _ = Describe("AgentRunner", func() {
 			Expect(getFakeAgentOutput(runner).Args).To(Equal([]string{
 				"agent",
 				fmt.Sprintf("-config-dir=%s", runner.ConfigDir),
+				fmt.Sprintf("-recursor=%s", "8.8.8.8"),
+				fmt.Sprintf("-recursor=%s", "10.0.2.3"),
 			}))
 		})
 

@@ -17,6 +17,7 @@ type AgentRunner struct {
 	ConfigDir string
 	Stdout    io.Writer
 	Stderr    io.Writer
+	Recursors []string
 	cmd       *exec.Cmd
 }
 
@@ -48,9 +49,16 @@ func (r *AgentRunner) Run() error {
 		return fmt.Errorf("Config dir does not exist: %s", r.ConfigDir)
 	}
 
-	r.cmd = exec.Command(r.Path,
+	args := []string{
 		"agent",
-		fmt.Sprintf("-config-dir=%s", r.ConfigDir))
+		fmt.Sprintf("-config-dir=%s", r.ConfigDir),
+	}
+
+	for _, recursor := range r.Recursors {
+		args = append(args, fmt.Sprintf("-recursor=%s", recursor))
+	}
+
+	r.cmd = exec.Command(r.Path, args...)
 	r.cmd.Stdout = r.Stdout
 	r.cmd.Stderr = r.Stderr
 

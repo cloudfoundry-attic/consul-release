@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"flag"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
@@ -10,6 +11,18 @@ import (
 	"path/filepath"
 	"time"
 )
+
+type stringSlice []string
+
+func (ss *stringSlice) String() string {
+	return fmt.Sprintf("%s", *ss)
+}
+
+func (ss *stringSlice) Set(value string) error {
+	*ss = append(*ss, value)
+
+	return nil
+}
 
 func main() {
 	// store information about this fake process into JSON
@@ -23,8 +36,10 @@ func main() {
 	}
 
 	var configDir string
+	var recursors stringSlice
 	flagSet := flag.NewFlagSet("", flag.ExitOnError)
 	flagSet.StringVar(&configDir, "config-dir", "", "config directory")
+	flagSet.Var(&recursors, "recursor", "recursor")
 	flagSet.Parse(os.Args[2:])
 	if configDir == "" {
 		log.Fatal("missing required config-dir flag")
