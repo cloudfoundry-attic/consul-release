@@ -111,7 +111,7 @@ The acceptance tests deploy a new consul cluster and exercise a variety of featu
 The following should be installed on the local machine:
 
 - Consul
-- Golang
+- Golang (>= 1.5)
 
 If using homebrew, these can be installed with:
 
@@ -145,9 +145,9 @@ An example config json for BOSH-lite would look like:
 cat > integration_config.json << EOF
 {
   "bosh_target": "192.168.50.4",
-  "iaas_settings_consul_stub_path": "./src/acceptance-tests/manifest-generation/bosh-lite-stubs/iaas-settings-consul.yml",
-  "iaas_settings_turbulence_stub_path": "./src/acceptance-tests/manifest-generation/bosh-lite-stubs/iaas-settings-turbulence.yml",
-  "turbulence_properties_stub_path": "./src/acceptance-tests/manifest-generation/bosh-lite-stubs/turbulence/property-overrides.yml",
+  "iaas_settings_consul_stub_path": "${PWD}/src/acceptance-tests/manifest-generation/bosh-lite-stubs/iaas-settings-consul.yml",
+  "iaas_settings_turbulence_stub_path": "${PWD}/src/acceptance-tests/manifest-generation/bosh-lite-stubs/iaas-settings-turbulence.yml",
+  "turbulence_properties_stub_path": "${PWD}/src/acceptance-tests/manifest-generation/bosh-lite-stubs/turbulence/property-overrides.yml",
   "cpi_release_location": "https://bosh.io/d/github.com/cppforlife/bosh-warden-cpi-release?v=28",
   "cpi_release_name": "bosh-warden-cpi",
   "bind_address": "192.168.50.1",
@@ -156,6 +156,8 @@ cat > integration_config.json << EOF
 EOF
 export CONSATS_CONFIG=$PWD/integration_config.json
 ```
+
+NOTE: when specifying locations on the filesystem, it is best to provide an absolute path.
 
 The full set of config parameters is explained below:
 * `bosh_target` (required) Public BOSH IP address that will be used to host test environment.
