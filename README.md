@@ -119,6 +119,20 @@ If using homebrew, these can be installed with:
 brew install consul go
 ```
 
+### Environment setup
+
+This repository assumes that it is the root of your `GOPATH`. You can set this up by doing the following:
+
+```shell
+source .envrc
+```
+
+Or if you have `direnv` installed:
+
+```shell
+direnv allow
+```
+
 ### Running the CONSATS
 
 Run all the tests with:
