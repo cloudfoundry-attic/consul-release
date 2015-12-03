@@ -121,3 +121,6 @@
 [submodule "src/acceptance-tests/vendor/github.com/nu7hatch/gouuid"]
 	path = src/acceptance-tests/vendor/github.com/nu7hatch/gouuid
 	url = git://github.com/nu7hatch/gouuid
+[submodule "src/confab/vendor/github.com/pivotal-golang/lager"]
+	path = src/confab/vendor/github.com/pivotal-golang/lager
+	url = git://github.com/pivotal-golang/lager

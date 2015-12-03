@@ -5,6 +5,8 @@ import (
 	"confab/fakes"
 	"errors"
 
+	"github.com/pivotal-golang/lager"
+
 	"github.com/hashicorp/consul/api"
 
 	. "github.com/onsi/ginkgo"
@@ -15,44 +17,89 @@ var _ = Describe("AgentClient", func() {
 	var (
 		consulAPIAgent  *fakes.FakeconsulAPIAgent
 		consulRPCClient *fakes.FakeconsulRPCClient
+		logger          *fakes.Logger
 		client          confab.AgentClient
 	)
 
 	BeforeEach(func() {
 		consulAPIAgent = &fakes.FakeconsulAPIAgent{}
 		consulRPCClient = &fakes.FakeconsulRPCClient{}
+		logger = &fakes.Logger{}
 		client = confab.AgentClient{
 			ConsulAPIAgent:  consulAPIAgent,
 			ConsulRPCClient: consulRPCClient,
+			Logger:          logger,
 		}
 	})
 
 	Describe("VerifyJoined", func() {
 		Context("when the set of members includes at least one that we expect", func() {
 			It("succeeds", func() {
+				client.ExpectedMembers = []string{"member1", "member2", "member3"}
 				consulAPIAgent.MembersReturns([]*api.AgentMember{
 					&api.AgentMember{Addr: "member1"},
 					&api.AgentMember{Addr: "member2"},
 					&api.AgentMember{Addr: "member3"},
 				}, nil)
-				client.ExpectedMembers = []string{"member1", "member2", "member3"}
 
 				Expect(client.VerifyJoined()).To(Succeed())
 				Expect(consulAPIAgent.MembersArgsForCall(0)).To(BeFalse())
+
+				Expect(logger.Messages).To(ConsistOf([]fakes.LoggerMessage{
+					{
+						Action: "agent-client.verify-joined.members.request",
+						Data: []lager.Data{{
+							"wan": false,
+						}},
+					},
+					{
+						Action: "agent-client.verify-joined.members.response",
+						Data: []lager.Data{{
+							"wan":     false,
+							"members": []string{"member1", "member2", "member3"},
+						}},
+					},
+					{
+						Action: "agent-client.verify-joined.members.joined",
+					},
+				}))
 			})
 		})
 
 		Context("when the members are all strangers", func() {
 			It("returns an error", func() {
+				client.ExpectedMembers = []string{"member1", "member2", "member3"}
 				consulAPIAgent.MembersReturns([]*api.AgentMember{
-					&api.AgentMember{Addr: "member1"},
-					&api.AgentMember{Addr: "member2"},
-					&api.AgentMember{Addr: "member3"},
+					&api.AgentMember{Addr: "member4"},
+					&api.AgentMember{Addr: "member5"},
 				}, nil)
-				client.ExpectedMembers = []string{"member4", "member5"}
 
 				Expect(client.VerifyJoined()).To(MatchError("no expected members"))
 				Expect(consulAPIAgent.MembersArgsForCall(0)).To(BeFalse())
+
+				Expect(logger.Messages).To(ConsistOf([]fakes.LoggerMessage{
+					{
+						Action: "agent-client.verify-joined.members.request",
+						Data: []lager.Data{{
+							"wan": false,
+						}},
+					},
+					{
+						Action: "agent-client.verify-joined.members.response",
+						Data: []lager.Data{{
+							"wan":     false,
+							"members": []string{"member4", "member5"},
+						}},
+					},
+					{
+						Action: "agent-client.verify-joined.members.not-joined",
+						Error:  errors.New("no expected members"),
+						Data: []lager.Data{{
+							"wan":     false,
+							"members": []string{"member4", "member5"},
+						}},
+					},
+				}))
 			})
 		})
 
@@ -63,6 +110,22 @@ var _ = Describe("AgentClient", func() {
 
 				Expect(client.VerifyJoined()).To(MatchError("members call error"))
 				Expect(consulAPIAgent.MembersArgsForCall(0)).To(BeFalse())
+
+				Expect(logger.Messages).To(ConsistOf([]fakes.LoggerMessage{
+					{
+						Action: "agent-client.verify-joined.members.request",
+						Data: []lager.Data{{
+							"wan": false,
+						}},
+					},
+					{
+						Action: "agent-client.verify-joined.members.request.failed",
+						Error:  errors.New("members call error"),
+						Data: []lager.Data{{
+							"wan": false,
+						}},
+					},
+				}))
 			})
 		})
 	})
@@ -80,6 +143,21 @@ var _ = Describe("AgentClient", func() {
 		It("verifies the sync state of the raft log", func() {
 			Expect(client.VerifySynced()).To(Succeed())
 			Expect(consulRPCClient.StatsCallCount()).To(Equal(1))
+			Expect(logger.Messages).To(ConsistOf([]fakes.LoggerMessage{
+				{
+					Action: "agent-client.verify-synced.stats.request",
+				},
+				{
+					Action: "agent-client.verify-synced.stats.response",
+					Data: []lager.Data{{
+						"commit_index":   "2",
+						"last_log_index": "2",
+					}},
+				},
+				{
+					Action: "agent-client.verify-synced.synced",
+				},
+			}))
 		})
 
 		Context("when the last_log_index never catches up", func() {
@@ -95,6 +173,22 @@ var _ = Describe("AgentClient", func() {
 			It("returns an error", func() {
 				Expect(client.VerifySynced()).To(MatchError("log not in sync"))
 				Expect(consulRPCClient.StatsCallCount()).To(Equal(1))
+				Expect(logger.Messages).To(ConsistOf([]fakes.LoggerMessage{
+					{
+						Action: "agent-client.verify-synced.stats.request",
+					},
+					{
+						Action: "agent-client.verify-synced.stats.response",
+						Data: []lager.Data{{
+							"commit_index":   "2",
+							"last_log_index": "1",
+						}},
+					},
+					{
+						Action: "agent-client.verify-synced.not-synced",
+						Error:  errors.New("log not in sync"),
+					},
+				}))
 			})
 		})
 
@@ -106,6 +200,15 @@ var _ = Describe("AgentClient", func() {
 			It("immediately returns an error", func() {
 				Expect(client.VerifySynced()).To(MatchError("RPC error"))
 				Expect(consulRPCClient.StatsCallCount()).To(Equal(1))
+				Expect(logger.Messages).To(ConsistOf([]fakes.LoggerMessage{
+					{
+						Action: "agent-client.verify-synced.stats.request",
+					},
+					{
+						Action: "agent-client.verify-synced.stats.request.failed",
+						Error:  errors.New("RPC error"),
+					},
+				}))
 			})
 		})
 
@@ -122,6 +225,22 @@ var _ = Describe("AgentClient", func() {
 			It("immediately returns an error", func() {
 				Expect(client.VerifySynced()).To(MatchError("commit index must not be zero"))
 				Expect(consulRPCClient.StatsCallCount()).To(Equal(1))
+				Expect(logger.Messages).To(ConsistOf([]fakes.LoggerMessage{
+					{
+						Action: "agent-client.verify-synced.stats.request",
+					},
+					{
+						Action: "agent-client.verify-synced.stats.response",
+						Data: []lager.Data{{
+							"commit_index":   "0",
+							"last_log_index": "0",
+						}},
+					},
+					{
+						Action: "agent-client.verify-synced.zero-index",
+						Error:  errors.New("commit index must not be zero"),
+					},
+				}))
 			})
 		})
 	})
@@ -140,6 +259,29 @@ var _ = Describe("AgentClient", func() {
 		It("returns true", func() {
 			Expect(client.IsLastNode()).To(BeTrue())
 			Expect(consulAPIAgent.MembersCallCount()).To(Equal(1))
+			Expect(logger.Messages).To(ConsistOf([]fakes.LoggerMessage{
+				{
+					Action: "agent-client.is-last-node.members.request",
+					Data: []lager.Data{{
+						"wan": false,
+					}},
+				},
+				{
+					Action: "agent-client.is-last-node.members.response",
+					Data: []lager.Data{{
+						"wan":     false,
+						"members": []string{"member1", "member2", "member3"},
+					}},
+				},
+				{
+					Action: "agent-client.is-last-node.result",
+					Data: []lager.Data{{
+						"actual_members_count":   3,
+						"expected_members_count": 3,
+						"is_last_node":           true,
+					}},
+				},
+			}))
 		})
 
 		Context("When you are not the last node", func() {
@@ -153,6 +295,29 @@ var _ = Describe("AgentClient", func() {
 			It("returns false", func() {
 				Expect(client.IsLastNode()).To(BeFalse())
 				Expect(consulAPIAgent.MembersCallCount()).To(Equal(1))
+				Expect(logger.Messages).To(ConsistOf([]fakes.LoggerMessage{
+					{
+						Action: "agent-client.is-last-node.members.request",
+						Data: []lager.Data{{
+							"wan": false,
+						}},
+					},
+					{
+						Action: "agent-client.is-last-node.members.response",
+						Data: []lager.Data{{
+							"wan":     false,
+							"members": []string{"member1", "member2"},
+						}},
+					},
+					{
+						Action: "agent-client.is-last-node.result",
+						Data: []lager.Data{{
+							"actual_members_count":   2,
+							"expected_members_count": 3,
+							"is_last_node":           false,
+						}},
+					},
+				}))
 			})
 
 			Context("when there are non-server members", func() {
@@ -167,6 +332,29 @@ var _ = Describe("AgentClient", func() {
 				It("returns false", func() {
 					Expect(client.IsLastNode()).To(BeFalse())
 					Expect(consulAPIAgent.MembersCallCount()).To(Equal(1))
+					Expect(logger.Messages).To(ConsistOf([]fakes.LoggerMessage{
+						{
+							Action: "agent-client.is-last-node.members.request",
+							Data: []lager.Data{{
+								"wan": false,
+							}},
+						},
+						{
+							Action: "agent-client.is-last-node.members.response",
+							Data: []lager.Data{{
+								"wan":     false,
+								"members": []string{"member1", "member2", "member3"},
+							}},
+						},
+						{
+							Action: "agent-client.is-last-node.result",
+							Data: []lager.Data{{
+								"actual_members_count":   2,
+								"expected_members_count": 3,
+								"is_last_node":           false,
+							}},
+						},
+					}))
 				})
 			})
 		})
@@ -180,6 +368,21 @@ var _ = Describe("AgentClient", func() {
 				_, err := client.IsLastNode()
 				Expect(err).To(MatchError("members error"))
 				Expect(consulAPIAgent.MembersCallCount()).To(Equal(1))
+				Expect(logger.Messages).To(ConsistOf([]fakes.LoggerMessage{
+					{
+						Action: "agent-client.is-last-node.members.request",
+						Data: []lager.Data{{
+							"wan": false,
+						}},
+					},
+					{
+						Action: "agent-client.is-last-node.members.request.failed",
+						Error:  errors.New("members error"),
+						Data: []lager.Data{{
+							"wan": false,
+						}},
+					},
+				}))
 			})
 		})
 	})
@@ -188,7 +391,7 @@ var _ = Describe("AgentClient", func() {
 		BeforeEach(func() {
 			consulRPCClient.InstallKeyReturns(nil)
 			consulRPCClient.UseKeyReturns(nil)
-			consulRPCClient.ListKeysReturns([]string{"key3", "key4"}, nil)
+			consulRPCClient.ListKeysReturns([]string{}, nil)
 			consulRPCClient.RemoveKeyReturns(nil)
 		})
 
@@ -206,10 +409,65 @@ var _ = Describe("AgentClient", func() {
 
 			key = consulRPCClient.UseKeyArgsForCall(0)
 			Expect(key).To(Equal("key1"))
+
+			Expect(consulRPCClient.RemoveKeyCallCount()).To(Equal(0))
+
+			Expect(logger.Messages).To(ConsistOf([]fakes.LoggerMessage{
+				{
+					Action: "agent-client.set-keys.list-keys.request",
+				},
+				{
+					Action: "agent-client.set-keys.list-keys.response",
+					Data: []lager.Data{{
+						"keys": []string{},
+					}},
+				},
+				{
+					Action: "agent-client.set-keys.install-key.request",
+					Data: []lager.Data{{
+						"key": "key1",
+					}},
+				},
+				{
+					Action: "agent-client.set-keys.install-key.response",
+					Data: []lager.Data{{
+						"key": "key1",
+					}},
+				},
+				{
+					Action: "agent-client.set-keys.install-key.request",
+					Data: []lager.Data{{
+						"key": "key2",
+					}},
+				},
+				{
+					Action: "agent-client.set-keys.install-key.response",
+					Data: []lager.Data{{
+						"key": "key2",
+					}},
+				},
+				{
+					Action: "agent-client.set-keys.use-key.request",
+					Data: []lager.Data{{
+						"key": "key1",
+					}},
+				},
+				{
+					Action: "agent-client.set-keys.use-key.response",
+					Data: []lager.Data{{
+						"key": "key1",
+					}},
+				},
+				{
+					Action: "agent-client.set-keys.success",
+				},
+			}))
 		})
 
 		Context("when there are extra keys", func() {
 			It("removes extra keys", func() {
+				consulRPCClient.ListKeysReturns([]string{"key3", "key4"}, nil)
+
 				Expect(client.SetKeys([]string{"key1", "key2"})).To(Succeed())
 				Expect(consulRPCClient.ListKeysCallCount()).To(Equal(1))
 
@@ -220,6 +478,81 @@ var _ = Describe("AgentClient", func() {
 
 				key = consulRPCClient.RemoveKeyArgsForCall(1)
 				Expect(key).To(Equal("key4"))
+
+				Expect(logger.Messages).To(ConsistOf([]fakes.LoggerMessage{
+					{
+						Action: "agent-client.set-keys.list-keys.request",
+					},
+					{
+						Action: "agent-client.set-keys.list-keys.response",
+						Data: []lager.Data{{
+							"keys": []string{"key3", "key4"},
+						}},
+					},
+					{
+						Action: "agent-client.set-keys.remove-key.request",
+						Data: []lager.Data{{
+							"key": "key3",
+						}},
+					},
+					{
+						Action: "agent-client.set-keys.remove-key.response",
+						Data: []lager.Data{{
+							"key": "key3",
+						}},
+					},
+					{
+						Action: "agent-client.set-keys.remove-key.request",
+						Data: []lager.Data{{
+							"key": "key4",
+						}},
+					},
+					{
+						Action: "agent-client.set-keys.remove-key.response",
+						Data: []lager.Data{{
+							"key": "key4",
+						}},
+					},
+					{
+						Action: "agent-client.set-keys.install-key.request",
+						Data: []lager.Data{{
+							"key": "key1",
+						}},
+					},
+					{
+						Action: "agent-client.set-keys.install-key.response",
+						Data: []lager.Data{{
+							"key": "key1",
+						}},
+					},
+					{
+						Action: "agent-client.set-keys.install-key.request",
+						Data: []lager.Data{{
+							"key": "key2",
+						}},
+					},
+					{
+						Action: "agent-client.set-keys.install-key.response",
+						Data: []lager.Data{{
+							"key": "key2",
+						}},
+					},
+					{
+						Action: "agent-client.set-keys.use-key.request",
+						Data: []lager.Data{{
+							"key": "key1",
+						}},
+					},
+					{
+						Action: "agent-client.set-keys.use-key.response",
+						Data: []lager.Data{{
+							"key": "key1",
+						}},
+					},
+					{
+						Action: "agent-client.set-keys.success",
+					},
+				}))
 			})
 		})
 
@@ -227,12 +560,24 @@ var _ = Describe("AgentClient", func() {
 			Context("when provided with a nil slice", func() {
 				It("returns a reasonably named error", func() {
 					Expect(client.SetKeys(nil)).To(MatchError("must provide a non-nil slice of keys"))
+					Expect(logger.Messages).To(ConsistOf([]fakes.LoggerMessage{
+						{
+							Action: "agent-client.set-keys.nil-slice",
+							Error:  errors.New("must provide a non-nil slice of keys"),
+						},
+					}))
 				})
 			})
 
 			Context("when provided with an empty slice", func() {
 				It("returns a reasonably named error", func() {
 					Expect(client.SetKeys([]string{})).To(MatchError("must provide a non-empty slice of keys"))
+					Expect(logger.Messages).To(ConsistOf([]fakes.LoggerMessage{
+						{
+							Action: "agent-client.set-keys.empty-slice",
+							Error:  errors.New("must provide a non-empty slice of keys"),
+						},
+					}))
 				})
 			})
 
@@ -241,14 +586,48 @@ var _ = Describe("AgentClient", func() {
 					consulRPCClient.ListKeysReturns([]string{}, errors.New("list keys error"))
 
 					Expect(client.SetKeys([]string{"key1"})).To(MatchError("list keys error"))
+					Expect(logger.Messages).To(ConsistOf([]fakes.LoggerMessage{
+						{
+							Action: "agent-client.set-keys.list-keys.request",
+						},
+						{
+							Action: "agent-client.set-keys.list-keys.request.failed",
+							Error:  errors.New("list keys error"),
+						},
+					}))
 				})
 			})
 
 			Context("when RemoveKeys returns an error", func() {
 				It("returns the error", func() {
+					consulRPCClient.ListKeysReturns([]string{"key2"}, nil)
 					consulRPCClient.RemoveKeyReturns(errors.New("remove key error"))
 
 					Expect(client.SetKeys([]string{"key1"})).To(MatchError("remove key error"))
+					Expect(logger.Messages).To(ConsistOf([]fakes.LoggerMessage{
+						{
+							Action: "agent-client.set-keys.list-keys.request",
+						},
+						{
+							Action: "agent-client.set-keys.list-keys.response",
+							Data: []lager.Data{{
+								"keys": []string{"key2"},
+							}},
+						},
+						{
+							Action: "agent-client.set-keys.remove-key.request",
+							Data: []lager.Data{{
+								"key": "key2",
+							}},
+						},
+						{
+							Action: "agent-client.set-keys.remove-key.request.failed",
+							Error:  errors.New("remove key error"),
+							Data: []lager.Data{{
+								"key": "key2",
+							}},
+						},
+					}))
 				})
 			})
 
@@ -257,6 +636,30 @@ var _ = Describe("AgentClient", func() {
 					consulRPCClient.InstallKeyReturns(errors.New("install key error"))
 
 					Expect(client.SetKeys([]string{"key1"})).To(MatchError("install key error"))
+					Expect(logger.Messages).To(ConsistOf([]fakes.LoggerMessage{
+						{
+							Action: "agent-client.set-keys.list-keys.request",
+						},
+						{
+							Action: "agent-client.set-keys.list-keys.response",
+							Data: []lager.Data{{
+								"keys": []string{},
+							}},
+						},
+						{
+							Action: "agent-client.set-keys.install-key.request",
+							Data: []lager.Data{{
+								"key": "key1",
+							}},
+						},
+						{
+							Action: "agent-client.set-keys.install-key.request.failed",
+							Error:  errors.New("install key error"),
+							Data: []lager.Data{{
+								"key": "key1",
+							}},
+						},
+					}))
 				})
 			})
 
@@ -265,6 +668,42 @@ var _ = Describe("AgentClient", func() {
 					consulRPCClient.UseKeyReturns(errors.New("use key error"))
 
 					Expect(client.SetKeys([]string{"key1"})).To(MatchError("use key error"))
+					Expect(logger.Messages).To(ConsistOf([]fakes.LoggerMessage{
+						{
+							Action: "agent-client.set-keys.list-keys.request",
+						},
+						{
+							Action: "agent-client.set-keys.list-keys.response",
+							Data: []lager.Data{{
+								"keys": []string{},
+							}},
+						},
+						{
+							Action: "agent-client.set-keys.install-key.request",
+							Data: []lager.Data{{
+								"key": "key1",
+							}},
+						},
+						{
+							Action: "agent-client.set-keys.install-key.response",
+							Data: []lager.Data{{
+								"key": "key1",
+							}},
+						},
+						{
+							Action: "agent-client.set-keys.use-key.request",
+							Data: []lager.Data{{
+								"key": "key1",
+							}},
+						},
+						{
+							Action: "agent-client.set-keys.use-key.request.failed",
+							Error:  errors.New("use key error"),
+							Data: []lager.Data{{
+								"key": "key1",
+							}},
+						},
+					}))
 				})
 			})
 		})
@@ -274,6 +713,14 @@ var _ = Describe("AgentClient", func() {
 		It("leaves the cluster", func() {
 			Expect(client.Leave()).To(Succeed())
 			Expect(consulRPCClient.LeaveCallCount()).To(Equal(1))
+			Expect(logger.Messages).To(ConsistOf([]fakes.LoggerMessage{
+				{
+					Action: "agent-client.leave.leave.request",
+				},
+				{
+					Action: "agent-client.leave.leave.response",
+				},
+			}))
 		})
 
 		Context("when RPCClient.leave returns an error", func() {
@@ -282,6 +729,15 @@ var _ = Describe("AgentClient", func() {
 
 				Expect(client.Leave()).To(MatchError("leave error"))
 				Expect(consulRPCClient.LeaveCallCount()).To(Equal(1))
+				Expect(logger.Messages).To(ConsistOf([]fakes.LoggerMessage{
+					{
+						Action: "agent-client.leave.leave.request",
+					},
+					{
+						Action: "agent-client.leave.leave.request.failed",
+						Error:  errors.New("leave error"),
+					},
+				}))
 			})
 		})
 
@@ -290,6 +746,12 @@ var _ = Describe("AgentClient", func() {
 				client.ConsulRPCClient = nil
 
 				Expect(client.Leave()).To(MatchError("consul rpc client is nil"))
+				Expect(logger.Messages).To(ConsistOf([]fakes.LoggerMessage{
+					{
+						Action: "agent-client.leave.nil-rpc-client",
+						Error:  errors.New("consul rpc client is nil"),
+					},
+				}))
 			})
 		})
 	})
