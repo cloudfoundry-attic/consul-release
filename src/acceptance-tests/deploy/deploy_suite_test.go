@@ -15,7 +15,7 @@ import (
 
 func TestDeploy(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Deploy Suite")
+	RunSpecs(t, "deploy")
 }
 
 var (
@@ -36,13 +36,19 @@ var (
 var _ = BeforeSuite(func() {
 	goPath = helpers.SetupGoPath()
 	gemfilePath := helpers.SetupFastBosh()
-	config = helpers.LoadConfig()
+
+	configPath, err := helpers.ConfigPath()
+	Expect(err).NotTo(HaveOccurred())
+
+	config, err = helpers.LoadConfig(configPath)
+	Expect(err).NotTo(HaveOccurred())
+
 	boshOperationTimeout := helpers.GetBoshOperationTimeout(config)
 	bosh = helpers.NewBosh(gemfilePath, goPath, config.BoshTarget, boshOperationTimeout)
 
 	consulManifestGeneration = filepath.Join(goPath, "scripts", "generate-consul-deployment-manifest")
 
-	err := os.Chdir(goPath)
+	err = os.Chdir(goPath)
 	Expect(err).ToNot(HaveOccurred())
 
 	directorUUIDStub = bosh.TargetDeployment()

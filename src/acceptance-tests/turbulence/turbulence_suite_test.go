@@ -16,7 +16,7 @@ import (
 
 func TestTurbulence(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Turbulence Suite")
+	RunSpecs(t, "turbulence")
 }
 
 var (
@@ -39,7 +39,13 @@ var (
 var _ = BeforeSuite(func() {
 	goPath = helpers.SetupGoPath()
 	gemfilePath := helpers.SetupFastBosh()
-	config = helpers.LoadConfig()
+
+	configPath, err := helpers.ConfigPath()
+	Expect(err).NotTo(HaveOccurred())
+
+	config, err = helpers.LoadConfig(configPath)
+	Expect(err).NotTo(HaveOccurred())
+
 	boshOperationTimeout := helpers.GetBoshOperationTimeout(config)
 
 	bosh = helpers.NewBosh(gemfilePath, goPath, config.BoshTarget, boshOperationTimeout)
@@ -49,7 +55,7 @@ var _ = BeforeSuite(func() {
 
 	directorUUIDStub = bosh.TargetDeployment()
 
-	err := os.Chdir(goPath)
+	err = os.Chdir(goPath)
 	Expect(err).ToNot(HaveOccurred())
 
 	uploadBoshCpiRelease()

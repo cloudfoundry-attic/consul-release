@@ -179,6 +179,7 @@ The full set of config parameters is explained below:
 * `iaas_settings_consul_stub_path` (required) Stub containing iaas settings for the consul deployment.
 * `iaas_settings_turbulence_stub_path` (required for turbulence tests) Stub containing iaas setting for the turbulence deployment.
 * `turbulence_properties_stub_path` (required for turbulence tests) Stub containing property overrides for the turbulence deployment.
+* `turbulence_release_location` (required for turbulence tests) Location of the turbulence release to use for the tests (version 0.4 or higher required).
 * `cpi_release_location` (required for turbulence tests) CPI for the current BOSH director being used to deploy tests with (version 28 or higher required).
 * `cpi_release_name` (required for turbulence tests) Name for the `cpi_release_location` parameter
 * `bosh_operation_timeout` (optional) Time to wait for BOSH commands to exit before erroring out. (default time is 5 min if not specified)
