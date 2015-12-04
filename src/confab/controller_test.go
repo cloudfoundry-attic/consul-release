@@ -1,12 +1,12 @@
 package confab_test
 
 import (
-	"bytes"
 	"confab"
 	"confab/fakes"
 	"errors"
-	"log"
 	"time"
+
+	"github.com/pivotal-golang/lager"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -18,11 +18,12 @@ var _ = Describe("controller", func() {
 		agentRunner *fakes.AgentRunner
 		agentClient *fakes.AgentClient
 		controller  confab.Controller
-		logBuffer   *bytes.Buffer
+		logger      *fakes.Logger
 	)
 
 	BeforeEach(func() {
 		clock = &fakes.Clock{}
+		logger = &fakes.Logger{}
 
 		agentClient = &fakes.AgentClient{}
 		agentClient.VerifyJoinedCalls.Returns.Errors = []error{nil}
@@ -31,8 +32,6 @@ var _ = Describe("controller", func() {
 		agentRunner = &fakes.AgentRunner{}
 		agentRunner.RunCalls.Returns.Errors = []error{nil}
 
-		logBuffer = &bytes.Buffer{}
-
 		controller = confab.Controller{
 			AgentClient:    agentClient,
 			AgentRunner:    agentRunner,
@@ -40,19 +39,26 @@ var _ = Describe("controller", func() {
 			SyncRetryDelay: 10 * time.Millisecond,
 			SyncRetryClock: clock,
 			EncryptKeys:    []string{"key 1", "key 2", "key 3"},
-			Logger:         log.New(logBuffer, "[Test]", 0),
+			Logger:         logger,
 		}
 	})
 
 	Describe("BootAgent", func() {
-		It("launches the consul agent", func() {
+		It("launches the consul agent and confirms that it joined the cluster", func() {
 			Expect(controller.BootAgent()).To(Succeed())
 			Expect(agentRunner.RunCalls.CallCount).To(Equal(1))
-		})
-
-		It("checks that the agent has joined a cluster", func() {
-			Expect(controller.BootAgent()).To(Succeed())
 			Expect(agentClient.VerifyJoinedCalls.CallCount).To(Equal(1))
+			Expect(logger.Messages).To(ContainSequence([]fakes.LoggerMessage{
+				{
+					Action: "controller.boot-agent.run",
+				},
+				{
+					Action: "controller.boot-agent.verify-joined",
+				},
+				{
+					Action: "controller.boot-agent.success",
+				},
+			}))
 		})
 
 		Context("when starting the agent fails", func() {
@@ -62,6 +68,15 @@ var _ = Describe("controller", func() {
 				Expect(controller.BootAgent()).To(MatchError("some error"))
 				Expect(agentRunner.RunCalls.CallCount).To(Equal(1))
 				Expect(agentClient.VerifyJoinedCalls.CallCount).To(Equal(0))
+				Expect(logger.Messages).To(ContainSequence([]fakes.LoggerMessage{
+					{
+						Action: "controller.boot-agent.run",
+					},
+					{
+						Action: "controller.boot-agent.run.failed",
+						Error:  errors.New("some error"),
+					},
+				}))
 			})
 		})
 
@@ -76,6 +91,17 @@ var _ = Describe("controller", func() {
 				Expect(agentClient.VerifyJoinedCalls.CallCount).To(Equal(10))
 				Expect(clock.SleepCall.CallCount).To(Equal(9))
 				Expect(clock.SleepCall.Receives.Duration).To(Equal(10 * time.Millisecond))
+				Expect(logger.Messages).To(ContainSequence([]fakes.LoggerMessage{
+					{
+						Action: "controller.boot-agent.run",
+					},
+					{
+						Action: "controller.boot-agent.verify-joined",
+					},
+					{
+						Action: "controller.boot-agent.success",
+					},
+				}))
 			})
 		})
 
@@ -91,18 +117,39 @@ var _ = Describe("controller", func() {
 				Expect(agentClient.VerifyJoinedCalls.CallCount).To(Equal(10))
 
 				Expect(agentClient.VerifySyncedCalls.CallCount).To(Equal(0))
+
+				Expect(logger.Messages).To(ContainSequence([]fakes.LoggerMessage{
+					{
+						Action: "controller.boot-agent.run",
+					},
+					{
+						Action: "controller.boot-agent.verify-joined",
+					},
+					{
+						Action: "controller.boot-agent.verify-joined.failed",
+						Error:  errors.New("the final error"),
+					},
+				}))
 			})
 		})
 	})
 
 	Describe("StopAgent", func() {
-		It("tells client to leave the cluster", func() {
+		It("tells client to leave the cluster and waits for the agent to stop", func() {
 			controller.StopAgent()
 			Expect(agentClient.LeaveCall.CallCount).To(Equal(1))
-		})
-		It("waits for the agent to stop", func() {
-			controller.StopAgent()
 			Expect(agentRunner.WaitCall.CallCount).To(Equal(1))
+			Expect(logger.Messages).To(ContainSequence([]fakes.LoggerMessage{
+				{
+					Action: "controller.stop-agent.leave",
+				},
+				{
+					Action: "controller.stop-agent.wait",
+				},
+				{
+					Action: "controller.stop-agent.success",
+				},
+			}))
 		})
 
 		Context("when the agent client Leave() returns an error", func() {
@@ -113,11 +160,24 @@ var _ = Describe("controller", func() {
 			It("tells the runner to stop the agent", func() {
 				controller.StopAgent()
 				Expect(agentRunner.StopCall.CallCount).To(Equal(1))
-			})
-
-			It("logs the error", func() {
-				controller.StopAgent()
-				Expect(logBuffer.String()).To(ContainSubstring("leave error"))
+				Expect(logger.Messages).To(ContainSequence([]fakes.LoggerMessage{
+					{
+						Action: "controller.stop-agent.leave",
+					},
+					{
+						Action: "controller.stop-agent.leave.failed",
+						Error:  errors.New("leave error"),
+					},
+					{
+						Action: "controller.stop-agent.stop",
+					},
+					{
+						Action: "controller.stop-agent.wait",
+					},
+					{
+						Action: "controller.stop-agent.success",
+					},
+				}))
 			})
 
 			Context("when agent runner Stop() returns an error", func() {
@@ -127,7 +187,28 @@ var _ = Describe("controller", func() {
 
 				It("logs the error", func() {
 					controller.StopAgent()
-					Expect(logBuffer.String()).To(ContainSubstring("stop error"))
+					Expect(logger.Messages).To(ContainSequence([]fakes.LoggerMessage{
+						{
+							Action: "controller.stop-agent.leave",
+						},
+						{
+							Action: "controller.stop-agent.leave.failed",
+							Error:  errors.New("leave error"),
+						},
+						{
+							Action: "controller.stop-agent.stop",
+						},
+						{
+							Action: "controller.stop-agent.stop.failed",
+							Error:  errors.New("stop error"),
+						},
+						{
+							Action: "controller.stop-agent.wait",
+						},
+						{
+							Action: "controller.stop-agent.success",
+						},
+					}))
 				})
 			})
 		})
@@ -139,26 +220,44 @@ var _ = Describe("controller", func() {
 
 			It("logs the error", func() {
 				controller.StopAgent()
-				Expect(logBuffer.String()).To(ContainSubstring("wait error"))
+				Expect(logger.Messages).To(ContainSequence([]fakes.LoggerMessage{
+					{
+						Action: "controller.stop-agent.leave",
+					},
+					{
+						Action: "controller.stop-agent.wait",
+					},
+					{
+						Action: "controller.stop-agent.wait.failed",
+						Error:  errors.New("wait error"),
+					},
+					{
+						Action: "controller.stop-agent.success",
+					},
+				}))
 			})
 		})
 	})
 
 	Describe("ConfigureServer", func() {
-		It("does not launch the consul agent", func() {
-			Expect(controller.ConfigureServer()).To(Succeed())
-			Expect(agentRunner.RunCalls.CallCount).To(Equal(0))
-		})
-
-		It("does not check that the agent has joined a cluster", func() {
-			Expect(controller.ConfigureServer()).To(Succeed())
-			Expect(agentClient.VerifyJoinedCalls.CallCount).To(Equal(0))
-		})
-
 		Context("when it is not the last node in the cluster", func() {
 			It("does not check that it is synced", func() {
 				Expect(controller.ConfigureServer()).To(Succeed())
 				Expect(agentClient.VerifySyncedCalls.CallCount).To(Equal(0))
+				Expect(logger.Messages).To(ContainSequence([]fakes.LoggerMessage{
+					{
+						Action: "controller.configure-server.is-last-node",
+					},
+					{
+						Action: "controller.configure-server.set-keys",
+						Data: []lager.Data{{
+							"keys": []string{"key 1", "key 2", "key 3"},
+						}},
+					},
+					{
+						Action: "controller.configure-server.success",
+					},
+				}))
 			})
 		})
 
@@ -169,6 +268,20 @@ var _ = Describe("controller", func() {
 					"key 1",
 					"key 2",
 					"key 3",
+				}))
+				Expect(logger.Messages).To(ContainSequence([]fakes.LoggerMessage{
+					{
+						Action: "controller.configure-server.is-last-node",
+					},
+					{
+						Action: "controller.configure-server.set-keys",
+						Data: []lager.Data{{
+							"keys": []string{"key 1", "key 2", "key 3"},
+						}},
+					},
+					{
+						Action: "controller.configure-server.success",
+					},
 				}))
 			})
 
@@ -181,6 +294,24 @@ var _ = Describe("controller", func() {
 						"key 2",
 						"key 3",
 					}))
+					Expect(logger.Messages).To(ContainSequence([]fakes.LoggerMessage{
+						{
+							Action: "controller.configure-server.is-last-node",
+						},
+						{
+							Action: "controller.configure-server.set-keys",
+							Data: []lager.Data{{
+								"keys": []string{"key 1", "key 2", "key 3"},
+							}},
+						},
+						{
+							Action: "controller.configure-server.set-keys.failed",
+							Error:  errors.New("oh noes"),
+							Data: []lager.Data{{
+								"keys": []string{"key 1", "key 2", "key 3"},
+							}},
+						},
+					}))
 				})
 			})
 
@@ -192,6 +323,14 @@ var _ = Describe("controller", func() {
 				It("does not set keys", func() {
 					Expect(controller.ConfigureServer()).To(Succeed())
 					Expect(agentClient.SetKeysCall.Receives.Keys).To(BeNil())
+					Expect(logger.Messages).To(ContainSequence([]fakes.LoggerMessage{
+						{
+							Action: "controller.configure-server.is-last-node",
+						},
+						{
+							Action: "controller.configure-server.success",
+						},
+					}))
 				})
 			})
 
@@ -203,6 +342,16 @@ var _ = Describe("controller", func() {
 				It("returns an error", func() {
 					Expect(controller.ConfigureServer()).To(MatchError("encrypt keys cannot be empty if ssl is enabled"))
 					Expect(agentClient.SetKeysCall.Receives.Keys).To(BeNil())
+
+					Expect(logger.Messages).To(ContainSequence([]fakes.LoggerMessage{
+						{
+							Action: "controller.configure-server.is-last-node",
+						},
+						{
+							Action: "controller.configure-server.no-encrypt-keys",
+							Error:  errors.New("encrypt keys cannot be empty if ssl is enabled"),
+						},
+					}))
 				})
 			})
 		})
@@ -215,6 +364,24 @@ var _ = Describe("controller", func() {
 			It("checks that it is synced", func() {
 				Expect(controller.ConfigureServer()).To(Succeed())
 				Expect(agentClient.VerifySyncedCalls.CallCount).To(Equal(1))
+
+				Expect(logger.Messages).To(ContainSequence([]fakes.LoggerMessage{
+					{
+						Action: "controller.configure-server.is-last-node",
+					},
+					{
+						Action: "controller.configure-server.verify-synced",
+					},
+					{
+						Action: "controller.configure-server.set-keys",
+						Data: []lager.Data{{
+							"keys": []string{"key 1", "key 2", "key 3"},
+						}},
+					},
+					{
+						Action: "controller.configure-server.success",
+					},
+				}))
 			})
 
 			Context("verifying sync fails at first but later succeeds", func() {
@@ -228,6 +395,24 @@ var _ = Describe("controller", func() {
 					Expect(agentClient.VerifySyncedCalls.CallCount).To(Equal(10))
 					Expect(clock.SleepCall.CallCount).To(Equal(9))
 					Expect(clock.SleepCall.Receives.Duration).To(Equal(10 * time.Millisecond))
+
+					Expect(logger.Messages).To(ContainSequence([]fakes.LoggerMessage{
+						{
+							Action: "controller.configure-server.is-last-node",
+						},
+						{
+							Action: "controller.configure-server.verify-synced",
+						},
+						{
+							Action: "controller.configure-server.set-keys",
+							Data: []lager.Data{{
+								"keys": []string{"key 1", "key 2", "key 3"},
+							}},
+						},
+						{
+							Action: "controller.configure-server.success",
+						},
+					}))
 				})
 			})
 
@@ -242,6 +427,19 @@ var _ = Describe("controller", func() {
 					Expect(controller.ConfigureServer()).To(MatchError("the final error"))
 					Expect(agentClient.VerifySyncedCalls.CallCount).To(Equal(10))
 					Expect(agentClient.SetKeysCall.Receives.Keys).To(BeNil())
+
+					Expect(logger.Messages).To(ContainSequence([]fakes.LoggerMessage{
+						{
+							Action: "controller.configure-server.is-last-node",
+						},
+						{
+							Action: "controller.configure-server.verify-synced",
+						},
+						{
+							Action: "controller.configure-server.verify-synced.failed",
+							Error:  errors.New("the final error"),
+						},
+					}))
 				})
 			})
 
@@ -251,6 +449,15 @@ var _ = Describe("controller", func() {
 					Expect(controller.ConfigureServer()).To(MatchError("some error"))
 					Expect(agentClient.VerifySyncedCalls.CallCount).To(Equal(0))
 					Expect(agentClient.SetKeysCall.Receives.Keys).To(BeNil())
+					Expect(logger.Messages).To(ContainSequence([]fakes.LoggerMessage{
+						{
+							Action: "controller.configure-server.is-last-node",
+						},
+						{
+							Action: "controller.configure-server.is-last-node.failed",
+							Error:  errors.New("some error"),
+						},
+					}))
 				})
 			})
 		})

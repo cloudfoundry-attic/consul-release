@@ -1,6 +1,7 @@
 package confab
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -9,6 +10,8 @@ import (
 	"strconv"
 	"syscall"
 	"time"
+
+	"github.com/pivotal-golang/lager"
 )
 
 type AgentRunner struct {
@@ -18,6 +21,7 @@ type AgentRunner struct {
 	Stdout    io.Writer
 	Stderr    io.Writer
 	Recursors []string
+	Logger    logger
 	cmd       *exec.Cmd
 }
 
@@ -42,11 +46,15 @@ func isRunningProcess(pidFilePath string) bool {
 
 func (r *AgentRunner) Run() error {
 	if isRunningProcess(r.PIDFile) {
-		return fmt.Errorf("consul_agent is already running, please stop it first")
+		err := fmt.Errorf("consul_agent is already running, please stop it first")
+		r.Logger.Error("agent-runner.run.consul-already-running", err)
+		return err
 	}
 
 	if _, err := os.Stat(r.ConfigDir); os.IsNotExist(err) {
-		return fmt.Errorf("Config dir does not exist: %s", r.ConfigDir)
+		err := fmt.Errorf("config dir does not exist: %s", r.ConfigDir)
+		r.Logger.Error("agent-runner.run.config-dir-missing", err)
+		return err
 	}
 
 	args := []string{
@@ -62,18 +70,37 @@ func (r *AgentRunner) Run() error {
 	r.cmd.Stdout = r.Stdout
 	r.cmd.Stderr = r.Stderr
 
+	r.Logger.Info("agent-runner.run.start", lager.Data{
+		"cmd":  r.Path,
+		"args": args,
+	})
 	err := r.cmd.Start()
 	if err != nil {
+		r.Logger.Error("agent-runner.run.start.failed", errors.New(err.Error()), lager.Data{
+			"cmd":  r.Path,
+			"args": args,
+		})
 		return err
 	}
 
+	r.Logger.Info("agent-runner.run.write-pidfile", lager.Data{
+		"pid":  r.cmd.Process.Pid,
+		"path": r.PIDFile,
+	})
+
 	err = ioutil.WriteFile(r.PIDFile, []byte(fmt.Sprintf("%d", r.cmd.Process.Pid)), 0644)
 	if err != nil {
-		return fmt.Errorf("error writing PID file: %s", err)
+		err = fmt.Errorf("error writing PID file: %s", err)
+		r.Logger.Error("agent-runner.run.write-pidfile.failed", err, lager.Data{
+			"pid":  r.cmd.Process.Pid,
+			"path": r.PIDFile,
+		})
+		return err
 	}
 
 	go r.cmd.Wait() // reap child process if it dies
 
+	r.Logger.Info("agent-runner.run.success")
 	return nil
 }
 
@@ -97,31 +124,59 @@ func (r *AgentRunner) getProcess() (*os.Process, error) {
 }
 
 func (r *AgentRunner) Wait() error {
+	r.Logger.Info("agent-runner.wait.get-process")
+
 	process, err := r.getProcess()
 	if err != nil {
+		r.Logger.Error("agent-runner.wait.get-process.failed", errors.New(err.Error()))
 		return err
 	}
 
+	r.Logger.Info("agent-runner.wait.get-process.result", lager.Data{
+		"pid": process.Pid,
+	})
+
+	r.Logger.Info("agent-runner.wait.signal", lager.Data{
+		"pid": process.Pid,
+	})
+
 	for {
 		err = process.Signal(syscall.Signal(0))
-		if err != nil {
-			return nil
+		if err == nil {
+			time.Sleep(10 * time.Millisecond)
+			continue
 		}
-		time.Sleep(10 * time.Millisecond)
+
+		break
 	}
+
+	r.Logger.Info("agent-runner.wait.success")
 	return nil
 }
 
 func (r *AgentRunner) Stop() error {
+	r.Logger.Info("agent-runner.stop.get-process")
+
 	process, err := r.getProcess()
 	if err != nil {
+		r.Logger.Error("agent-runner.stop.get-process.failed", errors.New(err.Error()))
 		return err
 	}
+
+	r.Logger.Info("agent-runner.stop.get-process.result", lager.Data{
+		"pid": process.Pid,
+	})
+
+	r.Logger.Info("agent-runner.stop.signal", lager.Data{
+		"pid": process.Pid,
+	})
 
 	err = process.Signal(syscall.Signal(syscall.SIGKILL))
 	if err != nil {
+		r.Logger.Error("agent-runner.stop.signal.failed", err)
 		return err
 	}
 
+	r.Logger.Info("agent-runner.stop.success")
 	return nil
 }

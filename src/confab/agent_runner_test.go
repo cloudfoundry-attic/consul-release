@@ -3,7 +3,9 @@ package confab_test
 import (
 	"bytes"
 	"confab"
+	"confab/fakes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"math/rand"
@@ -11,6 +13,8 @@ import (
 	"path/filepath"
 	"strconv"
 	"syscall"
+
+	"github.com/pivotal-golang/lager"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -62,6 +66,7 @@ func processIsRunning(runner confab.AgentRunner) bool {
 var _ = Describe("AgentRunner", func() {
 	var (
 		runner confab.AgentRunner
+		logger *fakes.Logger
 	)
 
 	BeforeEach(func() {
@@ -75,11 +80,14 @@ var _ = Describe("AgentRunner", func() {
 		os.Remove(pidFile.Name()) // so that the pid file doesn't exist at all
 		pidFileName := pidFile.Name()
 
+		logger = &fakes.Logger{}
+
 		runner = confab.AgentRunner{
 			Path:      pathToFakeProcess,
 			ConfigDir: configDir,
 			Recursors: []string{"8.8.8.8", "10.0.2.3"},
 			PIDFile:   pidFileName,
+			Logger:    logger,
 			// Stdout:    os.Stdout,  // uncomment this to see output from test agent
 			// Stderr:    os.Stderr,
 		}
@@ -90,23 +98,50 @@ var _ = Describe("AgentRunner", func() {
 		os.RemoveAll(runner.ConfigDir)
 	})
 
-	Describe("stop", func() {
+	Describe("Stop", func() {
 		It("kills the process", func() {
-			By("launching the process, configured to spin")
-			Expect(ioutil.WriteFile(filepath.Join(runner.ConfigDir, "options.json"), []byte(`{ "WaitForHUP": true }`), 0600)).To(Succeed())
-			Expect(runner.Run()).To(Succeed())
+			By("launching the process, configured to spin", func() {
+				Expect(ioutil.WriteFile(filepath.Join(runner.ConfigDir, "options.json"), []byte(`{ "WaitForHUP": true }`), 0600)).To(Succeed())
+				Expect(runner.Run()).To(Succeed())
+			})
 
-			By("waiting for the process to start enough that it has ignored signals")
-			Eventually(func() error {
-				_, err := os.Stat(filepath.Join(runner.ConfigDir, "fake-output.json"))
-				return err
-			}).Should(Succeed())
+			By("waiting for the process to start enough that it has ignored signals", func() {
+				Eventually(func() error {
+					_, err := os.Stat(filepath.Join(runner.ConfigDir, "fake-output.json"))
+					return err
+				}).Should(Succeed())
+			})
 
-			By("calling stop")
-			Expect(runner.Stop()).To(Succeed())
+			By("calling stop", func() {
+				pid, err := getPID(runner)
+				Expect(err).NotTo(HaveOccurred())
 
-			By("checking that the process no longer exists")
-			Eventually(func() bool { return processIsRunning(runner) }).Should(BeFalse())
+				Expect(runner.Stop()).To(Succeed())
+				Expect(logger.Messages).To(ContainSequence([]fakes.LoggerMessage{
+					{
+						Action: "agent-runner.stop.get-process",
+					},
+					{
+						Action: "agent-runner.stop.get-process.result",
+						Data: []lager.Data{{
+							"pid": pid,
+						}},
+					},
+					{
+						Action: "agent-runner.stop.signal",
+						Data: []lager.Data{{
+							"pid": pid,
+						}},
+					},
+					{
+						Action: "agent-runner.stop.success",
+					},
+				}))
+			})
+
+			By("checking that the process no longer exists", func() {
+				Eventually(func() bool { return processIsRunning(runner) }).Should(BeFalse())
+			})
 		})
 
 		Context("when the PID file cannot be read", func() {
@@ -115,6 +150,15 @@ var _ = Describe("AgentRunner", func() {
 
 				runner.PIDFile = "/tmp/nope-i-do-not-exist"
 				Expect(runner.Stop()).To(MatchError(ContainSubstring("no such file or directory")))
+				Expect(logger.Messages).To(ContainSequence([]fakes.LoggerMessage{
+					{
+						Action: "agent-runner.stop.get-process",
+					},
+					{
+						Action: "agent-runner.stop.get-process.failed",
+						Error:  errors.New("open /tmp/nope-i-do-not-exist: no such file or directory"),
+					},
+				}))
 			})
 		})
 
@@ -139,37 +183,67 @@ var _ = Describe("AgentRunner", func() {
 
 	Describe("stop & wait", func() {
 		It("stops the process / waits until it exits", func() {
-			By("launching the process, configured to spin")
-			Expect(ioutil.WriteFile(filepath.Join(runner.ConfigDir, "options.json"), []byte(`{ "WaitForHUP": true }`), 0600)).To(Succeed())
-			Expect(runner.Run()).To(Succeed())
+			By("launching the process, configured to spin", func() {
+				Expect(ioutil.WriteFile(filepath.Join(runner.ConfigDir, "options.json"), []byte(`{ "WaitForHUP": true }`), 0600)).To(Succeed())
+				Expect(runner.Run()).To(Succeed())
+			})
 
-			By("waiting for the process to get started")
-			Eventually(func() error {
-				_, err := os.Stat(filepath.Join(runner.ConfigDir, "fake-output.json"))
-				return err
-			}).Should(Succeed())
+			By("waiting for the process to get started", func() {
+				Eventually(func() error {
+					_, err := os.Stat(filepath.Join(runner.ConfigDir, "fake-output.json"))
+					return err
+				}).Should(Succeed())
+			})
 
-			By("checking that the process is running")
-			Expect(processIsRunning(runner)).To(BeTrue())
+			By("checking that the process is running", func() {
+				Expect(processIsRunning(runner)).To(BeTrue())
+			})
 
-			By("checking that Wait() blocks", func() {})
-			done := make(chan struct{})
-			go func() {
-				if err := runner.Wait(); err != nil {
-					panic(err)
-				}
-				done <- struct{}{}
-			}()
-			Consistently(done, "100ms").ShouldNot(Receive())
+			By("checking that Wait() blocks", func() {
+				done := make(chan struct{})
+				go func() {
+					if err := runner.Wait(); err != nil {
+						panic(err)
+					}
+					done <- struct{}{}
+				}()
+				Consistently(done, "100ms").ShouldNot(Receive())
+			})
 
-			By("stopping the process", func() {})
-			Expect(runner.Stop()).To(Succeed())
+			By("stopping the process", func() {
+				Expect(runner.Stop()).To(Succeed())
+			})
 
-			By("checking that Wait returns")
-			Expect(runner.Wait()).To(Succeed())
+			By("checking that Wait returns", func() {
+				pid, err := getPID(runner)
+				Expect(err).NotTo(HaveOccurred())
 
-			By("checking that the process no longer exists")
-			Eventually(func() bool { return processIsRunning(runner) }).Should(BeFalse())
+				Expect(runner.Wait()).To(Succeed())
+				Expect(logger.Messages).To(ContainSequence([]fakes.LoggerMessage{
+					{
+						Action: "agent-runner.wait.get-process",
+					},
+					{
+						Action: "agent-runner.wait.get-process.result",
+						Data: []lager.Data{{
+							"pid": pid,
+						}},
+					},
+					{
+						Action: "agent-runner.wait.signal",
+						Data: []lager.Data{{
+							"pid": pid,
+						}},
+					},
+					{
+						Action: "agent-runner.wait.success",
+					},
+				}))
+			})
+
+			By("checking that the process no longer exists", func() {
+				Eventually(func() bool { return processIsRunning(runner) }).Should(BeFalse())
+			})
 		})
 
 		Context("when the PID file cannot be read", func() {
@@ -178,6 +252,15 @@ var _ = Describe("AgentRunner", func() {
 
 				runner.PIDFile = "/tmp/nope-i-do-not-exist"
 				Expect(runner.Wait()).To(MatchError(ContainSubstring("no such file or directory")))
+				Expect(logger.Messages).To(ContainSequence([]fakes.LoggerMessage{
+					{
+						Action: "agent-runner.wait.get-process",
+					},
+					{
+						Action: "agent-runner.wait.get-process.failed",
+						Error:  errors.New("open /tmp/nope-i-do-not-exist: no such file or directory"),
+					},
+				}))
 			})
 		})
 
@@ -195,8 +278,36 @@ var _ = Describe("AgentRunner", func() {
 		It("writes the pid of the agent process to the pid file", func() {
 			Expect(runner.Run()).To(Succeed())
 
-			Expect(runner.Wait()).To(Succeed())
 			pid, err := getPID(runner)
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(logger.Messages).To(ContainSequence([]fakes.LoggerMessage{
+				{
+					Action: "agent-runner.run.start",
+					Data: []lager.Data{{
+						"cmd": runner.Path,
+						"args": []string{
+							"agent",
+							fmt.Sprintf("-config-dir=%s", runner.ConfigDir),
+							"-recursor=8.8.8.8",
+							"-recursor=10.0.2.3",
+						},
+					}},
+				},
+				{
+					Action: "agent-runner.run.write-pidfile",
+					Data: []lager.Data{{
+						"pid":  pid,
+						"path": runner.PIDFile,
+					}},
+				},
+				{
+					Action: "agent-runner.run.success",
+				},
+			}))
+
+			Expect(runner.Wait()).To(Succeed())
+			pid, err = getPID(runner)
 			Expect(err).NotTo(HaveOccurred())
 
 			outputs := getFakeAgentOutput(runner)
@@ -261,6 +372,12 @@ var _ = Describe("AgentRunner", func() {
 
 					Expect(runner.Run()).To(MatchError("consul_agent is already running, please stop it first"))
 					Expect(getFakeAgentOutput(runner).PID).To(Equal(0))
+					Expect(logger.Messages).To(ContainSequence([]fakes.LoggerMessage{
+						{
+							Action: "agent-runner.run.consul-already-running",
+							Error:  errors.New("consul_agent is already running, please stop it first"),
+						},
+					}))
 				})
 			})
 			Context("when the pid file points to a non-existent process", func() {
@@ -278,7 +395,6 @@ var _ = Describe("AgentRunner", func() {
 		Context("when writing the PID file errors", func() {
 			It("returns the error", func() {
 				Expect(ioutil.WriteFile(runner.PIDFile, []byte("some-pid"), 0100)).To(Succeed())
-
 				Expect(runner.Run()).To(MatchError(ContainSubstring("error writing PID file")))
 				Expect(runner.Run()).To(MatchError(ContainSubstring("permission denied")))
 			})
@@ -291,16 +407,50 @@ var _ = Describe("AgentRunner", func() {
 
 				_, err := os.Stat(runner.PIDFile)
 				Expect(err).To(HaveOccurred())
+				Expect(logger.Messages).To(ContainSequence([]fakes.LoggerMessage{
+					{
+						Action: "agent-runner.run.start",
+						Data: []lager.Data{{
+							"cmd": runner.Path,
+							"args": []string{
+								"agent",
+								fmt.Sprintf("-config-dir=%s", runner.ConfigDir),
+								"-recursor=8.8.8.8",
+								"-recursor=10.0.2.3",
+							},
+						}},
+					},
+					{
+						Action: "agent-runner.run.start.failed",
+						Error:  errors.New("fork/exec /tmp/not-a-thing-we-can-launch: no such file or directory"),
+						Data: []lager.Data{{
+							"cmd": runner.Path,
+							"args": []string{
+								"agent",
+								fmt.Sprintf("-config-dir=%s", runner.ConfigDir),
+								"-recursor=8.8.8.8",
+								"-recursor=10.0.2.3",
+							},
+						}},
+					},
+				}))
 			})
 		})
 
 		Context("when the ConfigDir is missing", func() {
 			It("returns an error immediately, without starting a process", func() {
 				runner.ConfigDir = fmt.Sprintf("/tmp/this-directory-does-not-existi-%x", rand.Int31())
-				Expect(runner.Run()).To(MatchError(ContainSubstring("Config dir does not exist")))
+				Expect(runner.Run()).To(MatchError(ContainSubstring("config dir does not exist")))
 
 				_, err := os.Stat(runner.PIDFile)
 				Expect(err).To(HaveOccurred())
+
+				Expect(logger.Messages).To(ContainSequence([]fakes.LoggerMessage{
+					{
+						Action: "agent-runner.run.config-dir-missing",
+						Error:  fmt.Errorf("config dir does not exist: %s", runner.ConfigDir),
+					},
+				}))
 			})
 		})
 	})

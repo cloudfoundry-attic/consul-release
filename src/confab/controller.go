@@ -2,8 +2,9 @@ package confab
 
 import (
 	"errors"
-	"log"
 	"time"
+
+	"github.com/pivotal-golang/lager"
 )
 
 type agentRunner interface {
@@ -32,19 +33,23 @@ type Controller struct {
 	SyncRetryClock clock
 	EncryptKeys    []string
 	SSLDisabled    bool
-	Logger         *log.Logger
+	Logger         logger
 }
 
 func (c Controller) BootAgent() error {
+	c.Logger.Info("controller.boot-agent.run")
 	err := c.AgentRunner.Run()
 	if err != nil {
+		c.Logger.Error("controller.boot-agent.run.failed", err)
 		return err
 	}
 
+	c.Logger.Info("controller.boot-agent.verify-joined")
 	for i := 1; i <= c.MaxRetries; i++ {
 		err := c.AgentClient.VerifyJoined()
 		if err != nil {
 			if i == c.MaxRetries {
+				c.Logger.Error("controller.boot-agent.verify-joined.failed", err)
 				return err
 			}
 
@@ -55,20 +60,25 @@ func (c Controller) BootAgent() error {
 		break
 	}
 
+	c.Logger.Info("controller.boot-agent.success")
 	return nil
 }
 
 func (c Controller) ConfigureServer() error {
+	c.Logger.Info("controller.configure-server.is-last-node")
 	lastNode, err := c.AgentClient.IsLastNode()
 	if err != nil {
+		c.Logger.Error("controller.configure-server.is-last-node.failed", err)
 		return err
 	}
 
 	if lastNode {
+		c.Logger.Info("controller.configure-server.verify-synced")
 		for i := 1; i <= c.MaxRetries; i++ {
 			err = c.AgentClient.VerifySynced()
 			if err != nil {
 				if i == c.MaxRetries {
+					c.Logger.Error("controller.configure-server.verify-synced.failed", err)
 					return err
 				}
 
@@ -82,34 +92,42 @@ func (c Controller) ConfigureServer() error {
 
 	if !c.SSLDisabled {
 		if len(c.EncryptKeys) == 0 {
-			return errors.New("encrypt keys cannot be empty if ssl is enabled")
+			err := errors.New("encrypt keys cannot be empty if ssl is enabled")
+			c.Logger.Error("controller.configure-server.no-encrypt-keys", err)
+			return err
 		}
+
+		c.Logger.Info("controller.configure-server.set-keys", lager.Data{
+			"keys": c.EncryptKeys,
+		})
 
 		err = c.AgentClient.SetKeys(c.EncryptKeys)
 		if err != nil {
+			c.Logger.Error("controller.configure-server.set-keys.failed", err, lager.Data{
+				"keys": c.EncryptKeys,
+			})
 			return err
 		}
 	}
 
+	c.Logger.Info("controller.configure-server.success")
 	return nil
 }
 
 func (c Controller) StopAgent() {
-	c.Logger.Printf("%s", "STOPAGENT: calling AgentClient.Leave()")
+	c.Logger.Info("controller.stop-agent.leave")
 	if err := c.AgentClient.Leave(); err != nil {
-		c.Logger.Printf("%s", err)
+		c.Logger.Error("controller.stop-agent.leave.failed", err)
 
-		c.Logger.Printf("%s", "STOPAGENT: calling AgentClient.Stop()")
+		c.Logger.Info("controller.stop-agent.stop")
 		if err = c.AgentRunner.Stop(); err != nil {
-			c.Logger.Printf("%s", err)
+			c.Logger.Error("controller.stop-agent.stop.failed", err)
 		}
-		c.Logger.Printf("%s", "STOPAGENT: called AgentClient.Stop()")
 	}
-	c.Logger.Printf("%s", "STOPAGENT: called AgentClient.Leave()")
 
-	c.Logger.Printf("%s", "STOPAGENT: calling AgentClient.Wait()")
+	c.Logger.Info("controller.stop-agent.wait")
 	if err := c.AgentRunner.Wait(); err != nil {
-		c.Logger.Printf("%s", err)
+		c.Logger.Error("controller.stop-agent.wait.failed", err)
 	}
-	c.Logger.Printf("%s", "STOPAGENT: called AgentClient.Wait()")
+	c.Logger.Info("controller.stop-agent.success")
 }

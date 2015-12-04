@@ -9,6 +9,8 @@ import (
 	"os/exec"
 	"time"
 
+	"github.com/pivotal-golang/lager"
+
 	"github.com/hashicorp/consul/api"
 	"github.com/hashicorp/consul/command/agent"
 	"github.com/pivotal-golang/clock"
@@ -70,6 +72,9 @@ func main() {
 		printUsageAndExit("\"pid-file\" cannot be empty", flagSet)
 	}
 
+	logger := lager.NewLogger("confab")
+	logger.RegisterSink(lager.NewWriterSink(os.Stdout, lager.INFO))
+
 	agentRunner := &confab.AgentRunner{
 		Path:      path,
 		PIDFile:   pidFile,
@@ -77,6 +82,7 @@ func main() {
 		Recursors: recursors,
 		Stdout:    os.Stdout,
 		Stderr:    os.Stderr,
+		Logger:    logger,
 	}
 
 	consulAPIClient, err := api.NewClient(api.DefaultConfig())
@@ -88,6 +94,7 @@ func main() {
 		ExpectedMembers: expectedMembers,
 		ConsulAPIAgent:  consulAPIClient.Agent(),
 		ConsulRPCClient: nil,
+		Logger:          logger,
 	}
 
 	controller = confab.Controller{
@@ -98,7 +105,7 @@ func main() {
 		SyncRetryClock: clock.NewClock(),
 		EncryptKeys:    encryptionKeys,
 		SSLDisabled:    sslDisabled,
-		Logger:         stdout,
+		Logger:         logger,
 	}
 
 	switch os.Args[1] {
