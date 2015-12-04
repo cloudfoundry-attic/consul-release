@@ -119,6 +119,18 @@ If using homebrew, these can be installed with:
 brew install consul go
 ```
 
+### Network setup
+
+#### BOSH-Lite
+
+Make sure you’ve run `bin/add-route`.
+This will setup some routing rules to give the tests access to the consul VMs.
+
+#### AWS
+
+You will want to run your tests from a VM within the same subnet as determined in your iaas-settings stub.
+This assumes you are using a private subnet within a VPC.
+
 ### Environment setup
 
 This repository assumes that it is the root of your `GOPATH`. You can set this up by doing the following:
