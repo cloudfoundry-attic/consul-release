@@ -1,98 +1,73 @@
 package deploy_test
 
 import (
-	"acceptance-tests/helpers"
-	"fmt"
+	"acceptance-tests/testing/bosh"
+	"acceptance-tests/testing/consul"
+	"acceptance-tests/testing/destiny"
+	"acceptance-tests/testing/helpers"
 
-	capi "github.com/hashicorp/consul/api"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/onsi/gomega/gexec"
 )
 
 var _ = Describe("Multiple Instance Rolling deploys", func() {
 	var (
-		consulManifest  *helpers.Manifest
-		consulServerIPs []string
-		runner          *helpers.AgentRunner
+		manifest  destiny.Manifest
+		kv        consul.KV
+		testKey   string
+		testValue string
 	)
 
 	BeforeEach(func() {
-		consulManifest = new(helpers.Manifest)
-		consulServerIPs = []string{}
+		guid, err := helpers.NewGUID()
+		Expect(err).NotTo(HaveOccurred())
 
-		bosh.GenerateAndSetDeploymentManifest(
-			consulManifest,
-			consulManifestGeneration,
-			directorUUIDStub,
-			helpers.InstanceCount3NodesStubPath,
-			helpers.PersistentDiskStubPath,
-			config.IAASSettingsConsulStubPath,
-			helpers.PropertyOverridesStubPath,
-			consulNameOverrideStub,
-		)
+		testKey = "consul-key-" + guid
+		testValue = "consul-value-" + guid
 
-		Expect(bosh.Command("-n", "deploy")).To(gexec.Exit(0))
-		Expect(len(consulManifest.Properties.Consul.Agent.Servers.Lans)).To(Equal(3))
+		manifest, kv, err = helpers.DeployConsulWithInstanceCount(2, client)
+		Expect(err).NotTo(HaveOccurred())
 
-		for _, elem := range consulManifest.Properties.Consul.Agent.Servers.Lans {
-			consulServerIPs = append(consulServerIPs, elem)
-		}
-
-		runner = helpers.NewAgentRunner(consulServerIPs, config.BindAddress)
-		runner.Start()
+		Eventually(func() ([]bosh.VM, error) {
+			return client.DeploymentVMs(manifest.Name)
+		}, "1m", "10s").Should(ConsistOf([]bosh.VM{
+			{"running"},
+			{"running"},
+		}))
 	})
 
 	AfterEach(func() {
-		By("delete deployment")
-		runner.Stop()
-		bosh.Command("-n", "delete", "deployment", consulDeployment)
+		err := client.DeleteDeployment(manifest.Name)
+		Expect(err).NotTo(HaveOccurred())
 	})
 
-	It("Saves data after a rolling deploy", func() {
-		By("setting a persistent value")
-		consatsClient := runner.NewClient()
+	It("saves data after a rolling deploy", func() {
+		By("setting a persistent value", func() {
+			err := kv.Set(testKey, testValue)
+			Expect(err).NotTo(HaveOccurred())
+		})
 
-		consatsKey := "consats-key"
-		consatsValue := []byte("consats-value")
+		By("deploying", func() {
+			manifest.Properties.Consul.ServerCert = "something different"
 
-		keyValueClient := consatsClient.KV()
+			yaml, err := manifest.ToYAML()
+			Expect(err).NotTo(HaveOccurred())
 
-		pair := &capi.KVPair{Key: consatsKey, Value: consatsValue}
-		_, err := keyValueClient.Put(pair, nil)
-		Expect(err).ToNot(HaveOccurred())
+			err = client.Deploy(yaml)
+			Expect(err).NotTo(HaveOccurred())
 
-		resultPair, _, err := keyValueClient.Get(consatsKey, nil)
-		Expect(err).ToNot(HaveOccurred())
-		Expect(resultPair.Value).To(Equal(consatsValue))
+			Eventually(func() ([]bosh.VM, error) {
+				return client.DeploymentVMs(manifest.Name)
+			}, "1m", "10s").Should(ConsistOf([]bosh.VM{
+				{"running"},
+				{"running"},
+			}))
+		})
 
-		// generate new stub that overwrites a property
-		consulStub := fmt.Sprintf(`---
-property_overrides:
-  consul:
-    server_cert: something different
-    require_ssl: false
-`)
-
-		consulRollingDeployStub := helpers.WriteStub(consulStub)
-
-		bosh.GenerateAndSetDeploymentManifest(
-			consulManifest,
-			consulManifestGeneration,
-			directorUUIDStub,
-			helpers.InstanceCount3NodesStubPath,
-			helpers.PersistentDiskStubPath,
-			config.IAASSettingsConsulStubPath,
-			consulRollingDeployStub,
-			consulNameOverrideStub,
-		)
-
-		By("deploying")
-		Expect(bosh.Command("-n", "deploy")).To(gexec.Exit(0))
-
-		By("reading the value from consul")
-		resultPair, _, err = keyValueClient.Get(consatsKey, nil)
-		Expect(err).ToNot(HaveOccurred())
-		Expect(resultPair.Value).To(Equal(consatsValue))
+		By("reading the value from consul", func() {
+			value, err := kv.Get(testKey)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(value).To(Equal(testValue))
+		})
 	})
 })

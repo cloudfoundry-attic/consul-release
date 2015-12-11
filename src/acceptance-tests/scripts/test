@@ -7,11 +7,8 @@ function main() {
 	local root_dir
 	root_dir=$(cd "${scripts_dir}/.." && pwd)
 
-	export GOPATH="${root_dir}:${GOPATH}"
+	export GO15VENDOREXPERIMENT=1
 	export PATH="${root_dir}/bin:${PATH}"
-
-	# Bosh-lite manifest generation should always work.
-	"${scripts_dir}/../../../scripts/generate-bosh-lite-manifest" > /dev/null
 
 	install_ginkgo "${root_dir}"
 	pushd "${root_dir}" > /dev/null
@@ -33,8 +30,8 @@ function install_ginkgo() {
 
 	mkdir -p "${dir}/src/github.com/onsi"
 	pushd "${dir}/src/github.com/onsi" > /dev/null
-		ln -s "${dir}/vendor/github.com/onsi/ginkgo"
-		go install github.com/onsi/ginkgo/ginkgo
+		ln -sf "${dir}/vendor/github.com/onsi/ginkgo"
+		GOPATH="${dir}" go install github.com/onsi/ginkgo/ginkgo
 	popd > /dev/null
 	rm "${dir}/src/github.com/onsi/ginkgo"
 }

@@ -1,0 +1,21 @@
+#!/bin/bash -exu
+
+CONSATS_DIR="/var/vcap/packages/acceptance-tests"
+
+export PATH="${PATH}:/var/vcap/packages/consul/bin"
+export GOROOT="$(readlink -nf /var/vcap/packages/golang1.5)"
+export GOPATH="${CONSATS_DIR}"
+export PATH="${GOROOT}/bin:${PATH}"
+export GO15VENDOREXPERIMENT=1
+
+export CONSATS_CONFIG=/tmp/config.json
+
+cat > $CONSATS_CONFIG <<EOF
+{
+  "bosh_target": "https://192.168.50.4:25555",
+  "bosh_username": "admin",
+  "bosh_password": "admin"
+}
+EOF
+
+bash -c "/var/vcap/packages/acceptance-tests/src/acceptance-tests/scripts/test"

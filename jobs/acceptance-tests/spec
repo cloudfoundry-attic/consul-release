@@ -1,0 +1,9 @@
+---
+name: acceptance-tests
+templates:
+  test.sh.erb: bin/run
+
+packages:
+ - acceptance-tests
+ - consul
+ - golang1.5

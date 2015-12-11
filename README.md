@@ -147,10 +147,12 @@ direnv allow
 
 ### Running the CONSATS
 
+#### Running locally
+
 Run all the tests with:
 
 ```
-CONSATS_CONFIG=[config_file.json] ./scripts/test_default
+CONSATS_CONFIG=[config_file.json] ./scripts/test
 ```
 
 Run a specific set of tests with:
@@ -159,7 +161,8 @@ Run a specific set of tests with:
 CONSATS_CONFIG=[config_file.json] ./scripts/test <some test packages>
 ```
 
-The `CONSATS_CONFIG` environment variable points to a configuration file which specifies the endpoint of the BOSH director and the path to your `iaas_settings` stub.
+The `CONSATS_CONFIG` environment variable points to a configuration file which specifies the endpoint of the BOSH director.
+When specifying location of the CONSATS_CONFIG, it must be an absolute path on the filesystem.
 
 See below for more information on the contents of this configuration file.
 
@@ -171,35 +174,22 @@ An example config json for BOSH-lite would look like:
 cat > integration_config.json << EOF
 {
   "bosh_target": "192.168.50.4",
-  "iaas_settings_consul_stub_path": "${PWD}/src/acceptance-tests/manifest-generation/bosh-lite-stubs/iaas-settings-consul.yml",
-  "iaas_settings_turbulence_stub_path": "${PWD}/src/acceptance-tests/manifest-generation/bosh-lite-stubs/iaas-settings-turbulence.yml",
-  "turbulence_properties_stub_path": "${PWD}/src/acceptance-tests/manifest-generation/bosh-lite-stubs/turbulence/property-overrides.yml",
-  "cpi_release_location": "https://bosh.io/d/github.com/cppforlife/bosh-warden-cpi-release?v=28",
-  "cpi_release_name": "bosh-warden-cpi",
-  "bind_address": "192.168.50.1",
-  "turbulence_release_location": "http://bosh.io/d/github.com/cppforlife/turbulence-release?v=0.4"
+  "bosh_username": "admin",
+  "bosh_password": "admin"
 }
 EOF
 export CONSATS_CONFIG=$PWD/integration_config.json
 ```
 
-NOTE: when specifying locations on the filesystem, it is best to provide an absolute path.
-
 The full set of config parameters is explained below:
 * `bosh_target` (required) Public BOSH IP address that will be used to host test environment.
-* `bind_address` (required) IP that the local consul node will use to connect to the cluster. See note below for info about bosh-lite
-* `iaas_settings_consul_stub_path` (required) Stub containing iaas settings for the consul deployment.
-* `iaas_settings_turbulence_stub_path` (required for turbulence tests) Stub containing iaas setting for the turbulence deployment.
-* `turbulence_properties_stub_path` (required for turbulence tests) Stub containing property overrides for the turbulence deployment.
-* `turbulence_release_location` (required for turbulence tests) Location of the turbulence release to use for the tests (version 0.4 or higher required).
-* `cpi_release_location` (required for turbulence tests) CPI for the current BOSH director being used to deploy tests with (version 28 or higher required).
-* `cpi_release_name` (required for turbulence tests) Name for the `cpi_release_location` parameter
-* `bosh_operation_timeout` (optional) Time to wait for BOSH commands to exit before erroring out. (default time is 5 min if not specified)
-* `turbulence_operation_timeout` (optional) Time to wait for Turbulence operations to succeed before erroring out. (default time is 5 min if not specified)
+* `bosh_username` (required) Username for the BOSH director login.
+* `bosh_password` (required) Password for the BOSH director login.
 
-Note: When running against bosh-lite the IP specified for `bind_address` must be in the 192.168.50.0/24 subnet. This is due how the consul agent and servers communicate 
-and determine whether a source is trusted. This differs from most bosh-lite networking where the 10.244.0.0/24 subnet is used.
+#### Running as BOSH errand
 
-Note: You must ensure that the stemcells specified in `iaas_settings_consul` and `iaas_settings_turbulence_stub_path` are already uploaded to the director at `bosh_target`.
-
-Note: The ruby `bundler` gem is used to install the correct version of the `bosh_cli`, as well as to decrease the `bosh` startup time. 
+The `acceptance-tests` BOSH errand assumes that the BOSH director has already uploaded the correct versions of the dependent releases.
+The required releases are:
+* [bosh-warden-cpi-release](http://bosh.io/releases/github.com/cppforlife/bosh-warden-cpi-release?version=28)
+* [turbulence-release](http://bosh.io/releases/github.com/cppforlife/turbulence-release?version=0.4)
+* [consul-release](http://bosh.io/releases/github.com/cloudfoundry-incubator/consul-release) or `bosh create release && bosh upload release`

@@ -1,0 +1,20 @@
+iaas_settings:
+  stemcell:
+    name: bosh-warden-boshlite-ubuntu-trusty-go_agent
+    version: latest
+  compilation_cloud_properties: {}
+  resource_pool_cloud_properties:
+    - name: consats
+      cloud_properties: {}
+
+  subnet_configs:
+    - name: consats
+      subnets:
+      - cloud_properties:
+          name: random
+        range: 10.244.6.0/24
+        reserved:
+        - 10.244.6.1
+        - 10.244.6.5
+        - 10.244.6.9
+        static: []

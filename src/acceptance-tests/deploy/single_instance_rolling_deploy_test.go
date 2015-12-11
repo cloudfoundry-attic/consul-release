@@ -1,106 +1,74 @@
 package deploy_test
 
 import (
-	"acceptance-tests/helpers"
-	"fmt"
+	"acceptance-tests/testing/bosh"
+	"acceptance-tests/testing/consul"
+	"acceptance-tests/testing/destiny"
+	"acceptance-tests/testing/helpers"
 
-	capi "github.com/hashicorp/consul/api"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/onsi/gomega/gexec"
 )
 
 var _ = Describe("Single Instance Rolling deploys", func() {
 	var (
-		consulManifest  *helpers.Manifest
-		consulServerIPs []string
-		runner          *helpers.AgentRunner
+		manifest  destiny.Manifest
+		kv        consul.KV
+		testKey   string
+		testValue string
 	)
 
 	BeforeEach(func() {
-		consulManifest = new(helpers.Manifest)
-		consulServerIPs = []string{}
+		guid, err := helpers.NewGUID()
+		Expect(err).NotTo(HaveOccurred())
 
-		bosh.GenerateAndSetDeploymentManifest(
-			consulManifest,
-			consulManifestGeneration,
-			directorUUIDStub,
-			helpers.InstanceCount1NodeStubPath,
-			helpers.PersistentDiskStubPath,
-			config.IAASSettingsConsulStubPath,
-			helpers.PropertyOverridesStubPath,
-			consulNameOverrideStub,
-		)
+		testKey = "consul-key-" + guid
+		testValue = "consul-value-" + guid
 
-		Expect(bosh.Command("-n", "deploy")).To(gexec.Exit(0))
-		Expect(len(consulManifest.Properties.Consul.Agent.Servers.Lans)).To(Equal(1))
+		manifest, kv, err = helpers.DeployConsulWithInstanceCount(1, client)
+		Expect(err).NotTo(HaveOccurred())
 
-		for _, elem := range consulManifest.Properties.Consul.Agent.Servers.Lans {
-			consulServerIPs = append(consulServerIPs, elem)
-		}
-
-		runner = helpers.NewAgentRunner(consulServerIPs, config.BindAddress)
-		runner.Start()
+		Eventually(func() ([]bosh.VM, error) {
+			return client.DeploymentVMs(manifest.Name)
+		}, "1m", "10s").Should(ConsistOf([]bosh.VM{
+			{"running"},
+		}))
 	})
 
 	AfterEach(func() {
-		By("delete deployment", func() {
-			runner.Stop()
-			bosh.Command("-n", "delete", "deployment", consulDeployment)
-		})
+		err := client.DeleteDeployment(manifest.Name)
+		Expect(err).NotTo(HaveOccurred())
 	})
 
-	It("Saves data after a rolling deploy", func() {
-		consatsKey := "consats-key"
-		consatsValue := []byte("consats-value")
-
+	It("saves data after a rolling deploy", func() {
 		By("setting a persistent value", func() {
-			consatsClient := runner.NewClient()
-			keyValueClient := consatsClient.KV()
-			pair := &capi.KVPair{Key: consatsKey, Value: consatsValue}
-			_, err := keyValueClient.Put(pair, nil)
-			Expect(err).ToNot(HaveOccurred())
-
-			resultPair, _, err := keyValueClient.Get(consatsKey, nil)
-			Expect(err).ToNot(HaveOccurred())
-			Expect(resultPair.Value).To(Equal(consatsValue))
-
-			// generate new stub that overwrites a property
-			consulStub := fmt.Sprintf(`---
-property_overrides:
-  consul:
-    server_cert: something different
-    require_ssl: false
-`)
-
-			consulRollingDeployStub := helpers.WriteStub(consulStub)
-
-			bosh.GenerateAndSetDeploymentManifest(
-				consulManifest,
-				consulManifestGeneration,
-				directorUUIDStub,
-				helpers.InstanceCount1NodeStubPath,
-				helpers.PersistentDiskStubPath,
-				config.IAASSettingsConsulStubPath,
-				consulRollingDeployStub,
-				consulNameOverrideStub,
-			)
+			err := kv.Set(testKey, testValue)
+			Expect(err).NotTo(HaveOccurred())
 		})
 
 		By("deploying", func() {
-			Expect(bosh.Command("-n", "deploy")).To(gexec.Exit(0))
+			manifest.Properties.Consul.ServerCert = "something different"
+
+			yaml, err := manifest.ToYAML()
+			Expect(err).NotTo(HaveOccurred())
+
+			yaml, err = client.ResolveManifestVersions(yaml)
+			Expect(err).NotTo(HaveOccurred())
+
+			err = client.Deploy(yaml)
+			Expect(err).NotTo(HaveOccurred())
+
+			Eventually(func() ([]bosh.VM, error) {
+				return client.DeploymentVMs(manifest.Name)
+			}, "1m", "10s").Should(ConsistOf([]bosh.VM{
+				{"running"},
+			}))
 		})
 
 		By("reading the value from consul", func() {
-			runner.Stop()
-			runner = helpers.NewAgentRunner(consulServerIPs, config.BindAddress)
-			runner.Start()
-
-			consatsClient := runner.NewClient()
-			keyValueClient := consatsClient.KV()
-			resultPair, _, err := keyValueClient.Get(consatsKey, nil)
-			Expect(err).ToNot(HaveOccurred())
-			Expect(resultPair.Value).To(Equal(consatsValue))
+			value, err := kv.Get(testKey)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(value).To(Equal(testValue))
 		})
 	})
 })

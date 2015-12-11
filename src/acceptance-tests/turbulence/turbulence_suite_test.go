@@ -1,15 +1,15 @@
 package turbulence_test
 
 import (
-	"acceptance-tests/helpers"
-	"fmt"
-	"os"
-	"path/filepath"
+	"acceptance-tests/testing/bosh"
+	"acceptance-tests/testing/destiny"
+	"acceptance-tests/testing/helpers"
+	"acceptance-tests/testing/turbulence"
 
-	"github.com/cloudfoundry-incubator/cf-test-helpers/generator"
+	"fmt"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	. "github.com/onsi/gomega/gexec"
 
 	"testing"
 )
@@ -20,119 +20,70 @@ func TestTurbulence(t *testing.T) {
 }
 
 var (
-	goPath             string
-	config             helpers.Config
-	bosh               *helpers.Bosh
-	turbulenceManifest *helpers.Manifest
+	config helpers.Config
+	client bosh.Client
 
-	consulRelease    = fmt.Sprintf("consul-%s", generator.RandomName())
-	consulDeployment = consulRelease
-
-	turbulenceDeployment = fmt.Sprintf("turb-%s", generator.RandomName())
-
-	directorUUIDStub, consulNameOverrideStub, turbulenceNameOverrideStub string
-
-	turbulenceManifestGeneration string
-	consulManifestGeneration     string
+	turbulenceManifest destiny.Manifest
+	turbulenceClient   turbulence.Client
 )
 
 var _ = BeforeSuite(func() {
-	goPath = helpers.SetupGoPath()
-	gemfilePath := helpers.SetupFastBosh()
-
 	configPath, err := helpers.ConfigPath()
 	Expect(err).NotTo(HaveOccurred())
 
 	config, err = helpers.LoadConfig(configPath)
 	Expect(err).NotTo(HaveOccurred())
 
-	boshOperationTimeout := helpers.GetBoshOperationTimeout(config)
+	client = bosh.NewClient(bosh.Config{
+		URL:              config.BOSHTarget,
+		Username:         config.BOSHUsername,
+		Password:         config.BOSHPassword,
+		AllowInsecureSSL: true,
+	})
 
-	bosh = helpers.NewBosh(gemfilePath, goPath, config.BoshTarget, boshOperationTimeout)
+	By("deploying turbulence", func() {
+		uuid, err := client.DirectorUUID()
+		Expect(err).NotTo(HaveOccurred())
 
-	turbulenceManifestGeneration = filepath.Join(goPath, "scripts", "generate_turbulence_deployment_manifest")
-	consulManifestGeneration = filepath.Join(goPath, "scripts", "generate-consul-deployment-manifest")
+		guid, err := helpers.NewGUID()
+		Expect(err).NotTo(HaveOccurred())
 
-	directorUUIDStub = bosh.TargetDeployment()
+		turbulenceManifest = destiny.NewTurbulence(destiny.Config{
+			DirectorUUID: uuid,
+			Name:         "turbulence-" + guid,
+		})
 
-	err = os.Chdir(goPath)
-	Expect(err).ToNot(HaveOccurred())
+		yaml, err := turbulenceManifest.ToYAML()
+		Expect(err).NotTo(HaveOccurred())
 
-	uploadBoshCpiRelease()
+		yaml, err = client.ResolveManifestVersions(yaml)
+		Expect(err).NotTo(HaveOccurred())
 
-	createTurbulenceStub()
+		turbulenceManifest, err = destiny.FromYAML(yaml)
+		Expect(err).NotTo(HaveOccurred())
 
-	turbulenceManifest = new(helpers.Manifest)
-	bosh.GenerateAndSetDeploymentManifest(
-		turbulenceManifest,
-		turbulenceManifestGeneration,
-		directorUUIDStub,
-		helpers.TurbulenceInstanceCountOverridesStubPath,
-		helpers.TurbulencePersistentDiskOverridesStubPath,
-		config.IAASSettingsTurbulenceStubPath,
-		config.TurbulencePropertiesStubPath,
-		turbulenceNameOverrideStub,
-	)
+		err = client.Deploy(yaml)
+		Expect(err).NotTo(HaveOccurred())
 
-	By("uploading the turbulence release")
-	Expect(bosh.Command("-n", "upload", "release", config.TurbulenceReleaseLocation)).To(Exit(0))
+		Eventually(func() ([]bosh.VM, error) {
+			return client.DeploymentVMs(turbulenceManifest.Name)
+		}, "1m", "10s").Should(ConsistOf([]bosh.VM{
+			{"running"},
+		}))
+	})
 
-	By("deploying the turbulence release")
-	Expect(bosh.Command("-n", "deploy")).To(Exit(0))
+	By("preparing turbulence client", func() {
+		turbulenceUrl := fmt.Sprintf("https://turbulence:%s@%s:8080",
+			turbulenceManifest.Properties.TurbulenceAPI.Password,
+			turbulenceManifest.Jobs[0].Networks[0].StaticIPs[0])
 
-	createConsulStub()
-	bosh.CreateAndUploadRelease(filepath.Join(goPath, "..", ".."), consulRelease)
+		turbulenceClient = turbulence.NewClient(turbulenceUrl)
+	})
 })
 
 var _ = AfterSuite(func() {
-	By("delete consul release")
-	bosh.Command("-n", "delete", "release", consulRelease)
-
-	By("delete turbulence deployment")
-	bosh.Command("-n", "delete", "deployment", turbulenceDeployment)
-
-	By("deleting the cpi release")
-	bosh.Command("-n", "delete", "release", config.CPIReleaseName)
-
-	By("deleting the turbulence release")
-	bosh.Command("-n", "delete", "release", config.TurbulenceReleaseName)
-
+	By("deleting the turbulence deployment", func() {
+		err := client.DeleteDeployment(turbulenceManifest.Name)
+		Expect(err).NotTo(HaveOccurred())
+	})
 })
-
-func createConsulStub() {
-	By("creating the consul overrides stub")
-	consulStub := fmt.Sprintf(`---
-name_overrides:
-  release_name: %s
-  deployment_name: %s
-`, consulRelease, consulDeployment)
-
-	consulNameOverrideStub = helpers.WriteStub(consulStub)
-}
-
-func createTurbulenceStub() {
-	By("creating the turbulence overrides stub")
-	turbulenceStub := fmt.Sprintf(`---
-name_overrides:
-  deployment_name: %s
-  turbulence:
-    release_name: %s
-  warden_cpi:
-    release_name: %s
-`, turbulenceDeployment, config.TurbulenceReleaseName, config.CPIReleaseName)
-
-	turbulenceNameOverrideStub = helpers.WriteStub(turbulenceStub)
-}
-
-func uploadBoshCpiRelease() {
-	By("Downloading remote release")
-	if config.CPIReleaseLocation == "" {
-		panic("missing required cpi release location")
-	}
-
-	if config.CPIReleaseName == "" {
-		panic("missing required warden_cpi release name")
-	}
-
-	Expect(bosh.Command("-n", "upload", "release", config.CPIReleaseLocation, "--skip-if-exists")).To(Exit(0))
-}

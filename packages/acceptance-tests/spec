@@ -1,0 +1,5 @@
+---
+name: acceptance-tests
+
+files:
+ - acceptance-tests/**/*

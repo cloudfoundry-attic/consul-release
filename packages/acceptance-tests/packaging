@@ -1,0 +1,4 @@
+#!/bin/bash -exu
+
+mkdir -p "${BOSH_INSTALL_TARGET}/src/acceptance-tests/"
+cp -R ${PWD}/acceptance-tests/* "${BOSH_INSTALL_TARGET}/src/acceptance-tests/"

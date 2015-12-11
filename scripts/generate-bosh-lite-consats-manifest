@@ -1,0 +1,33 @@
+#!/bin/bash -eux
+
+function main() {
+  local root_dir
+  root_dir="$(cd "$(dirname "${0}")/.." && pwd)"
+
+  local manifest_generation_dir
+  manifest_generation_dir="${root_dir}/manifest-generation"
+
+  local stubs_dir
+  stubs_dir="${manifest_generation_dir}/bosh-lite-stubs"
+
+  local deployment_manifest
+  deployment_manifest="${root_dir}/bosh-lite/consats.yml"
+
+  local iaas_settings_stub
+  iaas_settings_stub="${manifest_generation_dir}/bosh-lite-stubs/iaas-settings-consats.yml"
+
+  pushd "${root_dir}" > /dev/null
+    mkdir -p bosh-lite
+
+    spiff merge \
+      "${manifest_generation_dir}/misc-templates/bosh.yml" \
+      <(echo "director_uuid: $(bosh status --uuid)") \
+      "${manifest_generation_dir}/consats.yml" \
+      "${iaas_settings_stub}" \
+      > "${deployment_manifest}"
+
+      bosh deployment "${deployment_manifest}"
+  popd > /dev/null
+}
+
+main
