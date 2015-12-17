@@ -20,8 +20,9 @@ type Server struct {
 
 	OutputWriter *OutputWriter
 
-	Members  []string
-	DidLeave bool
+	Members           []string
+	DidLeave          bool
+	FailStatsEndpoint bool
 }
 
 func (s *Server) Serve() error {
@@ -54,6 +55,9 @@ func (s *Server) ServeHTTP() {
 		for _, member := range s.Members {
 			members = append(members, api.AgentMember{
 				Addr: member,
+				Tags: map[string]string{
+					"role": "consul",
+				},
 			})
 		}
 		json.NewEncoder(w).Encode(members)
@@ -69,12 +73,22 @@ func (s *Server) ServeHTTP() {
 
 func (s *Server) ServeTCP() {
 	mockAgent := new(FakeAgentBackend)
+	if s.FailStatsEndpoint {
+		mockAgent.StatsReturns(map[string]map[string]string{
+			"raft": {
+				"commit_index":   "5",
+				"last_log_index": "2",
+			},
+		})
+	}
+
 	agentRPCServer := agent.NewAgentRPC(mockAgent, s.TCPListener, os.Stderr, agent.NewLogWriter(42))
 
 	var (
 		useKeyCallCount     int
 		installKeyCallCount int
 		leaveCallCount      int
+		statsCallCount      int
 	)
 
 	for {
@@ -90,6 +104,9 @@ func (s *Server) ServeTCP() {
 			s.OutputWriter.LeaveCalled()
 			agentRPCServer.Shutdown()
 			s.DidLeave = true
+		case mockAgent.StatsCallCount() > statsCallCount:
+			statsCallCount++
+			s.OutputWriter.StatsCalled()
 		}
 
 		time.Sleep(10 * time.Millisecond)

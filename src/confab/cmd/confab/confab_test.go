@@ -97,6 +97,7 @@ var _ = Describe("confab", func() {
 				"LeaveCallCount":      float64(1),
 				"UseKeyCallCount":     float64(0),
 				"InstallKeyCallCount": float64(0),
+				"StatsCallCount":      float64(0),
 			}))
 		})
 
@@ -148,6 +149,7 @@ var _ = Describe("confab", func() {
 					"LeaveCallCount":      float64(1),
 					"UseKeyCallCount":     float64(0),
 					"InstallKeyCallCount": float64(0),
+					"StatsCallCount":      float64(1),
 				}))
 			})
 		})
@@ -185,6 +187,7 @@ var _ = Describe("confab", func() {
 					"LeaveCallCount":      float64(0),
 					"UseKeyCallCount":     float64(0),
 					"InstallKeyCallCount": float64(0),
+					"StatsCallCount":      float64(0),
 				}))
 			})
 		})
@@ -229,6 +232,44 @@ var _ = Describe("confab", func() {
 					"LeaveCallCount":      float64(0),
 					"InstallKeyCallCount": float64(2),
 					"UseKeyCallCount":     float64(1),
+					"StatsCallCount":      float64(1),
+				}))
+			})
+
+			It("checks sync state up the the max retry count", func() {
+				options := []byte(`{"Members": ["member-1", "member-2", "member-3"], "FailStatsEndpoint": true}`)
+				Expect(ioutil.WriteFile(filepath.Join(consulConfigDir, "options.json"), options, 0600)).To(Succeed())
+
+				cmd := exec.Command(pathToConfab,
+					"start",
+					"--server=true",
+					"--pid-file", pidFile.Name(),
+					"--agent-path", pathToFakeAgent,
+					"--consul-config-dir", consulConfigDir,
+					"--expected-member", "member-1",
+					"--expected-member", "member-2",
+					"--expected-member", "member-3",
+					"--encryption-key", "key-1",
+					"--encryption-key", "key-2",
+					"--sync-max-retries", "3",
+				)
+				Eventually(cmd.Run, COMMAND_TIMEOUT, COMMAND_TIMEOUT).ShouldNot(Succeed())
+
+				pid, err := getPID(pidFile.Name())
+				Expect(err).NotTo(HaveOccurred())
+
+				Eventually(func() (map[string]interface{}, error) {
+					return fakeAgentOutput(consulConfigDir)
+				}, "2s").Should(Equal(map[string]interface{}{
+					"PID": float64(pid),
+					"Args": []interface{}{
+						"agent",
+						fmt.Sprintf("-config-dir=%s", consulConfigDir),
+					},
+					"LeaveCallCount":      float64(1),
+					"InstallKeyCallCount": float64(0),
+					"UseKeyCallCount":     float64(0),
+					"StatsCallCount":      float64(3),
 				}))
 			})
 		})
@@ -285,6 +326,7 @@ var _ = Describe("confab", func() {
 				"LeaveCallCount":      float64(1),
 				"InstallKeyCallCount": float64(2),
 				"UseKeyCallCount":     float64(1),
+				"StatsCallCount":      float64(1),
 			}))
 		})
 	})

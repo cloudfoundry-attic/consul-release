@@ -49,8 +49,9 @@ func main() {
 
 	// read input options provided to us by the test
 	var inputOptions struct {
-		Members       []string
-		FailRPCServer bool
+		Members           []string
+		FailRPCServer     bool
+		FailStatsEndpoint bool
 	}
 
 	if optionsBytes, err := ioutil.ReadFile(filepath.Join(configDir, "options.json")); err == nil {
@@ -63,10 +64,11 @@ func main() {
 	}
 
 	server := &Server{
-		HTTPAddr:     "127.0.0.1:8500",
-		TCPAddr:      tcpAddr,
-		Members:      inputOptions.Members,
-		OutputWriter: ow,
+		HTTPAddr:          "127.0.0.1:8500",
+		TCPAddr:           tcpAddr,
+		Members:           inputOptions.Members,
+		OutputWriter:      ow,
+		FailStatsEndpoint: inputOptions.FailStatsEndpoint,
 	}
 
 	err := server.Serve()

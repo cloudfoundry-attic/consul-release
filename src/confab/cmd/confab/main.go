@@ -37,6 +37,7 @@ var (
 	expectedMembers stringSlice
 	encryptionKeys  stringSlice
 	recursors       stringSlice
+	maxRetries      int
 
 	stdout = log.New(os.Stdout, "", 0)
 	stderr = log.New(os.Stderr, "", 0)
@@ -54,6 +55,7 @@ func main() {
 	flagSet.Var(&expectedMembers, "expected-member", "address `list` of the expected members, may be specified multiple times")
 	flagSet.Var(&encryptionKeys, "encryption-key", "`key` used to encrypt consul traffic, may be specified multiple times")
 	flagSet.Var(&recursors, "recursor", "specifies the address of an upstream DNS `server`, may be specified multiple times")
+	flagSet.IntVar(&maxRetries, "sync-max-retries", 60, "specifies the maximum `number` of sync retry attempts")
 
 	if len(os.Args) < 2 {
 		printUsageAndExit("invalid number of arguments", flagSet)
@@ -100,7 +102,7 @@ func main() {
 	controller = confab.Controller{
 		AgentRunner:    agentRunner,
 		AgentClient:    agentClient,
-		MaxRetries:     10,
+		MaxRetries:     maxRetries,
 		SyncRetryDelay: 1 * time.Second,
 		SyncRetryClock: clock.NewClock(),
 		EncryptKeys:    encryptionKeys,
