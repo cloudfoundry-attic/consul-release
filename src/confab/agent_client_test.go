@@ -389,6 +389,9 @@ var _ = Describe("AgentClient", func() {
 	})
 
 	Describe("SetKeys", func() {
+		encryptedKey1 := "5v4WCjw2FyuezPYYUvo0zA=="
+		encryptedKey2 := "gcC8kpXH4sUwLaxtiz2mBw=="
+
 		BeforeEach(func() {
 			consulRPCClient.InstallKeyReturns(nil)
 			consulRPCClient.UseKeyReturns(nil)
@@ -401,15 +404,15 @@ var _ = Describe("AgentClient", func() {
 			Expect(consulRPCClient.InstallKeyCallCount()).To(Equal(2))
 
 			key := consulRPCClient.InstallKeyArgsForCall(0)
-			Expect(key).To(Equal("key1"))
+			Expect(key).To(Equal(encryptedKey1))
 
 			key = consulRPCClient.InstallKeyArgsForCall(1)
-			Expect(key).To(Equal("key2"))
+			Expect(key).To(Equal(encryptedKey2))
 
 			Expect(consulRPCClient.UseKeyCallCount()).To(Equal(1))
 
 			key = consulRPCClient.UseKeyArgsForCall(0)
-			Expect(key).To(Equal("key1"))
+			Expect(key).To(Equal(encryptedKey1))
 
 			Expect(consulRPCClient.RemoveKeyCallCount()).To(Equal(0))
 
@@ -426,37 +429,37 @@ var _ = Describe("AgentClient", func() {
 				{
 					Action: "agent-client.set-keys.install-key.request",
 					Data: []lager.Data{{
-						"key": "key1",
+						"key": encryptedKey1,
 					}},
 				},
 				{
 					Action: "agent-client.set-keys.install-key.response",
 					Data: []lager.Data{{
-						"key": "key1",
+						"key": encryptedKey1,
 					}},
 				},
 				{
 					Action: "agent-client.set-keys.install-key.request",
 					Data: []lager.Data{{
-						"key": "key2",
+						"key": encryptedKey2,
 					}},
 				},
 				{
 					Action: "agent-client.set-keys.install-key.response",
 					Data: []lager.Data{{
-						"key": "key2",
+						"key": encryptedKey2,
 					}},
 				},
 				{
 					Action: "agent-client.set-keys.use-key.request",
 					Data: []lager.Data{{
-						"key": "key1",
+						"key": encryptedKey1,
 					}},
 				},
 				{
 					Action: "agent-client.set-keys.use-key.response",
 					Data: []lager.Data{{
-						"key": "key1",
+						"key": encryptedKey1,
 					}},
 				},
 				{
@@ -517,37 +520,37 @@ var _ = Describe("AgentClient", func() {
 					{
 						Action: "agent-client.set-keys.install-key.request",
 						Data: []lager.Data{{
-							"key": "key1",
+							"key": encryptedKey1,
 						}},
 					},
 					{
 						Action: "agent-client.set-keys.install-key.response",
 						Data: []lager.Data{{
-							"key": "key1",
+							"key": encryptedKey1,
 						}},
 					},
 					{
 						Action: "agent-client.set-keys.install-key.request",
 						Data: []lager.Data{{
-							"key": "key2",
+							"key": encryptedKey2,
 						}},
 					},
 					{
 						Action: "agent-client.set-keys.install-key.response",
 						Data: []lager.Data{{
-							"key": "key2",
+							"key": encryptedKey2,
 						}},
 					},
 					{
 						Action: "agent-client.set-keys.use-key.request",
 						Data: []lager.Data{{
-							"key": "key1",
+							"key": encryptedKey1,
 						}},
 					},
 					{
 						Action: "agent-client.set-keys.use-key.response",
 						Data: []lager.Data{{
-							"key": "key1",
+							"key": encryptedKey1,
 						}},
 					},
 					{
@@ -650,14 +653,14 @@ var _ = Describe("AgentClient", func() {
 						{
 							Action: "agent-client.set-keys.install-key.request",
 							Data: []lager.Data{{
-								"key": "key1",
+								"key": encryptedKey1,
 							}},
 						},
 						{
 							Action: "agent-client.set-keys.install-key.request.failed",
 							Error:  errors.New("install key error"),
 							Data: []lager.Data{{
-								"key": "key1",
+								"key": encryptedKey1,
 							}},
 						},
 					}))
@@ -682,26 +685,26 @@ var _ = Describe("AgentClient", func() {
 						{
 							Action: "agent-client.set-keys.install-key.request",
 							Data: []lager.Data{{
-								"key": "key1",
+								"key": encryptedKey1,
 							}},
 						},
 						{
 							Action: "agent-client.set-keys.install-key.response",
 							Data: []lager.Data{{
-								"key": "key1",
+								"key": encryptedKey1,
 							}},
 						},
 						{
 							Action: "agent-client.set-keys.use-key.request",
 							Data: []lager.Data{{
-								"key": "key1",
+								"key": encryptedKey1,
 							}},
 						},
 						{
 							Action: "agent-client.set-keys.use-key.request.failed",
 							Error:  errors.New("use key error"),
 							Data: []lager.Data{{
-								"key": "key1",
+								"key": encryptedKey1,
 							}},
 						},
 					}))

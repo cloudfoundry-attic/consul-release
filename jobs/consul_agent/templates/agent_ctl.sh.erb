@@ -1,21 +1,5 @@
 #!/bin/bash -exu
 
-<%
-  require 'openssl'
-  require 'base64'
-  def string_to_encrypt_key(string)
-    return string if is_already_key?(string)
-    Base64.encode64(OpenSSL::PKCS5.pbkdf2_hmac_sha1(string, "", 20000, 16)).strip
-  end
-
-  def is_already_key?(string)
-    return false unless string.length == 24
-    Base64.strict_decode64(string).length == 16
-  rescue
-    false
-  end
-%>
-
 LOG_DIR=/var/vcap/sys/log/consul_agent
 RUN_DIR=/var/vcap/sys/run/consul_agent
 DATA_DIR=/var/vcap/store/consul_agent
@@ -157,7 +141,7 @@ EOF
     <% end %> \
     <% if_p("consul.encrypt_keys") do |encrypt_keys| %> \
       <% encrypt_keys.each do |key| %> \
-        -encryption-key <%= string_to_encrypt_key(key) %> \
+        -encryption-key <%= key %> \
       <% end %> \
     <% end %> \
     <% if !p("consul.require_ssl") %> -ssl-disabled <% end %> \

@@ -1,7 +1,11 @@
 package confab
 
 import (
+	"crypto/sha1"
+	"encoding/base64"
 	"errors"
+
+	"golang.org/x/crypto/pbkdf2"
 
 	"github.com/hashicorp/consul/api"
 	"github.com/pivotal-golang/lager"
@@ -162,6 +166,12 @@ func (c AgentClient) SetKeys(keys []string) error {
 
 	c.Logger.Info("agent-client.set-keys.list-keys.request")
 
+	var encryptedKeys []string
+	for _, key := range keys {
+		encryptedKeys = append(encryptedKeys,
+			base64.StdEncoding.EncodeToString(pbkdf2.Key([]byte(key), []byte(""), 20000, 16, sha1.New)))
+	}
+
 	existingKeys, err := c.ConsulRPCClient.ListKeys()
 	if err != nil {
 		c.Logger.Error("agent-client.set-keys.list-keys.request.failed", err)
@@ -173,7 +183,7 @@ func (c AgentClient) SetKeys(keys []string) error {
 	})
 
 	for _, key := range existingKeys {
-		if !containsString(keys, key) {
+		if !containsString(encryptedKeys, key) {
 			c.Logger.Info("agent-client.set-keys.remove-key.request", lager.Data{
 				"key": key,
 			})
@@ -190,7 +200,7 @@ func (c AgentClient) SetKeys(keys []string) error {
 		}
 	}
 
-	for _, key := range keys {
+	for _, key := range encryptedKeys {
 		c.Logger.Info("agent-client.set-keys.install-key.request", lager.Data{
 			"key": key,
 		})
@@ -209,19 +219,19 @@ func (c AgentClient) SetKeys(keys []string) error {
 	}
 
 	c.Logger.Info("agent-client.set-keys.use-key.request", lager.Data{
-		"key": keys[0],
+		"key": encryptedKeys[0],
 	})
 
-	err = c.ConsulRPCClient.UseKey(keys[0])
+	err = c.ConsulRPCClient.UseKey(encryptedKeys[0])
 	if err != nil {
 		c.Logger.Error("agent-client.set-keys.use-key.request.failed", err, lager.Data{
-			"key": keys[0],
+			"key": encryptedKeys[0],
 		})
 		return err
 	}
 
 	c.Logger.Info("agent-client.set-keys.use-key.response", lager.Data{
-		"key": keys[0],
+		"key": encryptedKeys[0],
 	})
 
 	c.Logger.Info("agent-client.set-keys.success")
