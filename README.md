@@ -8,8 +8,10 @@ This is a [BOSH](http://bosh.io) release for [consul](https://github.com/hashico
 
 ###Contents
 
-1. [Deploying](#deploying)
-2. [Running Tests](#running-tests)
+* [Deploying](#deploying)
+* [Confab Tests](#confab-tests)
+* [Acceptance Tests](#acceptance-tests)
+* [Known Issues](#known-issues)
 
 ## Deploying
 
@@ -188,8 +190,36 @@ The full set of config parameters is explained below:
 
 #### Running as BOSH errand
 
+##### Dependencies
+
 The `acceptance-tests` BOSH errand assumes that the BOSH director has already uploaded the correct versions of the dependent releases.
 The required releases are:
 * [bosh-warden-cpi-release](http://bosh.io/releases/github.com/cppforlife/bosh-warden-cpi-release?version=28)
 * [turbulence-release](http://bosh.io/releases/github.com/cppforlife/turbulence-release?version=0.4)
 * [consul-release](http://bosh.io/releases/github.com/cloudfoundry-incubator/consul-release) or `bosh create release && bosh upload release`
+
+##### Generating a consats deployment manifest
+
+We provide a set of scripts and templates to generate a simple deployment manifest. This manifest is designed to work on a local BOSH-lite.
+
+In order to automatically generate a manifest you must have installed [spiff](https://github.com/cloudfoundry-incubator/spiff).
+Once installed, manifests can be generated using `./scripts/generate-bosh-lite-consats-manifest` with the provided stubs:
+
+##### Deploying the errand
+
+NOTE: the manifest generation script will set the deployment for the BOSH CLI.
+
+Run `bosh deploy`.
+
+##### Running the errand
+
+Run `bosh run errand acceptance-tests`
+
+## Known Issues
+
+### 1-node clusters
+
+It is not recommended to run a 1-node cluster in any "production" environment.
+Having a 1-node cluster does not ensure any amount of data persistence.
+
+WARNING: Scaling your cluster to or from a 1-node configuration may result in data loss.
