@@ -24,6 +24,7 @@ var _ = Describe("confab", func() {
 		tempDir         string
 		consulConfigDir string
 		pidFile         *os.File
+		configFile      *os.File
 	)
 
 	BeforeEach(func() {
@@ -37,17 +38,46 @@ var _ = Describe("confab", func() {
 		pidFile, err = ioutil.TempFile(tempDir, "fake-pid-file")
 		Expect(err).NotTo(HaveOccurred())
 
+		configFile, err = ioutil.TempFile(tempDir, "config-file")
+		Expect(err).NotTo(HaveOccurred())
+
+		configData, err := json.Marshal(map[string]interface{}{
+			"node": map[string]interface{}{
+				"name":  "my-node",
+				"index": 3,
+			},
+			"agent": map[string]interface{}{
+				"services": map[string]interface{}{
+					"cloud_controller": map[string]interface{}{
+						"checks": []map[string]string{{
+							"name":     "do_something",
+							"script":   "/var/vcap/jobs/cloudcontroller/bin/do_something",
+							"interval": "5m",
+						}},
+					},
+					"router": map[string]interface{}{
+						"name": "gorouter",
+					},
+				},
+			},
+		})
+
+		_, err = configFile.Write(configData)
+		Expect(err).NotTo(HaveOccurred())
+
 		options := []byte(`{"Members": ["member-1", "member-2", "member-3"]}`)
 		err = ioutil.WriteFile(filepath.Join(consulConfigDir, "options.json"), options, 0600)
 		Expect(err).NotTo(HaveOccurred())
-
 	})
 
 	AfterEach(func() {
 		killProcessAttachedToPort(8400)
 		killProcessAttachedToPort(8500)
 
-		err := os.RemoveAll(tempDir)
+		err := os.Chmod(consulConfigDir, os.ModePerm)
+		Expect(err).NotTo(HaveOccurred())
+
+		err = os.RemoveAll(tempDir)
 		Expect(err).NotTo(HaveOccurred())
 	})
 
@@ -64,6 +94,7 @@ var _ = Describe("confab", func() {
 				"--expected-member", "member-3",
 				"--recursor", "8.8.8.8",
 				"--recursor", "10.0.2.3",
+				"--config-file", configFile.Name(),
 			)
 			Eventually(start.Run, COMMAND_TIMEOUT, COMMAND_TIMEOUT).Should(Succeed())
 
@@ -80,6 +111,7 @@ var _ = Describe("confab", func() {
 				"--expected-member", "member-1",
 				"--expected-member", "member-2",
 				"--expected-member", "member-3",
+				"--config-file", configFile.Name(),
 			)
 			Eventually(stop.Run, COMMAND_TIMEOUT, COMMAND_TIMEOUT).Should(Succeed())
 
@@ -99,6 +131,41 @@ var _ = Describe("confab", func() {
 				"InstallKeyCallCount": float64(0),
 				"StatsCallCount":      float64(0),
 			}))
+
+			serviceConfig, err := ioutil.ReadFile(filepath.Join(consulConfigDir, "service-cloud_controller.json"))
+			Expect(err).NotTo(HaveOccurred())
+			Expect(string(serviceConfig)).To(MatchJSON(`{
+				"service": {
+					"name": "cloud-controller",
+					"check": {
+						"name": "dns_health_check",
+						"script": "/var/vcap/jobs/cloud_controller/bin/dns_health_check",
+						"interval": "3s"
+					},
+					"checks": [
+						{
+							"name": "do_something",
+							"script": "/var/vcap/jobs/cloudcontroller/bin/do_something",
+							"interval": "5m"
+						}
+					],
+					"tags": ["my-node-3"]
+				}
+			}`))
+
+			serviceConfig, err = ioutil.ReadFile(filepath.Join(consulConfigDir, "service-router.json"))
+			Expect(err).NotTo(HaveOccurred())
+			Expect(string(serviceConfig)).To(MatchJSON(`{
+				"service": {
+					"name": "gorouter",
+					"check": {
+						"name": "dns_health_check",
+						"script": "/var/vcap/jobs/router/bin/dns_health_check",
+						"interval": "3s"
+					},
+					"tags": ["my-node-3"]
+				}
+			}`))
 		})
 
 		Context("when ssl-disabled is set to true", func() {
@@ -115,6 +182,7 @@ var _ = Describe("confab", func() {
 					"--encryption-key", "key-1",
 					"--encryption-key", "key-2",
 					"--ssl-disabled",
+					"--config-file", configFile.Name(),
 				)
 				Eventually(start.Run, COMMAND_TIMEOUT, COMMAND_TIMEOUT).Should(Succeed())
 
@@ -134,6 +202,7 @@ var _ = Describe("confab", func() {
 					"--encryption-key", "key-1",
 					"--encryption-key", "key-2",
 					"--ssl-disabled",
+					"--config-file", configFile.Name(),
 				)
 				Eventually(stop.Run, COMMAND_TIMEOUT, COMMAND_TIMEOUT).Should(Succeed())
 
@@ -171,6 +240,7 @@ var _ = Describe("confab", func() {
 					"--expected-member", "member-1",
 					"--expected-member", "member-2",
 					"--expected-member", "member-3",
+					"--config-file", configFile.Name(),
 				)
 				Eventually(cmd.Run, COMMAND_TIMEOUT, COMMAND_TIMEOUT).Should(Succeed())
 
@@ -214,6 +284,7 @@ var _ = Describe("confab", func() {
 					"--expected-member", "member-3",
 					"--encryption-key", "key-1",
 					"--encryption-key", "key-2",
+					"--config-file", configFile.Name(),
 				)
 				Eventually(cmd.Run, COMMAND_TIMEOUT, COMMAND_TIMEOUT).Should(Succeed())
 
@@ -236,7 +307,7 @@ var _ = Describe("confab", func() {
 				}))
 			})
 
-			It("checks sync state up the the max retry count", func() {
+			It("checks sync state up to the max retry count", func() {
 				options := []byte(`{"Members": ["member-1", "member-2", "member-3"], "FailStatsEndpoint": true}`)
 				Expect(ioutil.WriteFile(filepath.Join(consulConfigDir, "options.json"), options, 0600)).To(Succeed())
 
@@ -252,6 +323,7 @@ var _ = Describe("confab", func() {
 					"--encryption-key", "key-1",
 					"--encryption-key", "key-2",
 					"--sync-max-retries", "3",
+					"--config-file", configFile.Name(),
 				)
 				Eventually(cmd.Run, COMMAND_TIMEOUT, COMMAND_TIMEOUT).ShouldNot(Succeed())
 
@@ -293,6 +365,7 @@ var _ = Describe("confab", func() {
 				"--expected-member", "member-3",
 				"--encryption-key", "key-1",
 				"--encryption-key", "key-2",
+				"--config-file", configFile.Name(),
 			)
 			Eventually(cmd.Run, COMMAND_TIMEOUT, COMMAND_TIMEOUT).Should(Succeed())
 			Eventually(func() error {
@@ -306,6 +379,7 @@ var _ = Describe("confab", func() {
 			cmd = exec.Command(pathToConfab,
 				"stop",
 				"--pid-file", pidFile.Name(),
+				"--config-file", configFile.Name(),
 				"--agent-path", pathToFakeAgent,
 			)
 			Eventually(cmd.Run, COMMAND_TIMEOUT, COMMAND_TIMEOUT).Should(Succeed())
@@ -351,6 +425,8 @@ var _ = Describe("confab", func() {
 					"address list of the expected members",
 					"-pid-file file",
 					"path to consul PID file",
+					"-config-file",
+					"specifies the config file",
 				}
 				for _, line := range usageLines {
 					Expect(buffer).To(ContainSubstring(line))
@@ -364,6 +440,7 @@ var _ = Describe("confab", func() {
 					"--server=false",
 					"--agent-path", pathToFakeAgent,
 					"--pid-file", pidFile.Name(),
+					"--config-file", configFile.Name(),
 				)
 				buffer := bytes.NewBuffer([]byte{})
 				cmd.Stderr = buffer
@@ -378,7 +455,8 @@ var _ = Describe("confab", func() {
 				cmd := exec.Command(pathToConfab, "banana",
 					"--agent-path", pathToFakeAgent,
 					"--pid-file", pidFile.Name(),
-					"--consul-config-dir", consulConfigDir)
+					"--consul-config-dir", consulConfigDir,
+					"--config-file", configFile.Name())
 				buffer := bytes.NewBuffer([]byte{})
 				cmd.Stderr = buffer
 				Eventually(cmd.Run, COMMAND_TIMEOUT, COMMAND_TIMEOUT).ShouldNot(Succeed())
@@ -392,7 +470,8 @@ var _ = Describe("confab", func() {
 				cmd := exec.Command(pathToConfab, "start",
 					"--agent-path", pathToFakeAgent,
 					"--pid-file", pidFile.Name(),
-					"--consul-config-dir", consulConfigDir)
+					"--consul-config-dir", consulConfigDir,
+					"--config-file", configFile.Name())
 				buffer := bytes.NewBuffer([]byte{})
 				cmd.Stderr = buffer
 				Eventually(cmd.Run, COMMAND_TIMEOUT, COMMAND_TIMEOUT).ShouldNot(Succeed())
@@ -407,7 +486,8 @@ var _ = Describe("confab", func() {
 					"--expected-member", "member-1",
 					"--agent-path", "/tmp/path/that/does/not/exist",
 					"--pid-file", pidFile.Name(),
-					"--consul-config-dir", consulConfigDir)
+					"--consul-config-dir", consulConfigDir,
+					"--config-file", configFile.Name())
 				buffer := bytes.NewBuffer([]byte{})
 				cmd.Stderr = buffer
 				Eventually(cmd.Run, COMMAND_TIMEOUT, COMMAND_TIMEOUT).ShouldNot(Succeed())
@@ -421,7 +501,8 @@ var _ = Describe("confab", func() {
 				cmd := exec.Command(pathToConfab, "start",
 					"--expected-member", "member-1",
 					"--agent-path", pathToFakeAgent,
-					"--consul-config-dir", consulConfigDir)
+					"--consul-config-dir", consulConfigDir,
+					"--config-file", configFile.Name())
 				buffer := bytes.NewBuffer([]byte{})
 				cmd.Stderr = buffer
 				Eventually(cmd.Run, COMMAND_TIMEOUT, COMMAND_TIMEOUT).ShouldNot(Succeed())
@@ -436,7 +517,8 @@ var _ = Describe("confab", func() {
 					"--expected-member", "member-1",
 					"--agent-path", pathToFakeAgent,
 					"--pid-file", pidFile.Name(),
-					"--consul-config-dir", "/tmp/path/that/does/not/exist")
+					"--consul-config-dir", "/tmp/path/that/does/not/exist",
+					"--config-file", configFile.Name())
 				buffer := bytes.NewBuffer([]byte{})
 				cmd.Stderr = buffer
 				Eventually(cmd.Run, COMMAND_TIMEOUT, COMMAND_TIMEOUT).ShouldNot(Succeed())
@@ -459,6 +541,7 @@ var _ = Describe("confab", func() {
 					"--expected-member", "member-1",
 					"--expected-member", "member-2",
 					"--expected-member", "member-3",
+					"--config-file", configFile.Name(),
 				)
 				buffer := bytes.NewBuffer([]byte{})
 				cmd.Stderr = buffer
@@ -482,6 +565,7 @@ var _ = Describe("confab", func() {
 					"--expected-member", "member-1",
 					"--expected-member", "member-2",
 					"--expected-member", "member-3",
+					"--config-file", configFile.Name(),
 				)
 				buffer := bytes.NewBuffer([]byte{})
 				cmd.Stderr = buffer
@@ -499,6 +583,62 @@ var _ = Describe("confab", func() {
 				Eventually(cmd.Run, COMMAND_TIMEOUT, COMMAND_TIMEOUT).ShouldNot(Succeed())
 				Expect(buffer).To(ContainSubstring("flag provided but not defined: -banana"))
 				Expect(buffer).NotTo(ContainSubstring("usage: confab COMMAND OPTIONS"))
+			})
+		})
+
+		Context("when the config file does not exist", func() {
+			It("returns an error and exits with status 1", func() {
+				cmd := exec.Command(pathToConfab,
+					"start",
+					"--pid-file", pidFile.Name(),
+					"--agent-path", pathToFakeAgent,
+					"--config-file", "/some-missing-file.json",
+				)
+				buffer := bytes.NewBuffer([]byte{})
+				cmd.Stderr = buffer
+				Eventually(cmd.Run, COMMAND_TIMEOUT, COMMAND_TIMEOUT).ShouldNot(Succeed())
+				Expect(buffer).To(ContainSubstring("no such file or directory"))
+			})
+		})
+
+		Context("when the config file is malformed json", func() {
+			It("returns an error and exits with status 1", func() {
+				tmpFile, err := ioutil.TempFile(tempDir, "config")
+				Expect(err).NotTo(HaveOccurred())
+
+				_, err = tmpFile.Write([]byte(`%%%%%%%%%`))
+				Expect(err).NotTo(HaveOccurred())
+
+				cmd := exec.Command(pathToConfab,
+					"start",
+					"--pid-file", pidFile.Name(),
+					"--agent-path", pathToFakeAgent,
+					"--config-file", tmpFile.Name(),
+				)
+				buffer := bytes.NewBuffer([]byte{})
+				cmd.Stderr = buffer
+				Eventually(cmd.Run, COMMAND_TIMEOUT, COMMAND_TIMEOUT).ShouldNot(Succeed())
+				Expect(buffer).To(ContainSubstring("invalid character"))
+			})
+		})
+
+		Context("when the consul config dir is not writeable", func() {
+			It("returns an error and exits with status 1", func() {
+				err := os.Chmod(consulConfigDir, 0000)
+				Expect(err).NotTo(HaveOccurred())
+
+				cmd := exec.Command(pathToConfab,
+					"start",
+					"--pid-file", pidFile.Name(),
+					"--agent-path", pathToFakeAgent,
+					"--config-file", configFile.Name(),
+					"--expected-member", "member-1",
+					"--consul-config-dir", consulConfigDir,
+				)
+				buffer := bytes.NewBuffer([]byte{})
+				cmd.Stderr = buffer
+				Eventually(cmd.Run, COMMAND_TIMEOUT, COMMAND_TIMEOUT).ShouldNot(Succeed())
+				Expect(buffer).To(ContainSubstring("permission denied"))
 			})
 		})
 	})

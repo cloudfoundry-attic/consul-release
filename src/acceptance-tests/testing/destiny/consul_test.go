@@ -65,6 +65,18 @@ var _ = Describe("Consul Manifest", func() {
 							Consul: destiny.JobPropertiesConsul{
 								Agent: destiny.JobPropertiesConsulAgent{
 									Mode: "server",
+									Services: destiny.JobPropertiesConsulAgentServices{
+										"router": destiny.JobPropertiesConsulAgentService{
+											Name: "gorouter",
+											Check: &destiny.JobPropertiesConsulAgentServiceCheck{
+												Name:     "router-check",
+												Script:   "/var/vcap/jobs/router/bin/script",
+												Interval: "1m",
+											},
+											Tags: []string{"routing"},
+										},
+										"cloud_controller": destiny.JobPropertiesConsulAgentService{},
+									},
 								},
 							},
 						},

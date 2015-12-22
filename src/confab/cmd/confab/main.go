@@ -2,8 +2,10 @@ package main
 
 import (
 	"confab"
+	"encoding/json"
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
@@ -38,6 +40,7 @@ var (
 	encryptionKeys  stringSlice
 	recursors       stringSlice
 	maxRetries      int
+	configFile      string
 
 	stdout = log.New(os.Stdout, "", 0)
 	stderr = log.New(os.Stderr, "", 0)
@@ -56,6 +59,7 @@ func main() {
 	flagSet.Var(&encryptionKeys, "encryption-key", "`key` used to encrypt consul traffic, may be specified multiple times")
 	flagSet.Var(&recursors, "recursor", "specifies the address of an upstream DNS `server`, may be specified multiple times")
 	flagSet.IntVar(&maxRetries, "sync-max-retries", 60, "specifies the maximum `number` of sync retry attempts")
+	flagSet.StringVar(&configFile, "config-file", "", "specifies the config `file`")
 
 	if len(os.Args) < 2 {
 		printUsageAndExit("invalid number of arguments", flagSet)
@@ -99,6 +103,19 @@ func main() {
 		Logger:          logger,
 	}
 
+	configFileContents, err := ioutil.ReadFile(configFile)
+	if err != nil {
+		stderr.Printf("error reading configuration file: %s", err)
+		os.Exit(1)
+	}
+
+	var config confab.Config
+	err = json.Unmarshal(configFileContents, &config)
+	if err != nil {
+		stderr.Printf("error reading configuration file: %s", err)
+		os.Exit(1)
+	}
+
 	controller = confab.Controller{
 		AgentRunner:    agentRunner,
 		AgentClient:    agentClient,
@@ -108,6 +125,9 @@ func main() {
 		EncryptKeys:    encryptionKeys,
 		SSLDisabled:    sslDisabled,
 		Logger:         logger,
+		ServiceDefiner: confab.ServiceDefiner{logger},
+		ConfigDir:      consulConfigDir,
+		Config:         config,
 	}
 
 	switch os.Args[1] {
@@ -128,6 +148,12 @@ func start(flagSet *flag.FlagSet, path string, controller confab.Controller, age
 
 	if len(expectedMembers) == 0 {
 		printUsageAndExit("at least one \"expected-member\" must be provided", flagSet)
+	}
+
+	err = controller.WriteServiceDefinitions()
+	if err != nil {
+		stderr.Printf("error writing service definitions: %s", err)
+		os.Exit(1)
 	}
 
 	err = controller.BootAgent()

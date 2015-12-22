@@ -7,6 +7,20 @@ import (
 	"github.com/pivotal-golang/lager"
 )
 
+type Config struct {
+	Node  ConfigNode
+	Agent ConfigAgent
+}
+
+type ConfigNode struct {
+	Name  string
+	Index int
+}
+
+type ConfigAgent struct {
+	Services map[string]ServiceDefinition
+}
+
 type agentRunner interface {
 	Run() error
 	Stop() error
@@ -19,6 +33,11 @@ type agentClient interface {
 	IsLastNode() (bool, error)
 	SetKeys([]string) error
 	Leave() error
+}
+
+type serviceDefiner interface {
+	GenerateDefinitions(Config) []ServiceDefinition
+	WriteDefinitions(string, []ServiceDefinition) error
 }
 
 type clock interface {
@@ -34,6 +53,9 @@ type Controller struct {
 	EncryptKeys    []string
 	SSLDisabled    bool
 	Logger         logger
+	ConfigDir      string
+	ServiceDefiner serviceDefiner
+	Config         Config
 }
 
 func (c Controller) BootAgent() error {
@@ -130,4 +152,18 @@ func (c Controller) StopAgent() {
 		c.Logger.Error("controller.stop-agent.wait.failed", err)
 	}
 	c.Logger.Info("controller.stop-agent.success")
+}
+
+func (c Controller) WriteServiceDefinitions() error {
+	c.Logger.Info("controller.write-service-definitions.generate-definitions")
+	definitions := c.ServiceDefiner.GenerateDefinitions(c.Config)
+
+	c.Logger.Info("controller.write-service-definitions.write")
+	if err := c.ServiceDefiner.WriteDefinitions(c.ConfigDir, definitions); err != nil {
+		c.Logger.Error("controller.write-service-definitions.write.failed", err)
+		return err
+	}
+
+	c.Logger.Info("controller.write-service-definitions.success")
+	return nil
 }

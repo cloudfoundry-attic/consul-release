@@ -12,13 +12,14 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("controller", func() {
+var _ = Describe("Controller", func() {
 	var (
-		clock       *fakes.Clock
-		agentRunner *fakes.AgentRunner
-		agentClient *fakes.AgentClient
-		controller  confab.Controller
-		logger      *fakes.Logger
+		clock          *fakes.Clock
+		agentRunner    *fakes.AgentRunner
+		agentClient    *fakes.AgentClient
+		controller     confab.Controller
+		logger         *fakes.Logger
+		serviceDefiner *fakes.ServiceDefiner
 	)
 
 	BeforeEach(func() {
@@ -32,6 +33,8 @@ var _ = Describe("controller", func() {
 		agentRunner = &fakes.AgentRunner{}
 		agentRunner.RunCalls.Returns.Errors = []error{nil}
 
+		serviceDefiner = &fakes.ServiceDefiner{}
+
 		controller = confab.Controller{
 			AgentClient:    agentClient,
 			AgentRunner:    agentRunner,
@@ -40,7 +43,60 @@ var _ = Describe("controller", func() {
 			SyncRetryClock: clock,
 			EncryptKeys:    []string{"key 1", "key 2", "key 3"},
 			Logger:         logger,
+			ConfigDir:      "/tmp/config",
+			ServiceDefiner: serviceDefiner,
+			Config: confab.Config{
+				Node: confab.ConfigNode{Name: "node", Index: 0},
+			},
 		}
+	})
+
+	Describe("WriteServiceDefinitions", func() {
+		It("delegates to the service definer", func() {
+			definitions := []confab.ServiceDefinition{{
+				Name: "banana",
+			}}
+			serviceDefiner.GenerateDefinitionsCall.Returns.Definitions = definitions
+
+			Expect(controller.WriteServiceDefinitions()).To(Succeed())
+			Expect(serviceDefiner.GenerateDefinitionsCall.Receives.Config).To(Equal(controller.Config))
+			Expect(serviceDefiner.WriteDefinitionsCall.Receives.ConfigDir).To(Equal("/tmp/config"))
+			Expect(serviceDefiner.WriteDefinitionsCall.Receives.Definitions).To(Equal(definitions))
+
+			Expect(logger.Messages).To(ContainSequence([]fakes.LoggerMessage{
+				{
+					Action: "controller.write-service-definitions.generate-definitions",
+				},
+				{
+					Action: "controller.write-service-definitions.write",
+				},
+				{
+					Action: "controller.write-service-definitions.success",
+				},
+			}))
+		})
+
+		Context("when there is an error", func() {
+			It("returns the error", func() {
+				serviceDefiner.WriteDefinitionsCall.Returns.Error = errors.New("write definitions error")
+
+				err := controller.WriteServiceDefinitions()
+				Expect(err).To(MatchError(errors.New("write definitions error")))
+
+				Expect(logger.Messages).To(ContainSequence([]fakes.LoggerMessage{
+					{
+						Action: "controller.write-service-definitions.generate-definitions",
+					},
+					{
+						Action: "controller.write-service-definitions.write",
+					},
+					{
+						Action: "controller.write-service-definitions.write.failed",
+						Error:  errors.New("write definitions error"),
+					},
+				}))
+			})
+		})
 	})
 
 	Describe("BootAgent", func() {

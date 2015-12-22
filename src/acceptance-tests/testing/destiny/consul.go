@@ -104,6 +104,18 @@ func NewConsul(config Config) Manifest {
 			Consul: JobPropertiesConsul{
 				Agent: JobPropertiesConsulAgent{
 					Mode: "server",
+					Services: JobPropertiesConsulAgentServices{
+						"router": JobPropertiesConsulAgentService{
+							Name: "gorouter",
+							Check: &JobPropertiesConsulAgentServiceCheck{
+								Name:     "router-check",
+								Script:   "/var/vcap/jobs/router/bin/script",
+								Interval: "1m",
+							},
+							Tags: []string{"routing"},
+						},
+						"cloud_controller": JobPropertiesConsulAgentService{},
+					},
 				},
 			},
 		},

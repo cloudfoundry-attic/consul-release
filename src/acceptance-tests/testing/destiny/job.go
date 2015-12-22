@@ -21,7 +21,22 @@ type JobPropertiesConsul struct {
 }
 
 type JobPropertiesConsulAgent struct {
-	Mode string `yaml:"mode"`
+	Mode     string                           `yaml:"mode"`
+	Services JobPropertiesConsulAgentServices `yaml:"services,omitempty"`
+}
+
+type JobPropertiesConsulAgentServices map[string]JobPropertiesConsulAgentService
+
+type JobPropertiesConsulAgentService struct {
+	Name  string                                `yaml:"name,omitempty"`
+	Check *JobPropertiesConsulAgentServiceCheck `yaml:"check,omitempty"`
+	Tags  []string                              `yaml:"tags,omitempty"`
+}
+
+type JobPropertiesConsulAgentServiceCheck struct {
+	Name     string `yaml:"name"`
+	Script   string `yaml:"script,omitempty"`
+	Interval string `yaml:"interval,omitempty"`
 }
 
 type JobUpdate struct {

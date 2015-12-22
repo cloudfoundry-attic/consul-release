@@ -39,6 +39,15 @@ jobs:
     consul:
       agent:
         mode: server
+        services:
+          router:
+            name: gorouter
+            check:
+              name: router-check
+              script: /var/vcap/jobs/router/bin/script
+              interval: 1m
+            tags: [routing]
+          cloud_controller: {}
   resource_pool: consul_z1
   templates:
   - name: consul_agent
