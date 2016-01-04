@@ -12,7 +12,6 @@ function main() {
 
 	install_ginkgo "${root_dir}"
 	pushd "${root_dir}" > /dev/null
-		# Run acceptance tests
 		ginkgo \
 			-r \
 			-race \

@@ -391,6 +391,7 @@ var _ = Describe("AgentClient", func() {
 	Describe("SetKeys", func() {
 		encryptedKey1 := "5v4WCjw2FyuezPYYUvo0zA=="
 		encryptedKey2 := "gcC8kpXH4sUwLaxtiz2mBw=="
+		encryptedKeyPercent := "OLJdB+hlOnGSUEIR7S6ekA=="
 
 		BeforeEach(func() {
 			consulRPCClient.InstallKeyReturns(nil)
@@ -400,14 +401,17 @@ var _ = Describe("AgentClient", func() {
 		})
 
 		It("installs the given keys", func() {
-			Expect(client.SetKeys([]string{"key1", "key2"})).To(Succeed())
-			Expect(consulRPCClient.InstallKeyCallCount()).To(Equal(2))
+			Expect(client.SetKeys([]string{encryptedKey1, "key2", "key%%"})).To(Succeed())
+			Expect(consulRPCClient.InstallKeyCallCount()).To(Equal(3))
 
 			key := consulRPCClient.InstallKeyArgsForCall(0)
 			Expect(key).To(Equal(encryptedKey1))
 
 			key = consulRPCClient.InstallKeyArgsForCall(1)
 			Expect(key).To(Equal(encryptedKey2))
+
+			key = consulRPCClient.InstallKeyArgsForCall(2)
+			Expect(key).To(Equal(encryptedKeyPercent))
 
 			Expect(consulRPCClient.UseKeyCallCount()).To(Equal(1))
 
@@ -448,6 +452,18 @@ var _ = Describe("AgentClient", func() {
 					Action: "agent-client.set-keys.install-key.response",
 					Data: []lager.Data{{
 						"key": encryptedKey2,
+					}},
+				},
+				{
+					Action: "agent-client.set-keys.install-key.request",
+					Data: []lager.Data{{
+						"key": encryptedKeyPercent,
+					}},
+				},
+				{
+					Action: "agent-client.set-keys.install-key.response",
+					Data: []lager.Data{{
+						"key": encryptedKeyPercent,
 					}},
 				},
 				{

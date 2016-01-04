@@ -168,8 +168,14 @@ func (c AgentClient) SetKeys(keys []string) error {
 
 	var encryptedKeys []string
 	for _, key := range keys {
-		encryptedKeys = append(encryptedKeys,
-			base64.StdEncoding.EncodeToString(pbkdf2.Key([]byte(key), []byte(""), 20000, 16, sha1.New)))
+		encryptedKey := key
+
+		decodedKey, err := base64.StdEncoding.DecodeString(key)
+		if err != nil || len(decodedKey) != 16 {
+			encryptedKey = base64.StdEncoding.EncodeToString(pbkdf2.Key([]byte(key), []byte(""), 20000, 16, sha1.New))
+		}
+
+		encryptedKeys = append(encryptedKeys, encryptedKey)
 	}
 
 	existingKeys, err := c.ConsulRPCClient.ListKeys()

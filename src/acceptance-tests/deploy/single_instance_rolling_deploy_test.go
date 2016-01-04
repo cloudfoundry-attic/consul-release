@@ -47,7 +47,7 @@ var _ = Describe("Single Instance Rolling deploys", func() {
 		})
 
 		By("deploying", func() {
-			manifest.Properties.Consul.ServerCert = "something different"
+			manifest.Properties.Consul.Agent.LogLevel = "trace"
 
 			yaml, err := manifest.ToYAML()
 			Expect(err).NotTo(HaveOccurred())

@@ -34,7 +34,9 @@ func (c RPCClient) ListKeys() ([]string, error) {
 
 	var keys []string
 	for _, keyEntry := range response.Keys {
-		keys = append(keys, keyEntry.Key)
+		if keyEntry.Pool == "LAN" {
+			keys = append(keys, keyEntry.Key)
+		}
 	}
 
 	return keys, nil

@@ -21,8 +21,8 @@ type JobPropertiesConsul struct {
 }
 
 type JobPropertiesConsulAgent struct {
-	Mode     string                           `yaml:"mode"`
-	Services JobPropertiesConsulAgentServices `yaml:"services,omitempty"`
+	Mode                 string                           `yaml:"mode"`
+	Services             JobPropertiesConsulAgentServices `yaml:"services,omitempty"`
 }
 
 type JobPropertiesConsulAgentServices map[string]JobPropertiesConsulAgentService

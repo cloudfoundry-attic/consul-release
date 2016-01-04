@@ -21,8 +21,19 @@ function upload_releases() {
 		bosh upload release
 	popd > /dev/null
 
-	bosh upload release "http://bosh.io/d/github.com/cppforlife/bosh-warden-cpi-release?v=${warden_cpi_version}" --skip-if-exists
-	bosh upload release "http://bosh.io/d/github.com/cppforlife/turbulence-release?v=${turbulence_version}" --skip-if-exists
+  local releases_dir
+  releases_dir="/tmp/consats/releases"
+  mkdir -p "${releases_dir}"
+
+  if [[ ! -e "${releases_dir}/bosh-warden-cpi-release.tgz" ]]; then
+    wget -O "${releases_dir}/bosh-warden-cpi-release.tgz" "http://bosh.io/d/github.com/cppforlife/bosh-warden-cpi-release?v=${warden_cpi_version}"
+  fi
+  bosh upload release "${releases_dir}/bosh-warden-cpi-release.tgz" --skip-if-exists
+
+  if [[ ! -e "${releases_dir}/turbulence-release.tgz" ]]; then
+    wget -O "${releases_dir}/turbulence-release.tgz" "http://bosh.io/d/github.com/cppforlife/turbulence-release?v=${turbulence_version}"
+  fi
+  bosh upload release "${releases_dir}/turbulence-release.tgz" --skip-if-exists
 }
 
 function cleanup_releases() {

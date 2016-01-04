@@ -63,9 +63,26 @@ func DeployConsulWithInstanceCount(count int, client bosh.Client) (manifest dest
 		return
 	}
 
+	configDir, err := ioutil.TempDir("", "consul-config")
+	if err != nil {
+		return
+	}
+
+	var encryptKey string
+	if len(manifest.Properties.Consul.EncryptKeys) > 0 {
+		encryptKey = manifest.Properties.Consul.EncryptKeys[0]
+	}
+
 	agent := consul.NewAgent(consul.AgentOptions{
-		DataDir:   dataDir,
-		RetryJoin: consulMemberAddresses,
+		DataDir:    dataDir,
+		RetryJoin:  consulMemberAddresses,
+		ConfigDir:  configDir,
+		Domain:     "cf.internal",
+		Key:        manifest.Properties.Consul.AgentKey,
+		Cert:       manifest.Properties.Consul.AgentCert,
+		CACert:     manifest.Properties.Consul.CACert,
+		Encrypt:    encryptKey,
+		ServerName: "consul agent",
 	})
 
 	agentLocation := "http://127.0.0.1:8500"

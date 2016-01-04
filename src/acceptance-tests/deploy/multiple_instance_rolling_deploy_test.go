@@ -25,12 +25,13 @@ var _ = Describe("Multiple Instance Rolling deploys", func() {
 		testKey = "consul-key-" + guid
 		testValue = "consul-value-" + guid
 
-		manifest, kv, err = helpers.DeployConsulWithInstanceCount(2, client)
+		manifest, kv, err = helpers.DeployConsulWithInstanceCount(3, client)
 		Expect(err).NotTo(HaveOccurred())
 
 		Eventually(func() ([]bosh.VM, error) {
 			return client.DeploymentVMs(manifest.Name)
 		}, "1m", "10s").Should(ConsistOf([]bosh.VM{
+			{"running"},
 			{"running"},
 			{"running"},
 		}))
@@ -48,7 +49,7 @@ var _ = Describe("Multiple Instance Rolling deploys", func() {
 		})
 
 		By("deploying", func() {
-			manifest.Properties.Consul.ServerCert = "something different"
+			manifest.Properties.Consul.Agent.LogLevel = "trace"
 
 			yaml, err := manifest.ToYAML()
 			Expect(err).NotTo(HaveOccurred())
@@ -59,6 +60,7 @@ var _ = Describe("Multiple Instance Rolling deploys", func() {
 			Eventually(func() ([]bosh.VM, error) {
 				return client.DeploymentVMs(manifest.Name)
 			}, "1m", "10s").Should(ConsistOf([]bosh.VM{
+				{"running"},
 				{"running"},
 				{"running"},
 			}))
