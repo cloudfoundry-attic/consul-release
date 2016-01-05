@@ -212,7 +212,7 @@ properties:
       -----END CERTIFICATE-----
     encrypt_keys:
     - Atzo3VBv+YVDzQAzlQRPRA==
-    require_ssl: false
+    require_ssl: true
     server_cert: |+
       -----BEGIN CERTIFICATE-----
       MIIELDCCAhagAwIBAgIRAN0EJexxqEEyVatWrjzc7zAwCwYJKoZIhvcNAQELMBMx

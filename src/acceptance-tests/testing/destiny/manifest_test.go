@@ -200,7 +200,7 @@ var _ = Describe("Manifest", func() {
 						ServerCert:  destiny.ServerCert,
 						ServerKey:   destiny.ServerKey,
 						EncryptKeys: []string{destiny.EncryptKey},
-						RequireSSL:  false,
+						RequireSSL:  true,
 					},
 				},
 			}))

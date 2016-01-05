@@ -35,6 +35,27 @@ function main() {
   esac
 }
 
+function setup_resolvconf() {
+  local resolvconf_file
+  resolvconf_file=/etc/resolv.conf
+
+  if resolvconf --updates-are-enabled; then
+	  resolvconf_file=/etc/resolvconf/resolv.conf.d/head
+  fi
+
+  if ! grep -q 127.0.0.1 "${resolvconf_file}"; then
+	  if [[ "$(stat -c "%s" "${resolvconf_file}")" = "0" ]]; then
+		  echo 'nameserver 127.0.0.1' > "${resolvconf_file}"
+	  else
+		  sed -i -e '1i nameserver 127.0.0.1' "${resolvconf_file}"
+	  fi
+  fi
+
+  set +e
+  resolvconf -u
+  set -e
+}
+
 function start() {
   local confab_package
   confab_package="${1}"
@@ -66,26 +87,7 @@ function start() {
   ulimit -v unlimited
   ulimit -n 4096
 
-  # add consul agent's dns to resolv.conf
-  if resolvconf --updates-are-enabled; then
-    # /etc/resolv.conf will probably be regenerated all the time, so add the
-    # local dns server to /head, which will be prepended when regenerated.
-    if ! grep -q 127.0.0.1 /etc/resolvconf/resolv.conf.d/head; then
-      sed -i '/127.0.0.1/d' /etc/resolvconf/resolv.conf.d/head
-    fi
-    sed -i -e '1i nameserver 127.0.0.1' /etc/resolvconf/resolv.conf.d/head
-
-    resolvconf -u
-  else
-    # updates are disabled in bosh-lite; in this case just add to
-    # /etc/resolv.conf directly.
-    #
-    # enabling updates and then updating it with resolvconf -u seems to add
-    # dns entries from where the box was generated.
-    if ! grep -q 127.0.0.1 /etc/resolv.conf; then
-      sed -i -e '1i nameserver 127.0.0.1' /etc/resolv.conf
-    fi
-  fi
+  setup_resolvconf
 
   local server
   server=<%=p("consul.agent.mode") == "server"%>

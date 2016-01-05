@@ -164,7 +164,7 @@ var _ = Describe("Consul Manifest", func() {
 						ServerCert:  destiny.ServerCert,
 						ServerKey:   destiny.ServerKey,
 						EncryptKeys: []string{destiny.EncryptKey},
-						RequireSSL:  false,
+						RequireSSL:  true,
 					},
 				},
 			}))
