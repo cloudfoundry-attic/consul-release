@@ -171,7 +171,6 @@ var _ = Describe("Agent", func() {
 
 				err = agent.Start()
 				Expect(err).To(MatchError(ContainSubstring("permission denied")))
-
 			})
 
 			It("errors when the config dir cannot be written to", func() {
@@ -183,7 +182,6 @@ var _ = Describe("Agent", func() {
 
 				err = agent.Start()
 				Expect(err).To(MatchError(ContainSubstring("permission denied")))
-
 			})
 
 			It("errors when the config file cannot be written to", func() {

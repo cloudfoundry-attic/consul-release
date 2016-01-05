@@ -18,4 +18,7 @@ cat > $CONSATS_CONFIG <<EOF
 }
 EOF
 
-bash -c "/var/vcap/packages/acceptance-tests/src/acceptance-tests/scripts/test"
+chown -R vcap:vcap "/var/vcap/data/"
+pushd "/var/vcap/data/tmp" > /dev/null
+	chpst -u vcap:vcap bash -c "/var/vcap/packages/acceptance-tests/src/acceptance-tests/scripts/test"
+popd > /dev/null
