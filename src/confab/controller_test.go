@@ -195,12 +195,16 @@ var _ = Describe("Controller", func() {
 			controller.StopAgent()
 			Expect(agentClient.LeaveCall.CallCount).To(Equal(1))
 			Expect(agentRunner.WaitCall.CallCount).To(Equal(1))
+			Expect(agentRunner.CleanupCall.CallCount).To(Equal(1))
 			Expect(logger.Messages).To(ContainSequence([]fakes.LoggerMessage{
 				{
 					Action: "controller.stop-agent.leave",
 				},
 				{
 					Action: "controller.stop-agent.wait",
+				},
+				{
+					Action: "controller.stop-agent.cleanup",
 				},
 				{
 					Action: "controller.stop-agent.success",
@@ -216,6 +220,8 @@ var _ = Describe("Controller", func() {
 			It("tells the runner to stop the agent", func() {
 				controller.StopAgent()
 				Expect(agentRunner.StopCall.CallCount).To(Equal(1))
+				Expect(agentRunner.WaitCall.CallCount).To(Equal(1))
+				Expect(agentRunner.CleanupCall.CallCount).To(Equal(1))
 				Expect(logger.Messages).To(ContainSequence([]fakes.LoggerMessage{
 					{
 						Action: "controller.stop-agent.leave",
@@ -229,6 +235,9 @@ var _ = Describe("Controller", func() {
 					},
 					{
 						Action: "controller.stop-agent.wait",
+					},
+					{
+						Action: "controller.stop-agent.cleanup",
 					},
 					{
 						Action: "controller.stop-agent.success",
@@ -262,6 +271,9 @@ var _ = Describe("Controller", func() {
 							Action: "controller.stop-agent.wait",
 						},
 						{
+							Action: "controller.stop-agent.cleanup",
+						},
+						{
 							Action: "controller.stop-agent.success",
 						},
 					}))
@@ -286,6 +298,37 @@ var _ = Describe("Controller", func() {
 					{
 						Action: "controller.stop-agent.wait.failed",
 						Error:  errors.New("wait error"),
+					},
+					{
+						Action: "controller.stop-agent.cleanup",
+					},
+					{
+						Action: "controller.stop-agent.success",
+					},
+				}))
+			})
+		})
+
+		Context("when agent runner Cleanup() returns an error", func() {
+			BeforeEach(func() {
+				agentRunner.CleanupCall.Returns.Error = errors.New("cleanup error")
+			})
+
+			It("logs the error", func() {
+				controller.StopAgent()
+				Expect(logger.Messages).To(ContainSequence([]fakes.LoggerMessage{
+					{
+						Action: "controller.stop-agent.leave",
+					},
+					{
+						Action: "controller.stop-agent.wait",
+					},
+					{
+						Action: "controller.stop-agent.cleanup",
+					},
+					{
+						Action: "controller.stop-agent.cleanup.failed",
+						Error:  errors.New("cleanup error"),
 					},
 					{
 						Action: "controller.stop-agent.success",

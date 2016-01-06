@@ -25,6 +25,7 @@ type agentRunner interface {
 	Run() error
 	Stop() error
 	Wait() error
+	Cleanup() error
 }
 
 type agentClient interface {
@@ -151,6 +152,12 @@ func (c Controller) StopAgent() {
 	if err := c.AgentRunner.Wait(); err != nil {
 		c.Logger.Error("controller.stop-agent.wait.failed", err)
 	}
+
+	c.Logger.Info("controller.stop-agent.cleanup")
+	if err := c.AgentRunner.Cleanup(); err != nil {
+		c.Logger.Error("controller.stop-agent.cleanup.failed", err)
+	}
+
 	c.Logger.Info("controller.stop-agent.success")
 }
 

@@ -327,22 +327,13 @@ var _ = Describe("confab", func() {
 				)
 				Eventually(cmd.Run, COMMAND_TIMEOUT, COMMAND_TIMEOUT).ShouldNot(Succeed())
 
-				pid, err := getPID(pidFile.Name())
-				Expect(err).NotTo(HaveOccurred())
-
-				Eventually(func() (map[string]interface{}, error) {
-					return fakeAgentOutput(consulConfigDir)
-				}, "2s").Should(Equal(map[string]interface{}{
-					"PID": float64(pid),
-					"Args": []interface{}{
-						"agent",
-						fmt.Sprintf("-config-dir=%s", consulConfigDir),
-					},
-					"LeaveCallCount":      float64(1),
-					"InstallKeyCallCount": float64(0),
-					"UseKeyCallCount":     float64(0),
-					"StatsCallCount":      float64(3),
-				}))
+				Eventually(func() (interface{}, error) {
+					output, err := fakeAgentOutput(consulConfigDir)
+					if err != nil {
+						return nil, err
+					}
+					return output["StatsCallCount"], nil
+				}, "2s").Should(Equal(float64(3)))
 			})
 		})
 	})
@@ -376,6 +367,9 @@ var _ = Describe("confab", func() {
 				return err
 			}, "5s").Should(Succeed())
 
+			pid, err := getPID(pidFile.Name())
+			Expect(err).NotTo(HaveOccurred())
+
 			cmd = exec.Command(pathToConfab,
 				"stop",
 				"--pid-file", pidFile.Name(),
@@ -387,9 +381,6 @@ var _ = Describe("confab", func() {
 			Eventually(func() bool {
 				return pidIsForRunningProcess(pidFile.Name())
 			}, "5s").Should(BeFalse())
-
-			pid, err := getPID(pidFile.Name())
-			Expect(err).NotTo(HaveOccurred())
 
 			Expect(fakeAgentOutput(consulConfigDir)).To(Equal(map[string]interface{}{
 				"PID": float64(pid),
@@ -646,7 +637,9 @@ var _ = Describe("confab", func() {
 
 func killProcessWithPIDFile(pidFilePath string) {
 	pidFileContents, err := ioutil.ReadFile(pidFilePath)
-	Expect(err).NotTo(HaveOccurred())
+	if err != nil {
+		return
+	}
 
 	pid, err := strconv.Atoi(string(pidFileContents))
 	Expect(err).NotTo(HaveOccurred())

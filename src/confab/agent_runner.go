@@ -180,3 +180,21 @@ func (r *AgentRunner) Stop() error {
 	r.Logger.Info("agent-runner.stop.success")
 	return nil
 }
+
+func (r *AgentRunner) Cleanup() error {
+	r.Logger.Info("agent-runner.cleanup.remove", lager.Data{
+		"pidfile": r.PIDFile,
+	})
+
+	if err := os.Remove(r.PIDFile); err != nil {
+		err = errors.New(err.Error())
+		r.Logger.Error("agent-runner.cleanup.remove.failed", err, lager.Data{
+			"pidfile": r.PIDFile,
+		})
+		return err
+	}
+
+	r.Logger.Info("agent-runner.cleanup.success")
+
+	return nil
+}

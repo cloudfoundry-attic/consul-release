@@ -98,6 +98,62 @@ var _ = Describe("AgentRunner", func() {
 		os.RemoveAll(runner.ConfigDir)
 	})
 
+	Describe("Cleanup", func() {
+		It("deletes the PID file for the consul agent", func() {
+			_, err := os.Stat(runner.PIDFile)
+			Expect(err).To(MatchError(ContainSubstring("no such file or directory")))
+
+			_, err = os.Create(runner.PIDFile)
+			Expect(err).NotTo(HaveOccurred())
+
+			_, err = os.Stat(runner.PIDFile)
+			Expect(err).NotTo(HaveOccurred())
+
+			err = runner.Cleanup()
+			Expect(err).NotTo(HaveOccurred())
+
+			_, err = os.Stat(runner.PIDFile)
+			Expect(err).To(MatchError(ContainSubstring("no such file or directory")))
+
+			Expect(logger.Messages).To(ContainSequence([]fakes.LoggerMessage{
+				{
+					Action: "agent-runner.cleanup.remove",
+					Data: []lager.Data{{
+						"pidfile": runner.PIDFile,
+					}},
+				},
+				{
+					Action: "agent-runner.cleanup.success",
+				},
+			}))
+		})
+
+		Context("when the PIDFile does not exist", func() {
+			It("returns the error", func() {
+				expectedError := fmt.Errorf("remove %s: no such file or directory", runner.PIDFile)
+
+				err := runner.Cleanup()
+				Expect(err).To(MatchError(expectedError))
+
+				Expect(logger.Messages).To(ContainSequence([]fakes.LoggerMessage{
+					{
+						Action: "agent-runner.cleanup.remove",
+						Data: []lager.Data{{
+							"pidfile": runner.PIDFile,
+						}},
+					},
+					{
+						Action: "agent-runner.cleanup.remove.failed",
+						Error:  expectedError,
+						Data: []lager.Data{{
+							"pidfile": runner.PIDFile,
+						}},
+					},
+				}))
+			})
+		})
+	})
+
 	Describe("Stop", func() {
 		It("kills the process", func() {
 			By("launching the process, configured to spin", func() {
