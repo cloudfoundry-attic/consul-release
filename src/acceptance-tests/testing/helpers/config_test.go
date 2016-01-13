@@ -32,11 +32,26 @@ var _ = Describe("configuration", func() {
 			BeforeEach(func() {
 				var err error
 				configFilePath, err = writeConfigJSON(`{
-					"bosh_target": "some-bosh-target",
-					"bosh_operation_timeout": "some-bosh-operation-timeout",
-					"turbulence_operation_timeout": "some-turbulence-operation-timeout",
-					"bosh_username": "some-bosh-username",
-					"bosh_password": "some-bosh-password"
+					"bosh": {
+						"target": "some-bosh-target",
+						"username": "some-bosh-username",
+						"password": "some-bosh-password",
+						"director_ca_cert": "some-ca-cert"
+					},
+					"aws": {
+						"subnet": "some-awssubnet",
+						"access_key_id": "some-access-key-id",
+						"secret_access_key": "some-secret-access-key",
+						"default_key_name": "some-default-key-name",
+						"default_security_groups": ["some-default-security-group"],
+						"region": "some-region"
+					},
+					"registry": {
+						"host": "some-registry-host",
+						"port": 12345,
+						"username": "some-registry-username",
+						"password": "some-registry-password"
+					}
 				}`)
 				Expect(err).NotTo(HaveOccurred())
 			})
@@ -50,10 +65,27 @@ var _ = Describe("configuration", func() {
 				config, err := helpers.LoadConfig(configFilePath)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(config).To(Equal(helpers.Config{
-					BOSHTarget:            "some-bosh-target",
+					BOSH: helpers.ConfigBOSH{
+						Target:         "some-bosh-target",
+						Username:       "some-bosh-username",
+						Password:       "some-bosh-password",
+						DirectorCACert: "some-ca-cert",
+					},
+					AWS: helpers.ConfigAWS{
+						Subnet:                "some-awssubnet",
+						AccessKeyID:           "some-access-key-id",
+						SecretAccessKey:       "some-secret-access-key",
+						DefaultKeyName:        "some-default-key-name",
+						DefaultSecurityGroups: []string{"some-default-security-group"},
+						Region:                "some-region",
+					},
+					Registry: helpers.ConfigRegistry{
+						Host:     "some-registry-host",
+						Port:     12345,
+						Username: "some-registry-username",
+						Password: "some-registry-password",
+					},
 					TurbulenceReleaseName: "turbulence",
-					BOSHUsername:          "some-bosh-username",
-					BOSHPassword:          "some-bosh-password",
 				}))
 			})
 		})
@@ -85,7 +117,7 @@ var _ = Describe("configuration", func() {
 			})
 		})
 
-		Context("when the bosh_target is missing", func() {
+		Context("when the bosh.target is missing", func() {
 			var configFilePath string
 
 			BeforeEach(func() {
@@ -101,17 +133,19 @@ var _ = Describe("configuration", func() {
 
 			It("should return an error", func() {
 				_, err := helpers.LoadConfig(configFilePath)
-				Expect(err).To(MatchError(errors.New("missing `bosh_target` - e.g. 'lite' or '192.168.50.4'")))
+				Expect(err).To(MatchError(errors.New("missing `bosh.target` - e.g. 'lite' or '192.168.50.4'")))
 			})
 		})
 
-		Context("when the bosh_username is missing", func() {
+		Context("when the bosh.username is missing", func() {
 			var configFilePath string
 
 			BeforeEach(func() {
 				var err error
 				configFilePath, err = writeConfigJSON(`{
-					"bosh_target": "some-bosh-target"
+					"bosh": {
+						"target": "some-bosh-target"
+					}
 				}`)
 				Expect(err).NotTo(HaveOccurred())
 			})
@@ -123,7 +157,7 @@ var _ = Describe("configuration", func() {
 
 			It("should return an error", func() {
 				_, err := helpers.LoadConfig(configFilePath)
-				Expect(err).To(MatchError(errors.New("missing `bosh_username` - specify username for authenticating with BOSH")))
+				Expect(err).To(MatchError(errors.New("missing `bosh.username` - specify username for authenticating with BOSH")))
 			})
 		})
 
@@ -133,8 +167,10 @@ var _ = Describe("configuration", func() {
 			BeforeEach(func() {
 				var err error
 				configFilePath, err = writeConfigJSON(`{
-					"bosh_target": "some-bosh-target",
-					"bosh_username": "some-bosh-username"
+					"bosh": {
+						"target": "some-bosh-target",
+						"username": "some-bosh-username"
+					}
 				}`)
 				Expect(err).NotTo(HaveOccurred())
 			})
@@ -146,7 +182,7 @@ var _ = Describe("configuration", func() {
 
 			It("should return an error", func() {
 				_, err := helpers.LoadConfig(configFilePath)
-				Expect(err).To(MatchError(errors.New("missing `bosh_password` - specify password for authenticating with BOSH")))
+				Expect(err).To(MatchError(errors.New("missing `bosh.password` - specify password for authenticating with BOSH")))
 			})
 		})
 
@@ -156,9 +192,11 @@ var _ = Describe("configuration", func() {
 			BeforeEach(func() {
 				var err error
 				configFilePath, err = writeConfigJSON(`{
-					"bosh_target": "some-bosh-target",
-					"bosh_username": "some-bosh-username",
-					"bosh_password": "some-bosh-password"
+					"bosh": {
+						"target": "some-bosh-target",
+						"username": "some-bosh-username",
+						"password": "some-bosh-password"
+					}
 				}`)
 				Expect(err).NotTo(HaveOccurred())
 			})
@@ -172,14 +210,95 @@ var _ = Describe("configuration", func() {
 				config, err := helpers.LoadConfig(configFilePath)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(config).To(Equal(helpers.Config{
-					BOSHTarget:            "some-bosh-target",
-					BOSHUsername:          "some-bosh-username",
-					BOSHPassword:          "some-bosh-password",
+					BOSH: helpers.ConfigBOSH{
+						Target:   "some-bosh-target",
+						Username: "some-bosh-username",
+						Password: "some-bosh-password",
+					},
+					AWS: helpers.ConfigAWS{
+						DefaultKeyName: "bosh",
+						Region:         "us-east-1",
+					},
 					TurbulenceReleaseName: "turbulence",
 				}))
 			})
 		})
 
+		Context("when aws.default_key_name is missing", func() {
+			var configFilePath string
+
+			BeforeEach(func() {
+				var err error
+				configFilePath, err = writeConfigJSON(`{
+					"bosh": {
+						"target": "some-bosh-target",
+						"username": "some-bosh-username",
+						"password": "some-bosh-password"
+					}
+				}`)
+				Expect(err).NotTo(HaveOccurred())
+			})
+
+			AfterEach(func() {
+				err := os.Remove(configFilePath)
+				Expect(err).NotTo(HaveOccurred())
+			})
+
+			It("uses the name 'bosh'", func() {
+				config, err := helpers.LoadConfig(configFilePath)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(config).To(Equal(helpers.Config{
+					BOSH: helpers.ConfigBOSH{
+						Target:   "some-bosh-target",
+						Username: "some-bosh-username",
+						Password: "some-bosh-password",
+					},
+					AWS: helpers.ConfigAWS{
+						DefaultKeyName: "bosh",
+						Region:         "us-east-1",
+					},
+					TurbulenceReleaseName: "turbulence",
+				}))
+			})
+		})
+
+		Context("when aws.region is missing", func() {
+			var configFilePath string
+
+			BeforeEach(func() {
+				var err error
+				configFilePath, err = writeConfigJSON(`{
+					"bosh": {
+						"target": "some-bosh-target",
+						"username": "some-bosh-username",
+						"password": "some-bosh-password"
+					}
+				}`)
+				Expect(err).NotTo(HaveOccurred())
+			})
+
+			AfterEach(func() {
+				err := os.Remove(configFilePath)
+				Expect(err).NotTo(HaveOccurred())
+			})
+
+			It("uses the region 'us-east-1'", func() {
+				config, err := helpers.LoadConfig(configFilePath)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(config).To(Equal(helpers.Config{
+					BOSH: helpers.ConfigBOSH{
+						Target:   "some-bosh-target",
+						Username: "some-bosh-username",
+						Password: "some-bosh-password",
+					},
+					AWS: helpers.ConfigAWS{
+						DefaultKeyName: "bosh",
+						Region:         "us-east-1",
+					},
+					TurbulenceReleaseName: "turbulence",
+				}))
+			})
+		})
 	})
 
 	Describe("ConfigPath", func() {

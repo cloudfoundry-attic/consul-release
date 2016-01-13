@@ -1,6 +1,9 @@
 #!/bin/bash -eux
 
 function main() {
+  local iaas
+  iaas="${1}"
+
   local root_dir
   root_dir="$(cd "$(dirname "${0}")/.." && pwd)"
 
@@ -8,16 +11,16 @@ function main() {
   manifest_generation_dir="${root_dir}/manifest-generation"
 
   local stubs_dir
-  stubs_dir="${manifest_generation_dir}/bosh-lite-stubs"
+  stubs_dir="${manifest_generation_dir}/${iaas}-stubs"
 
   local deployment_manifest
-  deployment_manifest="${root_dir}/bosh-lite/consats.yml"
+  deployment_manifest="${root_dir}/${iaas}/consats.yml"
 
   local iaas_settings_stub
-  iaas_settings_stub="${manifest_generation_dir}/bosh-lite-stubs/iaas-settings-consats.yml"
+  iaas_settings_stub="${manifest_generation_dir}/${iaas}-stubs/iaas-settings-consats.yml"
 
   pushd "${root_dir}" > /dev/null
-    mkdir -p bosh-lite
+    mkdir -p "${iaas}"
 
     spiff merge \
       "${manifest_generation_dir}/misc-templates/bosh.yml" \
@@ -30,4 +33,19 @@ function main() {
   popd > /dev/null
 }
 
-main
+case "${1:-"not-an-iaas"}" in
+  aws)
+	echo "Building manifest for AWS..."
+	;;
+
+  bosh-lite)
+	echo "Building manifest for BOSH-Lite..."
+	;;
+
+  *)
+	echo "Usage: $0 {aws|bosh-lite}"
+	exit 1
+	;;
+esac
+
+main "${1}"

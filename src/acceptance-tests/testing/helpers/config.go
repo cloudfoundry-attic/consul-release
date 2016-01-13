@@ -9,10 +9,33 @@ import (
 )
 
 type Config struct {
-	BOSHTarget            string `json:"bosh_target"`
-	BOSHUsername          string `json:"bosh_username"`
-	BOSHPassword          string `json:"bosh_password"`
+	BOSH                  ConfigBOSH     `json:"bosh"`
+	AWS                   ConfigAWS      `json:"aws"`
+	Registry              ConfigRegistry `json:"registry"`
 	TurbulenceReleaseName string
+}
+
+type ConfigBOSH struct {
+	Target         string `json:"target"`
+	Username       string `json:"username"`
+	Password       string `json:"password"`
+	DirectorCACert string `json:"director_ca_cert"`
+}
+
+type ConfigAWS struct {
+	Subnet                string   `json:"subnet"`
+	AccessKeyID           string   `json:"access_key_id"`
+	SecretAccessKey       string   `json:"secret_access_key"`
+	DefaultKeyName        string   `json:"default_key_name"`
+	DefaultSecurityGroups []string `json:"default_security_groups"`
+	Region                string   `json:"region"`
+}
+
+type ConfigRegistry struct {
+	Host     string `json:"host"`
+	Port     int    `json:"port"`
+	Username string `json:"username"`
+	Password string `json:"password"`
 }
 
 func checkAbsolutePath(configValue, jsonKey string) error {
@@ -28,19 +51,27 @@ func LoadConfig(configFilePath string) (Config, error) {
 		return Config{}, err
 	}
 
-	if config.BOSHTarget == "" {
-		return Config{}, errors.New("missing `bosh_target` - e.g. 'lite' or '192.168.50.4'")
+	if config.BOSH.Target == "" {
+		return Config{}, errors.New("missing `bosh.target` - e.g. 'lite' or '192.168.50.4'")
 	}
 
-	if config.BOSHUsername == "" {
-		return Config{}, errors.New("missing `bosh_username` - specify username for authenticating with BOSH")
+	if config.BOSH.Username == "" {
+		return Config{}, errors.New("missing `bosh.username` - specify username for authenticating with BOSH")
 	}
 
-	if config.BOSHPassword == "" {
-		return Config{}, errors.New("missing `bosh_password` - specify password for authenticating with BOSH")
+	if config.BOSH.Password == "" {
+		return Config{}, errors.New("missing `bosh.password` - specify password for authenticating with BOSH")
 	}
 
 	config.TurbulenceReleaseName = "turbulence"
+
+	if config.AWS.DefaultKeyName == "" {
+		config.AWS.DefaultKeyName = "bosh"
+	}
+
+	if config.AWS.Region == "" {
+		config.AWS.Region = "us-east-1"
+	}
 
 	return config, nil
 }

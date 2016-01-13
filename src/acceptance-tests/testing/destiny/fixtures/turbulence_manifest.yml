@@ -14,7 +14,7 @@ resource_pools:
     version: latest
 compilation:
   cloud_properties: {}
-  network: compilation
+  network: turbulence
   reuse_compilation_vms: true
   workers: 3
 update:
@@ -29,7 +29,7 @@ jobs:
   networks:
   - name: turbulence
     static_ips:
-    - 10.244.7.2
+    - 10.244.4.12
   persistent_disk: 1024
   resource_pool: turbulence
   templates:
@@ -42,23 +42,16 @@ networks:
   subnets:
   - cloud_properties:
       name: random
-    range: 10.244.7.0/24
+    gateway: 10.244.4.1
+    range: 10.244.4.0/24
     reserved:
-    - 10.244.7.1
+    - 10.244.4.2-10.244.4.11
+    - 10.244.4.17-10.244.4.254
     static:
-    - 10.244.7.2
+    - 10.244.4.12
+    - 10.244.4.13
   type: manual
-- name: compilation
-  subnets:
-  - cloud_properties:
-      name: random
-    range: 10.244.8.0/24
-    reserved:
-    - 10.244.8.1
-    - 10.244.8.5
-    - 10.244.8.9
-    static: []
-  type: manual
+
 properties:
   turbulence_api:
     certificate: |+
@@ -106,9 +99,9 @@ properties:
         twzPSzG7vudrmO3PSgAT+db/xrDRoHa3xk5H3fltZi7uxpRaWPqsFDezDYul4C8b
         9JpGUkpLi0wGcVfceVLiZooxVGIQTFJj8Yu6fnTM2ZbD0xwFDyrYM92uWg==
         -----END CERTIFICATE-----
-      host: 192.168.50.4
-      password: admin
-      username: admin
+      host: some-bosh-target
+      password: some-bosh-password
+      username: some-bosh-username
     password: turbulence-password
     private_key: |+
       -----BEGIN RSA PRIVATE KEY-----

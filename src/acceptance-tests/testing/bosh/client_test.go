@@ -189,6 +189,23 @@ jobs:
 			It("should error on a non 200 status code", func() {
 				server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 					Expect(r.URL.Path).To(Equal("/stemcells"))
+					w.WriteHeader(http.StatusBadRequest)
+				}))
+
+				client := bosh.NewClient(bosh.Config{
+					URL:      server.URL,
+					Username: "some-username",
+					Password: "some-password",
+				})
+
+				_, err := client.Stemcell("some-stemcell-name")
+
+				Expect(err).To(MatchError("unexpected response 400 Bad Request"))
+			})
+
+			It("should error with a helpful message on 404 status code", func() {
+				server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					Expect(r.URL.Path).To(Equal("/stemcells"))
 					w.WriteHeader(http.StatusNotFound)
 				}))
 
@@ -200,7 +217,7 @@ jobs:
 
 				_, err := client.Stemcell("some-stemcell-name")
 
-				Expect(err).To(MatchError("unexpected response 404 Not Found"))
+				Expect(err).To(MatchError("stemcell some-stemcell-name could not be found"))
 			})
 
 			It("should error on an unsupported protocol", func() {
@@ -272,6 +289,23 @@ jobs:
 			It("should error on a non 200 status code", func() {
 				server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 					Expect(r.URL.Path).To(Equal("/releases/some-release-name"))
+					w.WriteHeader(http.StatusBadRequest)
+				}))
+
+				client := bosh.NewClient(bosh.Config{
+					URL:      server.URL,
+					Username: "some-username",
+					Password: "some-password",
+				})
+
+				_, err := client.Release("some-release-name")
+
+				Expect(err).To(MatchError("unexpected response 400 Bad Request"))
+			})
+
+			It("should error with a helpful message on 404 status code", func() {
+				server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					Expect(r.URL.Path).To(Equal("/releases/some-release-name"))
 					w.WriteHeader(http.StatusNotFound)
 				}))
 
@@ -283,7 +317,7 @@ jobs:
 
 				_, err := client.Release("some-release-name")
 
-				Expect(err).To(MatchError("unexpected response 404 Not Found"))
+				Expect(err).To(MatchError("release some-release-name could not be found"))
 			})
 
 			It("should error on an unsupported protocol", func() {
@@ -325,13 +359,13 @@ jobs:
 		})
 	})
 
-	Context("DirectorUUID", func() {
-		It("fetches the UUID from the director", func() {
+	Describe("Info", func() {
+		It("fetches the director info", func() {
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				Expect(r.URL.Path).To(Equal("/info"))
 				Expect(r.Method).To(Equal("GET"))
 
-				w.Write([]byte(`{"uuid":"some-director-uuid"}`))
+				w.Write([]byte(`{"uuid":"some-director-uuid", "cpi":"some-cpi"}`))
 			}))
 
 			client := bosh.NewClient(bosh.Config{
@@ -339,10 +373,13 @@ jobs:
 				TaskPollingInterval: time.Nanosecond,
 			})
 
-			uuid, err := client.DirectorUUID()
+			info, err := client.Info()
 
 			Expect(err).NotTo(HaveOccurred())
-			Expect(uuid).To(Equal("some-director-uuid"))
+			Expect(info).To(Equal(bosh.DirectorInfo{
+				UUID: "some-director-uuid",
+				CPI:  "some-cpi",
+			}))
 		})
 
 		Context("failure cases", func() {
@@ -356,7 +393,7 @@ jobs:
 					TaskPollingInterval: time.Nanosecond,
 				})
 
-				_, err := client.DirectorUUID()
+				_, err := client.Info()
 
 				Expect(err).To(MatchError(ContainSubstring("invalid character")))
 			})
@@ -367,7 +404,7 @@ jobs:
 					TaskPollingInterval: time.Nanosecond,
 				})
 
-				_, err := client.DirectorUUID()
+				_, err := client.Info()
 				Expect(err).To(MatchError(ContainSubstring("unsupported protocol")))
 			})
 		})
@@ -1129,7 +1166,7 @@ resource_pools:
 `
 
 					_, err := client.ResolveManifestVersions([]byte(manifest))
-					Expect(err).To(MatchError("unexpected response 404 Not Found"))
+					Expect(err).To(MatchError("stemcell some-other-stemcell-name could not be found"))
 				})
 			})
 
@@ -1154,7 +1191,7 @@ releases:
 `
 
 					_, err := client.ResolveManifestVersions([]byte(manifest))
-					Expect(err).To(MatchError("unexpected response 404 Not Found"))
+					Expect(err).To(MatchError("release some-release-name could not be found"))
 				})
 			})
 		})

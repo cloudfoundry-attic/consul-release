@@ -1,6 +1,13 @@
 package destiny
 
 const (
+	Infrastructure = iota
+	AWS
+	Warden
+
+	AWSStemcell    = "bosh-aws-xen-hvm-ubuntu-trusty-go_agent"
+	WardenStemcell = "bosh-warden-boshlite-ubuntu-trusty-go_agent"
+
 	EncryptKey = "Atzo3VBv+YVDzQAzlQRPRA=="
 
 	AgentKey = `-----BEGIN RSA PRIVATE KEY-----

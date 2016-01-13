@@ -35,23 +35,59 @@ var _ = BeforeSuite(func() {
 	Expect(err).NotTo(HaveOccurred())
 
 	client = bosh.NewClient(bosh.Config{
-		URL:              config.BOSHTarget,
-		Username:         config.BOSHUsername,
-		Password:         config.BOSHPassword,
+		URL:              fmt.Sprintf("https://%s:25555", config.BOSH.Target),
+		Username:         config.BOSH.Username,
+		Password:         config.BOSH.Password,
 		AllowInsecureSSL: true,
 	})
 
 	By("deploying turbulence", func() {
-		uuid, err := client.DirectorUUID()
+		info, err := client.Info()
 		Expect(err).NotTo(HaveOccurred())
 
 		guid, err := helpers.NewGUID()
 		Expect(err).NotTo(HaveOccurred())
 
-		turbulenceManifest = destiny.NewTurbulence(destiny.Config{
-			DirectorUUID: uuid,
+		manifestConfig := destiny.Config{
+			DirectorUUID: info.UUID,
 			Name:         "turbulence-" + guid,
-		})
+			BOSH: destiny.ConfigBOSH{
+				Target:         config.BOSH.Target,
+				Username:       config.BOSH.Username,
+				Password:       config.BOSH.Password,
+				DirectorCACert: config.BOSH.DirectorCACert,
+			},
+		}
+
+		switch info.CPI {
+		case "aws_cpi":
+			manifestConfig.IAAS = destiny.AWS
+
+			if config.AWS.Subnet == "" {
+				Fail("aws.subnet is required for AWS IAAS deployment")
+			}
+
+			manifestConfig.AWS = destiny.ConfigAWS{
+				AccessKeyID:           config.AWS.AccessKeyID,
+				SecretAccessKey:       config.AWS.SecretAccessKey,
+				DefaultKeyName:        config.AWS.DefaultKeyName,
+				DefaultSecurityGroups: config.AWS.DefaultSecurityGroups,
+				Region:                config.AWS.Region,
+				Subnet:                config.AWS.Subnet,
+			}
+			manifestConfig.Registry = destiny.ConfigRegistry{
+				Host:     config.Registry.Host,
+				Port:     config.Registry.Port,
+				Username: config.Registry.Username,
+				Password: config.Registry.Password,
+			}
+		case "warden_cpi":
+			manifestConfig.IAAS = destiny.Warden
+		default:
+			Fail("unknown infrastructure type")
+		}
+
+		turbulenceManifest = destiny.NewTurbulence(manifestConfig)
 
 		yaml, err := turbulenceManifest.ToYAML()
 		Expect(err).NotTo(HaveOccurred())

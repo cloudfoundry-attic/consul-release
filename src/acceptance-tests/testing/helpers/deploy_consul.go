@@ -1,6 +1,7 @@
 package helpers
 
 import (
+	"errors"
 	"fmt"
 	"io/ioutil"
 
@@ -9,21 +10,39 @@ import (
 	"acceptance-tests/testing/destiny"
 )
 
-func DeployConsulWithInstanceCount(count int, client bosh.Client) (manifest destiny.Manifest, kv consul.KV, err error) {
+func DeployConsulWithInstanceCount(count int, client bosh.Client, config Config) (manifest destiny.Manifest, kv consul.KV, err error) {
 	guid, err := NewGUID()
 	if err != nil {
 		return
 	}
 
-	directorUUID, err := client.DirectorUUID()
+	info, err := client.Info()
 	if err != nil {
 		return
 	}
 
-	manifest = destiny.NewConsul(destiny.Config{
-		DirectorUUID: directorUUID,
+	manifestConfig := destiny.Config{
+		DirectorUUID: info.UUID,
 		Name:         fmt.Sprintf("consul-%s", guid),
-	})
+	}
+
+	switch info.CPI {
+	case "aws_cpi":
+		manifestConfig.IAAS = destiny.AWS
+		if config.AWS.Subnet != "" {
+			manifestConfig.AWS.Subnet = config.AWS.Subnet
+		} else {
+			err = errors.New("AWSSubnet is required for AWS IAAS deployment")
+			return
+		}
+	case "warden_cpi":
+		manifestConfig.IAAS = destiny.Warden
+	default:
+		err = errors.New("unknown infrastructure type")
+		return
+	}
+
+	manifest = destiny.NewConsul(manifestConfig)
 
 	manifest.Jobs[0], manifest.Properties = destiny.SetJobInstanceCount(manifest.Jobs[0], manifest.Networks[0], manifest.Properties, count)
 

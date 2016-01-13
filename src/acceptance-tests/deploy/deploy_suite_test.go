@@ -3,6 +3,7 @@ package deploy_test
 import (
 	"acceptance-tests/testing/bosh"
 	"acceptance-tests/testing/helpers"
+	"fmt"
 	"testing"
 
 	. "github.com/onsi/ginkgo"
@@ -27,9 +28,9 @@ var _ = BeforeSuite(func() {
 	Expect(err).NotTo(HaveOccurred())
 
 	client = bosh.NewClient(bosh.Config{
-		URL:              config.BOSHTarget,
-		Username:         config.BOSHUsername,
-		Password:         config.BOSHPassword,
+		URL:              fmt.Sprintf("https://%s:25555", config.BOSH.Target),
+		Username:         config.BOSH.Username,
+		Password:         config.BOSH.Password,
 		AllowInsecureSSL: true,
 	})
 })

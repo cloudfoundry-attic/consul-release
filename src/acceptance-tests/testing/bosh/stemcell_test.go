@@ -7,7 +7,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("stemcell", func() {
+var _ = Describe("Stemcell", func() {
 	Context("Latest", func() {
 		It("should return the latest stemcell available", func() {
 			stemcell := bosh.NewStemcell()
@@ -20,5 +20,7 @@ var _ = Describe("stemcell", func() {
 
 			Expect(stemcell.Latest()).To(Equal("3147"))
 		})
+
+		PIt("should handle no installed stemcells", func() {})
 	})
 })

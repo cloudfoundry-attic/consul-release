@@ -7,3 +7,60 @@ packages:
  - acceptance-tests
  - consul
  - golang1.5
+
+properties:
+  consul.acceptance_tests.bosh.target:
+   description: "Location of the BOSH Director to target when deploying consul"
+   default: "192.168.50.4"
+
+  consul.acceptance_tests.bosh.username:
+   description: "BOSH Director username"
+   default: "admin"
+
+  consul.acceptance_tests.bosh.password:
+   description: "BOSH Director password"
+   default: "admin"
+
+  consul.acceptance_tests.bosh.director_ca_cert:
+   description: "BOSH Director CA Cert"
+   default: ""
+
+  consul.acceptance_tests.aws.subnet:
+   description: "Subnet ID for AWS deployments"
+   default: ""
+
+  consul.acceptance_tests.aws.access_key_id:
+   description: "Key ID for AWS deployments"
+   default: ""
+
+  consul.acceptance_tests.aws.secret_access_key:
+   description: "Secret Access Key for AWS deployments"
+   default: ""
+
+  consul.acceptance_tests.aws.default_key_name:
+   description: "Default Key Name for AWS deployments"
+   default: "bosh"
+
+  consul.acceptance_tests.aws.default_security_groups:
+   description: "Security groups for AWS deployments"
+   default: []
+
+  consul.acceptance_tests.aws.region:
+   description: "Region for AWS deployments"
+   default: "us-east-1"
+
+  consul.acceptance_tests.registry.host:
+   description: "Host for the BOSH registry"
+   default: "127.0.0.1"
+
+  consul.acceptance_tests.registry.port:
+   description: "Port for the BOSH registry"
+   default: 25777
+
+  consul.acceptance_tests.registry.username:
+   description: "Username for the BOSH registry"
+   default: "admin"
+
+  consul.acceptance_tests.registry.password:
+   description: "Password for the BOSH registry"
+   default: "password"

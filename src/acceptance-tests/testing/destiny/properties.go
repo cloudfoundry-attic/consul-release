@@ -4,6 +4,25 @@ type Properties struct {
 	Consul        *PropertiesConsul        `yaml:"consul,omitempty"`
 	TurbulenceAPI *PropertiesTurbulenceAPI `yaml:"turbulence_api,omitempty"`
 	WardenCPI     *PropertiesWardenCPI     `yaml:"warden_cpi,omitempty"`
+	AWS           *PropertiesAWS           `yaml:"aws,omitempty"`
+	Registry      *PropertiesRegistry      `yaml:"registry,omitempty"`
+	Blobstore     *PropertiesBlobstore     `yaml:"blobstore,omitempty"`
+	Agent         *PropertiesAgent         `yaml:"agent,omitempty"`
+}
+
+type PropertiesBlobstore struct {
+	Address string                   `yaml:"address"`
+	Port    int                      `yaml:"port"`
+	Agent   PropertiesBlobstoreAgent `yaml:"agent"`
+}
+
+type PropertiesBlobstoreAgent struct {
+	User     string `yaml:"user"`
+	Password string `yaml:"password"`
+}
+
+type PropertiesAgent struct {
+	Mbus string `yaml:"mbus"`
 }
 
 type PropertiesTurbulenceAPI struct {
@@ -24,6 +43,21 @@ type PropertiesTurbulenceAPIDirector struct {
 type PropertiesWardenCPI struct {
 	Agent  PropertiesWardenCPIAgent  `yaml:"agent"`
 	Warden PropertiesWardenCPIWarden `yaml:"warden"`
+}
+
+type PropertiesAWS struct {
+	AccessKeyID           string   `yaml:"access_key_id"`
+	SecretAccessKey       string   `yaml:"secret_access_key"`
+	DefaultKeyName        string   `yaml:"default_key_name"`
+	DefaultSecurityGroups []string `yaml:"default_security_groups"`
+	Region                string   `yaml:"region"`
+}
+
+type PropertiesRegistry struct {
+	Host     string `yaml:"host"`
+	Username string `yaml:"username"`
+	Password string `yaml:"password"`
+	Port     int    `yaml:"port"`
 }
 
 type PropertiesWardenCPIAgent struct {

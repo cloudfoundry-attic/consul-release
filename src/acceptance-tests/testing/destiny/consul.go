@@ -1,5 +1,10 @@
 package destiny
 
+import (
+	"fmt"
+	"strings"
+)
+
 func (m Manifest) ConsulMembers() []ConsulMember {
 	members := []ConsulMember{}
 	for _, job := range m.Jobs {
@@ -23,46 +28,50 @@ type ConsulMember struct {
 	Address string
 }
 
+type IPRange string
+
+func (r IPRange) IP(index int) string {
+	parts := strings.Split(string(r), ".")
+	return fmt.Sprintf("%s.%s.%s.%d", parts[0], parts[1], parts[2], index)
+}
+
+func (r IPRange) Range(start, end int) string {
+	return fmt.Sprintf("%s-%s", r.IP(start), r.IP(end))
+}
+
 func NewConsul(config Config) Manifest {
 	release := Release{
 		Name:    "consul",
 		Version: "latest",
 	}
 
+	ipRange := IPRange("10.244.4.0/24")
+	cloudProperties := NetworkSubnetCloudProperties{Name: "random"}
+	if config.IAAS == AWS {
+		cloudProperties = NetworkSubnetCloudProperties{Subnet: config.AWS.Subnet}
+		ipRange = IPRange("10.0.4.0/24")
+	}
+
 	consulNetwork1 := Network{
 		Name: "consul1",
 		Subnets: []NetworkSubnet{{
-			CloudProperties: NetworkSubnetCloudProperties{Name: "random"},
-			Range:           "10.244.4.0/24",
-			Reserved:        []string{"10.244.4.1", "10.244.4.5", "10.244.4.9", "10.244.4.13", "10.244.4.17"},
-			Static:          []string{"10.244.4.2", "10.244.4.6", "10.244.4.10", "10.244.4.14", "10.244.4.18"},
-		}},
-		Type: "manual",
-	}
-
-	consulNetwork2 := Network{
-		Name: "consul2",
-		Subnets: []NetworkSubnet{{
-			CloudProperties: NetworkSubnetCloudProperties{Name: "random"},
-			Range:           "10.244.5.0/24",
-			Reserved:        []string{"10.244.5.1", "10.244.5.5", "10.244.5.9", "10.244.5.13", "10.244.5.17"},
-			Static:          []string{"10.244.5.2", "10.244.5.6", "10.244.5.10", "10.244.5.14", "10.244.5.18"},
-		}},
-		Type: "manual",
-	}
-
-	compilationNetwork := Network{
-		Name: "compilation",
-		Subnets: []NetworkSubnet{{
-			CloudProperties: NetworkSubnetCloudProperties{Name: "random"},
-			Range:           "10.244.6.0/24",
-			Reserved:        []string{"10.244.6.1", "10.244.6.5", "10.244.6.9"},
+			CloudProperties: cloudProperties,
+			Gateway:         ipRange.IP(1),
+			Range:           string(ipRange),
+			Reserved:        []string{ipRange.Range(2, 3), ipRange.Range(12, 254)},
+			Static: []string{
+				ipRange.IP(4),
+				ipRange.IP(5),
+				ipRange.IP(6),
+				ipRange.IP(7),
+				ipRange.IP(8),
+			},
 		}},
 		Type: "manual",
 	}
 
 	compilation := Compilation{
-		Network:             compilationNetwork.Name,
+		Network:             consulNetwork1.Name,
 		ReuseCompilationVMs: true,
 		Workers:             3,
 	}
@@ -76,7 +85,7 @@ func NewConsul(config Config) Manifest {
 	}
 
 	stemcell := ResourcePoolStemcell{
-		Name:    "bosh-warden-boshlite-ubuntu-trusty-go_agent",
+		Name:    StemcellForIAAS(config.IAAS),
 		Version: "latest",
 	}
 
@@ -86,10 +95,24 @@ func NewConsul(config Config) Manifest {
 		Stemcell: stemcell,
 	}
 
-	z2ResourcePool := ResourcePool{
-		Name:     "consul_z2",
-		Network:  consulNetwork2.Name,
-		Stemcell: stemcell,
+	if config.IAAS == AWS {
+		compilation.CloudProperties = CompilationCloudProperties{
+			InstanceType:     "m3.medium",
+			AvailabilityZone: "us-east-1a",
+			EphemeralDisk: &CompilationCloudPropertiesEphemeralDisk{
+				Size: 1024,
+				Type: "gp2",
+			},
+		}
+
+		z1ResourcePool.CloudProperties = ResourcePoolCloudProperties{
+			InstanceType:     "m3.medium",
+			AvailabilityZone: "us-east-1a",
+			EphemeralDisk: &ResourcePoolCloudPropertiesEphemeralDisk{
+				Size: 1024,
+				Type: "gp2",
+			},
+		}
 	}
 
 	z1Job := Job{
@@ -129,30 +152,6 @@ func NewConsul(config Config) Manifest {
 		},
 	}
 
-	z2Job := Job{
-		Name:      "consul_z2",
-		Instances: 0,
-		Networks: []JobNetwork{{
-			Name: consulNetwork2.Name,
-		}},
-		PersistentDisk: 1024,
-		Properties: &JobProperties{
-			Consul: JobPropertiesConsul{
-				Agent: JobPropertiesConsulAgent{
-					Mode: "server",
-				},
-			},
-		},
-		ResourcePool: z2ResourcePool.Name,
-		Templates: []JobTemplate{{
-			Name:    "consul_agent",
-			Release: "consul",
-		}},
-		Update: &JobUpdate{
-			MaxInFlight: 1,
-		},
-	}
-
 	properties := Properties{
 		Consul: &PropertiesConsul{
 			Agent: PropertiesConsulAgent{
@@ -176,9 +175,9 @@ func NewConsul(config Config) Manifest {
 		Releases:      []Release{release},
 		Compilation:   compilation,
 		Update:        update,
-		ResourcePools: []ResourcePool{z1ResourcePool, z2ResourcePool},
-		Jobs:          []Job{z1Job, z2Job},
-		Networks:      []Network{consulNetwork1, consulNetwork2, compilationNetwork},
+		ResourcePools: []ResourcePool{z1ResourcePool},
+		Jobs:          []Job{z1Job},
+		Networks:      []Network{consulNetwork1},
 		Properties:    properties,
 	}
 }

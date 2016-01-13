@@ -26,7 +26,7 @@ var _ = Describe("KillVm", func() {
 		testKey = "consul-key-" + guid
 		testValue = "consul-value-" + guid
 
-		consulManifest, kv, err = helpers.DeployConsulWithInstanceCount(3, client)
+		consulManifest, kv, err = helpers.DeployConsulWithInstanceCount(3, client, config)
 		Expect(err).NotTo(HaveOccurred())
 
 		Eventually(func() ([]bosh.VM, error) {

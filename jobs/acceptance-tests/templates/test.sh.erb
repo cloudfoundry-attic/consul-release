@@ -11,11 +11,7 @@ export GO15VENDOREXPERIMENT=1
 export CONSATS_CONFIG=/tmp/config.json
 
 cat > $CONSATS_CONFIG <<EOF
-{
-  "bosh_target": "https://192.168.50.4:25555",
-  "bosh_username": "admin",
-  "bosh_password": "admin"
-}
+<%= p('consul.acceptance_tests').to_json %>
 EOF
 
 chown -R vcap:vcap "/var/vcap/data/"

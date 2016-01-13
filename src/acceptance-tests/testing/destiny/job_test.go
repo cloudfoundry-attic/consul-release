@@ -10,7 +10,9 @@ import (
 var _ = Describe("Job", func() {
 	Describe("SetJobInstanceCount", func() {
 		It("sets the correct values for instances and static_ips given a count", func() {
-			manifest := destiny.NewConsul(destiny.Config{})
+			manifest := destiny.NewConsul(destiny.Config{
+				IAAS: destiny.Warden,
+			})
 			job := manifest.Jobs[0]
 			network := manifest.Networks[0]
 			properties := manifest.Properties

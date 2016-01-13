@@ -25,7 +25,7 @@ var _ = Describe("Scaling down Instances", func() {
 		testKey = "consul-key-" + guid
 		testValue = "consul-value-" + guid
 
-		manifest, kv, err = helpers.DeployConsulWithInstanceCount(3, client)
+		manifest, kv, err = helpers.DeployConsulWithInstanceCount(3, client, config)
 		Expect(err).NotTo(HaveOccurred())
 
 		Eventually(func() ([]bosh.VM, error) {

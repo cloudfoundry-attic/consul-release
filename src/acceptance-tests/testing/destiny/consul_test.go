@@ -13,6 +13,7 @@ var _ = Describe("Consul Manifest", func() {
 			manifest := destiny.NewConsul(destiny.Config{
 				DirectorUUID: "some-director-uuid",
 				Name:         "consul-some-random-guid",
+				IAAS:         destiny.Warden,
 			})
 
 			Expect(manifest).To(Equal(destiny.Manifest{
@@ -23,7 +24,7 @@ var _ = Describe("Consul Manifest", func() {
 					Version: "latest",
 				}},
 				Compilation: destiny.Compilation{
-					Network:             "compilation",
+					Network:             "consul1",
 					ReuseCompilationVMs: true,
 					Workers:             3,
 				},
@@ -43,14 +44,6 @@ var _ = Describe("Consul Manifest", func() {
 							Version: "latest",
 						},
 					},
-					{
-						Name:    "consul_z2",
-						Network: "consul2",
-						Stemcell: destiny.ResourcePoolStemcell{
-							Name:    "bosh-warden-boshlite-ubuntu-trusty-go_agent",
-							Version: "latest",
-						},
-					},
 				},
 				Jobs: []destiny.Job{
 					{
@@ -58,7 +51,7 @@ var _ = Describe("Consul Manifest", func() {
 						Instances: 1,
 						Networks: []destiny.JobNetwork{{
 							Name:      "consul1",
-							StaticIPs: []string{"10.244.4.2"},
+							StaticIPs: []string{"10.244.4.4"},
 						}},
 						PersistentDisk: 1024,
 						Properties: &destiny.JobProperties{
@@ -89,21 +82,135 @@ var _ = Describe("Consul Manifest", func() {
 							MaxInFlight: 1,
 						},
 					},
+				},
+				Networks: []destiny.Network{
 					{
-						Name:      "consul_z2",
-						Instances: 0,
+						Name: "consul1",
+						Subnets: []destiny.NetworkSubnet{
+							{
+								CloudProperties: destiny.NetworkSubnetCloudProperties{Name: "random"},
+								Gateway:         "10.244.4.1",
+								Range:           "10.244.4.0/24",
+								Reserved: []string{
+									"10.244.4.2-10.244.4.3",
+									"10.244.4.12-10.244.4.254",
+								},
+								Static: []string{
+									"10.244.4.4",
+									"10.244.4.5",
+									"10.244.4.6",
+									"10.244.4.7",
+									"10.244.4.8",
+								},
+							},
+						},
+						Type: "manual",
+					},
+				},
+				Properties: destiny.Properties{
+					Consul: &destiny.PropertiesConsul{
+						Agent: destiny.PropertiesConsulAgent{
+							LogLevel: "",
+							Servers: destiny.PropertiesConsulAgentServers{
+								Lan: []string{"10.244.4.4"},
+							},
+						},
+						CACert:      destiny.CACert,
+						AgentCert:   destiny.AgentCert,
+						AgentKey:    destiny.AgentKey,
+						ServerCert:  destiny.ServerCert,
+						ServerKey:   destiny.ServerKey,
+						EncryptKeys: []string{destiny.EncryptKey},
+						RequireSSL:  true,
+					},
+				},
+			}))
+		})
+
+		It("generates a valid Consul AWS manifest", func() {
+			manifest := destiny.NewConsul(destiny.Config{
+				DirectorUUID: "some-director-uuid",
+				Name:         "consul-some-random-guid",
+				IAAS:         destiny.AWS,
+				AWS: destiny.ConfigAWS{
+					Subnet: "subnet-1234",
+				},
+			})
+
+			Expect(manifest).To(Equal(destiny.Manifest{
+				DirectorUUID: "some-director-uuid",
+				Name:         "consul-some-random-guid",
+				Releases: []destiny.Release{{
+					Name:    "consul",
+					Version: "latest",
+				}},
+				Compilation: destiny.Compilation{
+					Network:             "consul1",
+					ReuseCompilationVMs: true,
+					Workers:             3,
+					CloudProperties: destiny.CompilationCloudProperties{
+						InstanceType:     "m3.medium",
+						AvailabilityZone: "us-east-1a",
+						EphemeralDisk: &destiny.CompilationCloudPropertiesEphemeralDisk{
+							Size: 1024,
+							Type: "gp2",
+						},
+					},
+				},
+				Update: destiny.Update{
+					Canaries:        1,
+					CanaryWatchTime: "1000-180000",
+					MaxInFlight:     50,
+					Serial:          true,
+					UpdateWatchTime: "1000-180000",
+				},
+				ResourcePools: []destiny.ResourcePool{
+					{
+						Name:    "consul_z1",
+						Network: "consul1",
+						Stemcell: destiny.ResourcePoolStemcell{
+							Name:    "bosh-aws-xen-hvm-ubuntu-trusty-go_agent",
+							Version: "latest",
+						},
+						CloudProperties: destiny.ResourcePoolCloudProperties{
+							InstanceType:     "m3.medium",
+							AvailabilityZone: "us-east-1a",
+							EphemeralDisk: &destiny.ResourcePoolCloudPropertiesEphemeralDisk{
+								Size: 1024,
+								Type: "gp2",
+							},
+						},
+					},
+				},
+				Jobs: []destiny.Job{
+					{
+						Name:      "consul_z1",
+						Instances: 1,
 						Networks: []destiny.JobNetwork{{
-							Name: "consul2",
+							Name:      "consul1",
+							StaticIPs: []string{"10.0.4.4"},
 						}},
 						PersistentDisk: 1024,
 						Properties: &destiny.JobProperties{
 							Consul: destiny.JobPropertiesConsul{
 								Agent: destiny.JobPropertiesConsulAgent{
 									Mode: "server",
+									Services: destiny.JobPropertiesConsulAgentServices{
+										"router": destiny.JobPropertiesConsulAgentService{
+											Name: "gorouter",
+											Check: &destiny.JobPropertiesConsulAgentServiceCheck{
+												Name:     "router-check",
+												Script:   "/var/vcap/jobs/router/bin/script",
+												Interval: "1m",
+											},
+											Tags: []string{"routing"},
+										},
+										"cloud_controller": destiny.JobPropertiesConsulAgentService{},
+									},
 								},
 							},
 						},
-						ResourcePool: "consul_z2",
+						ResourcePool: "consul_z1",
 						Templates: []destiny.JobTemplate{{
 							Name:    "consul_agent",
 							Release: "consul",
@@ -118,33 +225,20 @@ var _ = Describe("Consul Manifest", func() {
 						Name: "consul1",
 						Subnets: []destiny.NetworkSubnet{
 							{
-								CloudProperties: destiny.NetworkSubnetCloudProperties{Name: "random"},
-								Range:           "10.244.4.0/24",
-								Reserved:        []string{"10.244.4.1", "10.244.4.5", "10.244.4.9", "10.244.4.13", "10.244.4.17"},
-								Static:          []string{"10.244.4.2", "10.244.4.6", "10.244.4.10", "10.244.4.14", "10.244.4.18"},
-							},
-						},
-						Type: "manual",
-					},
-					{
-						Name: "consul2",
-						Subnets: []destiny.NetworkSubnet{
-							{
-								CloudProperties: destiny.NetworkSubnetCloudProperties{Name: "random"},
-								Range:           "10.244.5.0/24",
-								Reserved:        []string{"10.244.5.1", "10.244.5.5", "10.244.5.9", "10.244.5.13", "10.244.5.17"},
-								Static:          []string{"10.244.5.2", "10.244.5.6", "10.244.5.10", "10.244.5.14", "10.244.5.18"},
-							},
-						},
-						Type: "manual",
-					},
-					{
-						Name: "compilation",
-						Subnets: []destiny.NetworkSubnet{
-							{
-								CloudProperties: destiny.NetworkSubnetCloudProperties{Name: "random"},
-								Range:           "10.244.6.0/24",
-								Reserved:        []string{"10.244.6.1", "10.244.6.5", "10.244.6.9"},
+								CloudProperties: destiny.NetworkSubnetCloudProperties{Subnet: "subnet-1234"},
+								Gateway:         "10.0.4.1",
+								Range:           "10.0.4.0/24",
+								Reserved: []string{
+									"10.0.4.2-10.0.4.3",
+									"10.0.4.12-10.0.4.254",
+								},
+								Static: []string{
+									"10.0.4.4",
+									"10.0.4.5",
+									"10.0.4.6",
+									"10.0.4.7",
+									"10.0.4.8",
+								},
 							},
 						},
 						Type: "manual",
@@ -155,7 +249,7 @@ var _ = Describe("Consul Manifest", func() {
 						Agent: destiny.PropertiesConsulAgent{
 							LogLevel: "",
 							Servers: destiny.PropertiesConsulAgentServers{
-								Lan: []string{"10.244.4.2"},
+								Lan: []string{"10.0.4.4"},
 							},
 						},
 						CACert:      destiny.CACert,

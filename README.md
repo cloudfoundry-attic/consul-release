@@ -175,18 +175,31 @@ An example config json for BOSH-lite would look like:
 ```json
 cat > integration_config.json << EOF
 {
-  "bosh_target": "192.168.50.4",
-  "bosh_username": "admin",
-  "bosh_password": "admin"
+  "bosh":{
+    "target": "192.168.50.4",
+    "username": "admin",
+    "password": "admin"
+  }
 }
 EOF
 export CONSATS_CONFIG=$PWD/integration_config.json
 ```
 
 The full set of config parameters is explained below:
-* `bosh_target` (required) Public BOSH IP address that will be used to host test environment.
-* `bosh_username` (required) Username for the BOSH director login.
-* `bosh_password` (required) Password for the BOSH director login.
+* `bosh.target` (required) Public BOSH IP address that will be used to host test environment
+* `bosh.username` (required) Username for the BOSH director login
+* `bosh.password` (required) Password for the BOSH director login
+* `bosh.director_ca_cert` BOSH Director CA Cert
+* `aws.subnet` Subnet ID for AWS deployments
+* `aws.access_key_id` Key ID for AWS deployments
+* `aws.secret_access_key` Secret Access Key for AWS deployments
+* `aws.default_key_name` Default Key Name for AWS deployments
+* `aws.default_security_groups` Security groups for AWS deployments
+* `aws.region` Region for AWS deployments
+* `registry.host` Host for the BOSH registry
+* `registry.port` Port for the BOSH registry
+* `registry.username` Username for the BOSH registry
+* `registry.password` Password for the BOSH registry
 
 #### Running as BOSH errand
 
@@ -194,16 +207,22 @@ The full set of config parameters is explained below:
 
 The `acceptance-tests` BOSH errand assumes that the BOSH director has already uploaded the correct versions of the dependent releases.
 The required releases are:
-* [bosh-warden-cpi-release](http://bosh.io/releases/github.com/cppforlife/bosh-warden-cpi-release?version=28)
 * [turbulence-release](http://bosh.io/releases/github.com/cppforlife/turbulence-release?version=0.4)
 * [consul-release](http://bosh.io/releases/github.com/cloudfoundry-incubator/consul-release) or `bosh create release && bosh upload release`
 
+For BOSH-Lite:
+* [bosh-warden-cpi-release](http://bosh.io/releases/github.com/cppforlife/bosh-warden-cpi-release?version=28)
+
+For AWS:
+* [bosh-aws-cpi-release](http://bosh.io/releases/github.com/cloudfoundry-incubator/bosh-aws-cpi-release?version=39)
+
 ##### Generating a consats deployment manifest
 
-We provide a set of scripts and templates to generate a simple deployment manifest. This manifest is designed to work on a local BOSH-lite.
+We provide a set of scripts and templates to generate a simple deployment manifest.
+This manifest is designed to work on a local BOSH-lite or AWS provisioned BOSH.
 
 In order to automatically generate a manifest you must have installed [spiff](https://github.com/cloudfoundry-incubator/spiff).
-Once installed, manifests can be generated using `./scripts/generate-bosh-lite-consats-manifest` with the provided stubs:
+Once installed, manifests can be generated using `./scripts/generate-consats-manifest {bosh-lite|aws}` with the provided stubs.
 
 ##### Deploying the errand
 

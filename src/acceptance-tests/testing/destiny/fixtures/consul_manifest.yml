@@ -1,19 +1,24 @@
 director_uuid: some-director-uuid
+
 name: consul
+
 releases:
 - name: consul
   version: latest
+
 compilation:
   cloud_properties: {}
-  network: compilation
+  network: consul1
   reuse_compilation_vms: true
   workers: 3
+
 update:
   canaries: 1
   canary_watch_time: 1000-180000
   max_in_flight: 50
   serial: true
   update_watch_time: 1000-180000
+
 resource_pools:
 - cloud_properties: {}
   name: consul_z1
@@ -21,19 +26,14 @@ resource_pools:
   stemcell:
     name: bosh-warden-boshlite-ubuntu-trusty-go_agent
     version: latest
-- cloud_properties: {}
-  name: consul_z2
-  network: consul2
-  stemcell:
-    name: bosh-warden-boshlite-ubuntu-trusty-go_agent
-    version: latest
+
 jobs:
 - instances: 1
   name: consul_z1
   networks:
   - name: consul1
     static_ips:
-    - 10.244.4.2
+    - 10.244.4.4
   persistent_disk: 1024
   properties:
     consul:
@@ -54,70 +54,23 @@ jobs:
     release: consul
   update:
     max_in_flight: 1
-- instances: 0
-  name: consul_z2
-  networks:
-  - name: consul2
-    static_ips: []
-  persistent_disk: 1024
-  properties:
-    consul:
-      agent:
-        mode: server
-  resource_pool: consul_z2
-  templates:
-  - name: consul_agent
-    release: consul
-  update:
-    max_in_flight: 1
 
 networks:
 - name: consul1
   subnets:
   - cloud_properties:
       name: random
+    gateway: 10.244.4.1
     range: 10.244.4.0/24
     reserved:
-    - 10.244.4.1
+    - 10.244.4.2-10.244.4.3
+    - 10.244.4.12-10.244.4.254
+    static:
+    - 10.244.4.4
     - 10.244.4.5
-    - 10.244.4.9
-    - 10.244.4.13
-    - 10.244.4.17
-    static:
-    - 10.244.4.2
     - 10.244.4.6
-    - 10.244.4.10
-    - 10.244.4.14
-    - 10.244.4.18
-  type: manual
-- name: consul2
-  subnets:
-  - cloud_properties:
-      name: random
-    range: 10.244.5.0/24
-    reserved:
-    - 10.244.5.1
-    - 10.244.5.5
-    - 10.244.5.9
-    - 10.244.5.13
-    - 10.244.5.17
-    static:
-    - 10.244.5.2
-    - 10.244.5.6
-    - 10.244.5.10
-    - 10.244.5.14
-    - 10.244.5.18
-  type: manual
-- name: compilation
-  subnets:
-  - cloud_properties:
-      name: random
-    range: 10.244.6.0/24
-    reserved:
-    - 10.244.6.1
-    - 10.244.6.5
-    - 10.244.6.9
-    static: []
+    - 10.244.4.7
+    - 10.244.4.8
   type: manual
 
 properties:
@@ -125,7 +78,7 @@ properties:
     agent:
       servers:
         lan:
-        - 10.244.4.2
+        - 10.244.4.4
     agent_cert: |+
       -----BEGIN CERTIFICATE-----
       MIIEITCCAgugAwIBAgIQTDMCJHBiQrY8hlM78doHTzALBgkqhkiG9w0BAQswEzER

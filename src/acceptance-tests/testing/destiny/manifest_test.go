@@ -19,6 +19,7 @@ var _ = Describe("Manifest", func() {
 			manifest := destiny.NewConsul(destiny.Config{
 				DirectorUUID: "some-director-uuid",
 				Name:         "consul",
+				IAAS:         destiny.Warden,
 			})
 
 			yaml, err := manifest.ToYAML()
@@ -33,6 +34,12 @@ var _ = Describe("Manifest", func() {
 			manifest := destiny.NewTurbulence(destiny.Config{
 				DirectorUUID: "some-director-uuid",
 				Name:         "turbulence",
+				IAAS:         destiny.Warden,
+				BOSH: destiny.ConfigBOSH{
+					Target:   "some-bosh-target",
+					Username: "some-bosh-username",
+					Password: "some-bosh-password",
+				},
 			})
 
 			yaml, err := manifest.ToYAML()
@@ -57,7 +64,7 @@ var _ = Describe("Manifest", func() {
 					Version: "latest",
 				}},
 				Compilation: destiny.Compilation{
-					Network:             "compilation",
+					Network:             "consul1",
 					ReuseCompilationVMs: true,
 					Workers:             3,
 				},
@@ -77,14 +84,6 @@ var _ = Describe("Manifest", func() {
 							Version: "latest",
 						},
 					},
-					{
-						Name:    "consul_z2",
-						Network: "consul2",
-						Stemcell: destiny.ResourcePoolStemcell{
-							Name:    "bosh-warden-boshlite-ubuntu-trusty-go_agent",
-							Version: "latest",
-						},
-					},
 				},
 				Jobs: []destiny.Job{
 					{
@@ -92,7 +91,7 @@ var _ = Describe("Manifest", func() {
 						Instances: 1,
 						Networks: []destiny.JobNetwork{{
 							Name:      "consul1",
-							StaticIPs: []string{"10.244.4.2"},
+							StaticIPs: []string{"10.244.4.4"},
 						}},
 						PersistentDisk: 1024,
 						Properties: &destiny.JobProperties{
@@ -123,30 +122,6 @@ var _ = Describe("Manifest", func() {
 							MaxInFlight: 1,
 						},
 					},
-					{
-						Name:      "consul_z2",
-						Instances: 0,
-						Networks: []destiny.JobNetwork{{
-							Name:      "consul2",
-							StaticIPs: []string{},
-						}},
-						PersistentDisk: 1024,
-						Properties: &destiny.JobProperties{
-							Consul: destiny.JobPropertiesConsul{
-								Agent: destiny.JobPropertiesConsulAgent{
-									Mode: "server",
-								},
-							},
-						},
-						ResourcePool: "consul_z2",
-						Templates: []destiny.JobTemplate{{
-							Name:    "consul_agent",
-							Release: "consul",
-						}},
-						Update: &destiny.JobUpdate{
-							MaxInFlight: 1,
-						},
-					},
 				},
 				Networks: []destiny.Network{
 					{
@@ -154,33 +129,19 @@ var _ = Describe("Manifest", func() {
 						Subnets: []destiny.NetworkSubnet{
 							{
 								CloudProperties: destiny.NetworkSubnetCloudProperties{Name: "random"},
+								Gateway:         "10.244.4.1",
 								Range:           "10.244.4.0/24",
-								Reserved:        []string{"10.244.4.1", "10.244.4.5", "10.244.4.9", "10.244.4.13", "10.244.4.17"},
-								Static:          []string{"10.244.4.2", "10.244.4.6", "10.244.4.10", "10.244.4.14", "10.244.4.18"},
-							},
-						},
-						Type: "manual",
-					},
-					{
-						Name: "consul2",
-						Subnets: []destiny.NetworkSubnet{
-							{
-								CloudProperties: destiny.NetworkSubnetCloudProperties{Name: "random"},
-								Range:           "10.244.5.0/24",
-								Reserved:        []string{"10.244.5.1", "10.244.5.5", "10.244.5.9", "10.244.5.13", "10.244.5.17"},
-								Static:          []string{"10.244.5.2", "10.244.5.6", "10.244.5.10", "10.244.5.14", "10.244.5.18"},
-							},
-						},
-						Type: "manual",
-					},
-					{
-						Name: "compilation",
-						Subnets: []destiny.NetworkSubnet{
-							{
-								CloudProperties: destiny.NetworkSubnetCloudProperties{Name: "random"},
-								Range:           "10.244.6.0/24",
-								Reserved:        []string{"10.244.6.1", "10.244.6.5", "10.244.6.9"},
-								Static:          []string{},
+								Reserved: []string{
+									"10.244.4.2-10.244.4.3",
+									"10.244.4.12-10.244.4.254",
+								},
+								Static: []string{
+									"10.244.4.4",
+									"10.244.4.5",
+									"10.244.4.6",
+									"10.244.4.7",
+									"10.244.4.8",
+								},
 							},
 						},
 						Type: "manual",
@@ -191,7 +152,7 @@ var _ = Describe("Manifest", func() {
 						Agent: destiny.PropertiesConsulAgent{
 							LogLevel: "",
 							Servers: destiny.PropertiesConsulAgentServers{
-								Lan: []string{"10.244.4.2"},
+								Lan: []string{"10.244.4.4"},
 							},
 						},
 						CACert:      destiny.CACert,

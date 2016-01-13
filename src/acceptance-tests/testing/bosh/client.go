@@ -56,6 +56,11 @@ type Client struct {
 	config Config
 }
 
+type DirectorInfo struct {
+	UUID string
+	CPI  string
+}
+
 func NewClient(config Config) Client {
 	if config.TaskPollingInterval == time.Duration(0) {
 		config.TaskPollingInterval = 5 * time.Second
@@ -126,6 +131,10 @@ func (c Client) Stemcell(name string) (Stemcell, error) {
 		return Stemcell{}, err
 	}
 
+	if response.StatusCode == http.StatusNotFound {
+		return Stemcell{}, fmt.Errorf("stemcell %s could not be found", name)
+	}
+
 	if response.StatusCode != http.StatusOK {
 		return Stemcell{}, fmt.Errorf("unexpected response %d %s", response.StatusCode, http.StatusText(response.StatusCode))
 	}
@@ -162,6 +171,10 @@ func (c Client) Release(name string) (Release, error) {
 	response, err := client.Do(request)
 	if err != nil {
 		return Release{}, err
+	}
+
+	if response.StatusCode == http.StatusNotFound {
+		return Release{}, fmt.Errorf("release %s could not be found", name)
 	}
 
 	if response.StatusCode != http.StatusOK {
@@ -240,21 +253,19 @@ func (c Client) DeploymentVMs(name string) ([]VM, error) {
 	return vms, nil
 }
 
-func (c Client) DirectorUUID() (string, error) {
+func (c Client) Info() (DirectorInfo, error) {
 	response, err := client.Get(fmt.Sprintf("%s/info", c.config.URL))
 	if err != nil {
-		return "", err
+		return DirectorInfo{}, err
 	}
 
-	var values struct {
-		UUID string
-	}
-	err = json.NewDecoder(response.Body).Decode(&values)
+	info := DirectorInfo{}
+	err = json.NewDecoder(response.Body).Decode(&info)
 	if err != nil {
-		return "", err
+		return DirectorInfo{}, err
 	}
 
-	return values.UUID, nil
+	return info, nil
 }
 
 func (c Client) Deploy(manifest []byte) error {

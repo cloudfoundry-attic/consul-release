@@ -21,11 +21,13 @@ func (n Network) StaticIPs(count int) []string {
 
 type NetworkSubnet struct {
 	CloudProperties NetworkSubnetCloudProperties `yaml:"cloud_properties"`
+	Gateway         string                       `yaml:"gateway"`
 	Range           string                       `yaml:"range"`
 	Reserved        []string                     `yaml:"reserved"`
 	Static          []string                     `yaml:"static"`
 }
 
 type NetworkSubnetCloudProperties struct {
-	Name string `yaml:"name"`
+	Name   string `yaml:"name"`
+	Subnet string `yaml:"subnet,omitempty"`
 }

@@ -1,46 +1,89 @@
 package destiny
 
+import "fmt"
+
+type CPI struct {
+	JobName     string
+	ReleaseName string
+}
+
 func NewTurbulence(config Config) Manifest {
 	turbulenceRelease := Release{
 		Name:    "turbulence",
 		Version: "latest",
 	}
 
-	wardenCPIRelease := Release{
-		Name:    "bosh-warden-cpi",
+	cpi := CPI{
+		JobName:     "warden_cpi",
+		ReleaseName: "bosh-warden-cpi",
+	}
+	if config.IAAS == AWS {
+		cpi = CPI{
+			JobName:     "aws_cpi",
+			ReleaseName: "bosh-aws-cpi",
+		}
+	}
+
+	cpiRelease := Release{
+		Name:    cpi.ReleaseName,
 		Version: "latest",
+	}
+
+	ipRange := IPRange("10.244.4.0/24")
+	cloudProperties := NetworkSubnetCloudProperties{Name: "random"}
+	if config.IAAS == AWS {
+		cloudProperties = NetworkSubnetCloudProperties{Subnet: config.AWS.Subnet}
+		ipRange = IPRange("10.0.4.0/24")
 	}
 
 	turbulenceNetwork := Network{
 		Name: "turbulence",
 		Subnets: []NetworkSubnet{{
-			CloudProperties: NetworkSubnetCloudProperties{
-				Name: "random",
+			CloudProperties: cloudProperties,
+			Gateway:         ipRange.IP(1),
+			Range:           string(ipRange),
+			Reserved:        []string{ipRange.Range(2, 11), ipRange.Range(17, 254)},
+			Static: []string{
+				ipRange.IP(12),
+				ipRange.IP(13),
 			},
-			Range:    "10.244.7.0/24",
-			Reserved: []string{"10.244.7.1"},
-			Static:   []string{"10.244.7.2"},
-		}},
-		Type: "manual",
-	}
-
-	compilationNetwork := Network{
-		Name: "compilation",
-		Subnets: []NetworkSubnet{{
-			CloudProperties: NetworkSubnetCloudProperties{
-				Name: "random",
-			},
-			Range:    "10.244.8.0/24",
-			Reserved: []string{"10.244.8.1", "10.244.8.5", "10.244.8.9"},
-			Static:   []string{},
 		}},
 		Type: "manual",
 	}
 
 	compilation := Compilation{
-		Network:             compilationNetwork.Name,
+		Network:             turbulenceNetwork.Name,
 		ReuseCompilationVMs: true,
 		Workers:             3,
+	}
+
+	turbulenceResourcePool := ResourcePool{
+		Name:    "turbulence",
+		Network: turbulenceNetwork.Name,
+		Stemcell: ResourcePoolStemcell{
+			Name:    StemcellForIAAS(config.IAAS),
+			Version: "latest",
+		},
+	}
+
+	if config.IAAS == AWS {
+		compilation.CloudProperties = CompilationCloudProperties{
+			InstanceType:     "m3.medium",
+			AvailabilityZone: "us-east-1a",
+			EphemeralDisk: &CompilationCloudPropertiesEphemeralDisk{
+				Size: 1024,
+				Type: "gp2",
+			},
+		}
+
+		turbulenceResourcePool.CloudProperties = ResourcePoolCloudProperties{
+			InstanceType:     "m3.medium",
+			AvailabilityZone: "us-east-1a",
+			EphemeralDisk: &ResourcePoolCloudPropertiesEphemeralDisk{
+				Size: 1024,
+				Type: "gp2",
+			},
+		}
 	}
 
 	update := Update{
@@ -49,15 +92,6 @@ func NewTurbulence(config Config) Manifest {
 		MaxInFlight:     1,
 		Serial:          true,
 		UpdateWatchTime: "1000-180000",
-	}
-
-	turbulenceResourcePool := ResourcePool{
-		Name:    "turbulence",
-		Network: turbulenceNetwork.Name,
-		Stemcell: ResourcePoolStemcell{
-			Name:    "bosh-warden-boshlite-ubuntu-trusty-go_agent",
-			Version: "latest",
-		},
 	}
 
 	apiJob := Job{
@@ -75,26 +109,35 @@ func NewTurbulence(config Config) Manifest {
 				Release: turbulenceRelease.Name,
 			},
 			{
-				Name:    "warden_cpi",
-				Release: wardenCPIRelease.Name,
+				Name:    cpi.JobName,
+				Release: cpiRelease.Name,
 			},
 		},
+	}
+
+	directorCACert := TurbulenceAPIDirectorCACert
+	if config.BOSH.DirectorCACert != "" {
+		directorCACert = config.BOSH.DirectorCACert
 	}
 
 	properties := Properties{
 		TurbulenceAPI: &PropertiesTurbulenceAPI{
 			Certificate: TurbulenceAPICertificate,
-			CPIJobName:  "warden_cpi",
+			CPIJobName:  cpi.JobName,
 			Director: PropertiesTurbulenceAPIDirector{
-				CACert:   TurbulenceAPIDirectorCACert,
-				Host:     "192.168.50.4",
-				Password: "admin",
-				Username: "admin",
+				CACert:   directorCACert,
+				Host:     config.BOSH.Target,
+				Password: config.BOSH.Password,
+				Username: config.BOSH.Username,
 			},
 			Password:   "turbulence-password",
 			PrivateKey: TurbulenceAPIPrivateKey,
 		},
-		WardenCPI: &PropertiesWardenCPI{
+	}
+
+	switch config.IAAS {
+	case Warden:
+		properties.WardenCPI = &PropertiesWardenCPI{
 			Agent: PropertiesWardenCPIAgent{
 				Blobstore: PropertiesWardenCPIAgentBlobstore{
 					Options: PropertiesWardenCPIAgentBlobstoreOptions{
@@ -110,18 +153,43 @@ func NewTurbulence(config Config) Manifest {
 				ConnectAddress: "10.254.50.4:7777",
 				ConnectNetwork: "tcp",
 			},
-		},
+		}
+	case AWS:
+		properties.AWS = &PropertiesAWS{
+			AccessKeyID:           config.AWS.AccessKeyID,
+			SecretAccessKey:       config.AWS.SecretAccessKey,
+			DefaultKeyName:        config.AWS.DefaultKeyName,
+			DefaultSecurityGroups: config.AWS.DefaultSecurityGroups,
+			Region:                config.AWS.Region,
+		}
+		properties.Registry = &PropertiesRegistry{
+			Host:     config.Registry.Host,
+			Password: config.Registry.Password,
+			Port:     config.Registry.Port,
+			Username: config.Registry.Username,
+		}
+		properties.Blobstore = &PropertiesBlobstore{
+			Address: turbulenceNetwork.StaticIPs(1)[0],
+			Port:    2520,
+			Agent: PropertiesBlobstoreAgent{
+				User:     "agent",
+				Password: "agent-password",
+			},
+		}
+		properties.Agent = &PropertiesAgent{
+			Mbus: fmt.Sprintf("nats://nats:password@%s:4222", turbulenceNetwork.StaticIPs(1)[0]),
+		}
 	}
 
 	return Manifest{
 		DirectorUUID:  config.DirectorUUID,
 		Name:          config.Name,
-		Releases:      []Release{turbulenceRelease, wardenCPIRelease},
+		Releases:      []Release{turbulenceRelease, cpiRelease},
 		ResourcePools: []ResourcePool{turbulenceResourcePool},
 		Compilation:   compilation,
 		Update:        update,
 		Jobs:          []Job{apiJob},
-		Networks:      []Network{turbulenceNetwork, compilationNetwork},
+		Networks:      []Network{turbulenceNetwork},
 		Properties:    properties,
 	}
 }
