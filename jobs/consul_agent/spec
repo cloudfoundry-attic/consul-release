@@ -46,10 +46,6 @@ properties:
     description: "The Consul protocol to use."
     default: 2
 
-  consul.agent.register_self_service:
-    description: "Registers a service called 'self'"
-    default: false
-
   consul.require_ssl:
     description: "enable ssl for all communication with consul"
     default: true
