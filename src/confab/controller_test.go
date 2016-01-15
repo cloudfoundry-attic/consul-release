@@ -38,7 +38,6 @@ var _ = Describe("Controller", func() {
 		controller = confab.Controller{
 			AgentClient:    agentClient,
 			AgentRunner:    agentRunner,
-			MaxRetries:     10,
 			SyncRetryDelay: 10 * time.Millisecond,
 			SyncRetryClock: clock,
 			EncryptKeys:    []string{"key 1", "key 2", "key 3"},
@@ -101,7 +100,7 @@ var _ = Describe("Controller", func() {
 
 	Describe("BootAgent", func() {
 		It("launches the consul agent and confirms that it joined the cluster", func() {
-			Expect(controller.BootAgent()).To(Succeed())
+			Expect(controller.BootAgent(confab.NewTimeout(make(chan time.Time)))).To(Succeed())
 			Expect(agentRunner.RunCalls.CallCount).To(Equal(1))
 			Expect(agentClient.VerifyJoinedCalls.CallCount).To(Equal(1))
 			Expect(logger.Messages).To(ContainSequence([]fakes.LoggerMessage{
@@ -121,7 +120,7 @@ var _ = Describe("Controller", func() {
 			It("immediately returns an error", func() {
 				agentRunner.RunCalls.Returns.Errors = []error{errors.New("some error")}
 
-				Expect(controller.BootAgent()).To(MatchError("some error"))
+				Expect(controller.BootAgent(confab.NewTimeout(make(chan time.Time)))).To(MatchError("some error"))
 				Expect(agentRunner.RunCalls.CallCount).To(Equal(1))
 				Expect(agentClient.VerifyJoinedCalls.CallCount).To(Equal(0))
 				Expect(logger.Messages).To(ContainSequence([]fakes.LoggerMessage{
@@ -143,7 +142,7 @@ var _ = Describe("Controller", func() {
 					agentClient.VerifyJoinedCalls.Returns.Errors[i] = errors.New("some error")
 				}
 
-				Expect(controller.BootAgent()).To(Succeed())
+				Expect(controller.BootAgent(confab.NewTimeout(make(chan time.Time)))).To(Succeed())
 				Expect(agentClient.VerifyJoinedCalls.CallCount).To(Equal(10))
 				Expect(clock.SleepCall.CallCount).To(Equal(9))
 				Expect(clock.SleepCall.Receives.Duration).To(Equal(10 * time.Millisecond))
@@ -161,17 +160,21 @@ var _ = Describe("Controller", func() {
 			})
 		})
 
-		Context("joining never succeeds within MaxRetries", func() {
+		Context("joining never succeeds within timeout period", func() {
 			It("immediately returns an error", func() {
 				agentClient.VerifyJoinedCalls.Returns.Errors = make([]error, 10)
 				for i := 0; i < 9; i++ {
 					agentClient.VerifyJoinedCalls.Returns.Errors[i] = errors.New("some error")
 				}
-				agentClient.VerifyJoinedCalls.Returns.Errors[9] = errors.New("the final error")
 
-				Expect(controller.BootAgent()).To(MatchError("the final error"))
-				Expect(agentClient.VerifyJoinedCalls.CallCount).To(Equal(10))
+				timer := make(chan time.Time)
+				timeout := confab.NewTimeout(timer)
+				timer <- time.Now()
 
+				err := controller.BootAgent(timeout)
+
+				Expect(err).To(MatchError("timeout exceeded"))
+				Expect(agentClient.VerifyJoinedCalls.CallCount).To(Equal(0))
 				Expect(agentClient.VerifySyncedCalls.CallCount).To(Equal(0))
 
 				Expect(logger.Messages).To(ContainSequence([]fakes.LoggerMessage{
@@ -183,7 +186,7 @@ var _ = Describe("Controller", func() {
 					},
 					{
 						Action: "controller.boot-agent.verify-joined.failed",
-						Error:  errors.New("the final error"),
+						Error:  errors.New("timeout exceeded"),
 					},
 				}))
 			})
@@ -341,7 +344,7 @@ var _ = Describe("Controller", func() {
 	Describe("ConfigureServer", func() {
 		Context("when it is not the last node in the cluster", func() {
 			It("does not check that it is synced", func() {
-				Expect(controller.ConfigureServer()).To(Succeed())
+				Expect(controller.ConfigureServer(confab.NewTimeout(make(chan time.Time)))).To(Succeed())
 				Expect(agentClient.VerifySyncedCalls.CallCount).To(Equal(0))
 				Expect(logger.Messages).To(ContainSequence([]fakes.LoggerMessage{
 					{
@@ -362,7 +365,7 @@ var _ = Describe("Controller", func() {
 
 		Context("setting keys", func() {
 			It("sets the encryption keys used by the agent", func() {
-				Expect(controller.ConfigureServer()).To(Succeed())
+				Expect(controller.ConfigureServer(confab.NewTimeout(make(chan time.Time)))).To(Succeed())
 				Expect(agentClient.SetKeysCall.Receives.Keys).To(Equal([]string{
 					"key 1",
 					"key 2",
@@ -387,7 +390,7 @@ var _ = Describe("Controller", func() {
 			Context("when setting keys errors", func() {
 				It("returns the error", func() {
 					agentClient.SetKeysCall.Returns.Error = errors.New("oh noes")
-					Expect(controller.ConfigureServer()).To(MatchError("oh noes"))
+					Expect(controller.ConfigureServer(confab.NewTimeout(make(chan time.Time)))).To(MatchError("oh noes"))
 					Expect(agentClient.SetKeysCall.Receives.Keys).To(Equal([]string{
 						"key 1",
 						"key 2",
@@ -420,7 +423,7 @@ var _ = Describe("Controller", func() {
 				})
 
 				It("does not set keys", func() {
-					Expect(controller.ConfigureServer()).To(Succeed())
+					Expect(controller.ConfigureServer(confab.NewTimeout(make(chan time.Time)))).To(Succeed())
 					Expect(agentClient.SetKeysCall.Receives.Keys).To(BeNil())
 					Expect(logger.Messages).To(ContainSequence([]fakes.LoggerMessage{
 						{
@@ -439,7 +442,7 @@ var _ = Describe("Controller", func() {
 				})
 
 				It("returns an error", func() {
-					Expect(controller.ConfigureServer()).To(MatchError("encrypt keys cannot be empty if ssl is enabled"))
+					Expect(controller.ConfigureServer(confab.NewTimeout(make(chan time.Time)))).To(MatchError("encrypt keys cannot be empty if ssl is enabled"))
 					Expect(agentClient.SetKeysCall.Receives.Keys).To(BeNil())
 
 					Expect(logger.Messages).To(ContainSequence([]fakes.LoggerMessage{
@@ -461,7 +464,7 @@ var _ = Describe("Controller", func() {
 			})
 
 			It("checks that it is synced", func() {
-				Expect(controller.ConfigureServer()).To(Succeed())
+				Expect(controller.ConfigureServer(confab.NewTimeout(make(chan time.Time)))).To(Succeed())
 				Expect(agentClient.VerifySyncedCalls.CallCount).To(Equal(1))
 
 				Expect(logger.Messages).To(ContainSequence([]fakes.LoggerMessage{
@@ -490,7 +493,7 @@ var _ = Describe("Controller", func() {
 						agentClient.VerifySyncedCalls.Returns.Errors[i] = errors.New("some error")
 					}
 
-					Expect(controller.ConfigureServer()).To(Succeed())
+					Expect(controller.ConfigureServer(confab.NewTimeout(make(chan time.Time)))).To(Succeed())
 					Expect(agentClient.VerifySyncedCalls.CallCount).To(Equal(10))
 					Expect(clock.SleepCall.CallCount).To(Equal(9))
 					Expect(clock.SleepCall.Receives.Duration).To(Equal(10 * time.Millisecond))
@@ -515,16 +518,20 @@ var _ = Describe("Controller", func() {
 				})
 			})
 
-			Context("verifying synced never succeeds within MaxRetries", func() {
+			Context("verifying synced never succeeds within the timeout period", func() {
 				It("immediately returns an error", func() {
 					agentClient.VerifySyncedCalls.Returns.Errors = make([]error, 10)
 					for i := 0; i < 9; i++ {
 						agentClient.VerifySyncedCalls.Returns.Errors[i] = errors.New("some error")
 					}
-					agentClient.VerifySyncedCalls.Returns.Errors[9] = errors.New("the final error")
 
-					Expect(controller.ConfigureServer()).To(MatchError("the final error"))
-					Expect(agentClient.VerifySyncedCalls.CallCount).To(Equal(10))
+					timer := make(chan time.Time)
+					timeout := confab.NewTimeout(timer)
+					timer <- time.Now()
+
+					err := controller.ConfigureServer(timeout)
+					Expect(err).To(MatchError("timeout exceeded"))
+					Expect(agentClient.VerifySyncedCalls.CallCount).To(Equal(0))
 					Expect(agentClient.SetKeysCall.Receives.Keys).To(BeNil())
 
 					Expect(logger.Messages).To(ContainSequence([]fakes.LoggerMessage{
@@ -536,7 +543,7 @@ var _ = Describe("Controller", func() {
 						},
 						{
 							Action: "controller.configure-server.verify-synced.failed",
-							Error:  errors.New("the final error"),
+							Error:  errors.New("timeout exceeded"),
 						},
 					}))
 				})
@@ -545,7 +552,7 @@ var _ = Describe("Controller", func() {
 			Context("error while checking if it is the last node", func() {
 				It("immediately returns the error", func() {
 					agentClient.IsLastNodeCall.Returns.Error = errors.New("some error")
-					Expect(controller.ConfigureServer()).To(MatchError("some error"))
+					Expect(controller.ConfigureServer(confab.NewTimeout(make(chan time.Time)))).To(MatchError("some error"))
 					Expect(agentClient.VerifySyncedCalls.CallCount).To(Equal(0))
 					Expect(agentClient.SetKeysCall.Receives.Keys).To(BeNil())
 					Expect(logger.Messages).To(ContainSequence([]fakes.LoggerMessage{

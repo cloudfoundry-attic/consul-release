@@ -48,7 +48,6 @@ type clock interface {
 type Controller struct {
 	AgentRunner    agentRunner
 	AgentClient    agentClient
-	MaxRetries     int
 	SyncRetryDelay time.Duration
 	SyncRetryClock clock
 	EncryptKeys    []string
@@ -59,7 +58,7 @@ type Controller struct {
 	Config         Config
 }
 
-func (c Controller) BootAgent() error {
+func (c Controller) BootAgent(timeout Timeout) error {
 	c.Logger.Info("controller.boot-agent.run")
 	err := c.AgentRunner.Run()
 	if err != nil {
@@ -68,26 +67,34 @@ func (c Controller) BootAgent() error {
 	}
 
 	c.Logger.Info("controller.boot-agent.verify-joined")
-	for i := 1; i <= c.MaxRetries; i++ {
-		err := c.AgentClient.VerifyJoined()
-		if err != nil {
-			if i == c.MaxRetries {
-				c.Logger.Error("controller.boot-agent.verify-joined.failed", err)
-				return err
-			}
 
-			c.SyncRetryClock.Sleep(c.SyncRetryDelay)
-			continue
-		}
-
-		break
+	if err := c.callWithTimeout(timeout, c.AgentClient.VerifyJoined); err != nil {
+		c.Logger.Error("controller.boot-agent.verify-joined.failed", err)
+		return err
 	}
 
 	c.Logger.Info("controller.boot-agent.success")
 	return nil
 }
 
-func (c Controller) ConfigureServer() error {
+func (c Controller) callWithTimeout(timeout Timeout, f func() error) error {
+	for {
+		select {
+		case <-timeout.Done():
+			return errors.New("timeout exceeded")
+		default:
+			err := f()
+			if err != nil {
+				c.SyncRetryClock.Sleep(c.SyncRetryDelay)
+				continue
+			}
+
+			return nil
+		}
+	}
+}
+
+func (c Controller) ConfigureServer(timeout Timeout) error {
 	c.Logger.Info("controller.configure-server.is-last-node")
 	lastNode, err := c.AgentClient.IsLastNode()
 	if err != nil {
@@ -97,19 +104,9 @@ func (c Controller) ConfigureServer() error {
 
 	if lastNode {
 		c.Logger.Info("controller.configure-server.verify-synced")
-		for i := 1; i <= c.MaxRetries; i++ {
-			err = c.AgentClient.VerifySynced()
-			if err != nil {
-				if i == c.MaxRetries {
-					c.Logger.Error("controller.configure-server.verify-synced.failed", err)
-					return err
-				}
-
-				c.SyncRetryClock.Sleep(c.SyncRetryDelay)
-				continue
-			}
-
-			break
+		if err := c.callWithTimeout(timeout, c.AgentClient.VerifySynced); err != nil {
+			c.Logger.Error("controller.configure-server.verify-synced.failed", err)
+			return err
 		}
 	}
 

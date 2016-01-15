@@ -39,7 +39,7 @@ var (
 	expectedMembers stringSlice
 	encryptionKeys  stringSlice
 	recursors       stringSlice
-	maxRetries      int
+	timeoutSeconds  int
 	configFile      string
 
 	stdout = log.New(os.Stdout, "", 0)
@@ -58,7 +58,7 @@ func main() {
 	flagSet.Var(&expectedMembers, "expected-member", "address `list` of the expected members, may be specified multiple times")
 	flagSet.Var(&encryptionKeys, "encryption-key", "`key` used to encrypt consul traffic, may be specified multiple times")
 	flagSet.Var(&recursors, "recursor", "specifies the address of an upstream DNS `server`, may be specified multiple times")
-	flagSet.IntVar(&maxRetries, "sync-max-retries", 60, "specifies the maximum `number` of sync retry attempts")
+	flagSet.IntVar(&timeoutSeconds, "timeout-seconds", 55, "specifies the maximum `number` of seconds before timeout")
 	flagSet.StringVar(&configFile, "config-file", "", "specifies the config `file`")
 
 	if len(os.Args) < 2 {
@@ -119,7 +119,6 @@ func main() {
 	controller = confab.Controller{
 		AgentRunner:    agentRunner,
 		AgentClient:    agentClient,
-		MaxRetries:     maxRetries,
 		SyncRetryDelay: 1 * time.Second,
 		SyncRetryClock: clock.NewClock(),
 		EncryptKeys:    encryptionKeys,
@@ -141,6 +140,8 @@ func main() {
 }
 
 func start(flagSet *flag.FlagSet, path string, controller confab.Controller, agentClient *confab.AgentClient) {
+	timeout := confab.NewTimeout(time.After(time.Duration(timeoutSeconds) * time.Second))
+
 	_, err := os.Stat(consulConfigDir)
 	if err != nil {
 		printUsageAndExit(fmt.Sprintf("\"consul-config-dir\" %q could not be found", consulConfigDir), flagSet)
@@ -156,7 +157,7 @@ func start(flagSet *flag.FlagSet, path string, controller confab.Controller, age
 		os.Exit(1)
 	}
 
-	err = controller.BootAgent()
+	err = controller.BootAgent(timeout)
 	if err != nil {
 		stderr.Printf("error booting consul agent: %s", err)
 
@@ -167,11 +168,11 @@ func start(flagSet *flag.FlagSet, path string, controller confab.Controller, age
 	}
 
 	if isServer {
-		configureServer(controller, agentClient)
+		configureServer(controller, agentClient, timeout)
 	}
 }
 
-func configureServer(controller confab.Controller, agentClient *confab.AgentClient) {
+func configureServer(controller confab.Controller, agentClient *confab.AgentClient, timeout confab.Timeout) {
 	rpcClient, err := agent.NewRPCClient("localhost:8400")
 	if err != nil {
 		stderr.Printf("error connecting to RPC server: %s", err)
@@ -179,7 +180,7 @@ func configureServer(controller confab.Controller, agentClient *confab.AgentClie
 	}
 
 	agentClient.ConsulRPCClient = &confab.RPCClient{*rpcClient}
-	err = controller.ConfigureServer()
+	err = controller.ConfigureServer(timeout)
 	if err != nil {
 		stderr.Printf("error configuring server: %s", err)
 		exit(controller, 1)

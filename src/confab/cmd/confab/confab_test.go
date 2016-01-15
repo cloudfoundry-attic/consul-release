@@ -12,6 +12,7 @@ import (
 	"strconv"
 	"strings"
 	"syscall"
+	"time"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -307,7 +308,7 @@ var _ = Describe("confab", func() {
 				}))
 			})
 
-			It("checks sync state up to the max retry count", func() {
+			It("checks sync state up to the timeout", func() {
 				options := []byte(`{"Members": ["member-1", "member-2", "member-3"], "FailStatsEndpoint": true}`)
 				Expect(ioutil.WriteFile(filepath.Join(consulConfigDir, "options.json"), options, 0600)).To(Succeed())
 
@@ -322,18 +323,18 @@ var _ = Describe("confab", func() {
 					"--expected-member", "member-3",
 					"--encryption-key", "key-1",
 					"--encryption-key", "key-2",
-					"--sync-max-retries", "3",
+					"--timeout-seconds", "3",
 					"--config-file", configFile.Name(),
 				)
-				Eventually(cmd.Run, COMMAND_TIMEOUT, COMMAND_TIMEOUT).ShouldNot(Succeed())
 
-				Eventually(func() (interface{}, error) {
-					output, err := fakeAgentOutput(consulConfigDir)
-					if err != nil {
-						return nil, err
-					}
-					return output["StatsCallCount"], nil
-				}, "2s").Should(Equal(float64(3)))
+				start := time.Now()
+				Eventually(cmd.Run, COMMAND_TIMEOUT, COMMAND_TIMEOUT).ShouldNot(Succeed())
+				Expect(time.Now()).To(BeTemporally("~", start.Add(3*time.Second), 1*time.Second))
+
+				output, err := fakeAgentOutput(consulConfigDir)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(output["StatsCallCount"]).To(BeNumerically(">", 0))
+				Expect(output["StatsCallCount"]).To(BeNumerically("<", 4))
 			})
 		})
 	})
