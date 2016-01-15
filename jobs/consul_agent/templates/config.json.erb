@@ -62,8 +62,12 @@
     # restarting
     "disable_remote_exec" => true,
     "disable_update_check" => true,
-    "protocol" => p("consul.agent.protocol_version"),
-}
+    "protocol" => p("consul.agent.protocol_version")
+  }
+
+  if p("consul.agent.register_self_service")
+    config["service"] = { "name" => "self" }
+  end
 
 if p("consul.require_ssl")
   certs_dir = "/var/vcap/jobs/consul_agent/config/certs"

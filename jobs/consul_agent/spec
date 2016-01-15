@@ -50,18 +50,28 @@ properties:
     description: "Time to wait for a consul node to finish syncing with the cluster in seconds"
     default: 60
 
+  consul.agent.register_self_service:
+    description: "Registers a service called 'self'"
+    default: false
+
   consul.require_ssl:
     description: "enable ssl for all communication with consul"
     default: true
+
   consul.ca_cert:
     description: "PEM-encoded CA certificate"
+
   consul.server_cert:
     description: "PEM-encoded server certificate"
+
   consul.server_key:
     description: "PEM-encoded server key"
+
   consul.agent_cert:
     description: "PEM-encoded agent certificate"
+
   consul.agent_key:
     description: "PEM-encoded client key"
+
   consul.encrypt_keys:
     description: "A list of passphrases that will be converted into encryption keys, the first key in the list is the active one"
