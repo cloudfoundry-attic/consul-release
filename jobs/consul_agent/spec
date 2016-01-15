@@ -46,10 +46,6 @@ properties:
     description: "The Consul protocol to use."
     default: 2
 
-  consul.agent.sync_timeout_in_seconds:
-    description: "Time to wait for a consul node to finish syncing with the cluster in seconds"
-    default: 60
-
   consul.agent.register_self_service:
     description: "Registers a service called 'self'"
     default: false
