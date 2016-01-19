@@ -18,31 +18,31 @@ var _ = Describe("Scaling down Instances", func() {
 		testValue string
 	)
 
-	BeforeEach(func() {
-		guid, err := helpers.NewGUID()
-		Expect(err).NotTo(HaveOccurred())
-
-		testKey = "consul-key-" + guid
-		testValue = "consul-value-" + guid
-
-		manifest, kv, err = helpers.DeployConsulWithInstanceCount(3, client, config)
-		Expect(err).NotTo(HaveOccurred())
-
-		Eventually(func() ([]bosh.VM, error) {
-			return client.DeploymentVMs(manifest.Name)
-		}, "1m", "10s").Should(ConsistOf([]bosh.VM{
-			{"running"},
-			{"running"},
-			{"running"},
-		}))
-	})
-
 	AfterEach(func() {
 		err := client.DeleteDeployment(manifest.Name)
 		Expect(err).NotTo(HaveOccurred())
 	})
 
 	Describe("scaling from 3 nodes to 1", func() {
+		BeforeEach(func() {
+			guid, err := helpers.NewGUID()
+			Expect(err).NotTo(HaveOccurred())
+
+			testKey = "consul-key-" + guid
+			testValue = "consul-value-" + guid
+
+			manifest, kv, err = helpers.DeployConsulWithInstanceCount(3, client, config)
+			Expect(err).NotTo(HaveOccurred())
+
+			Eventually(func() ([]bosh.VM, error) {
+				return client.DeploymentVMs(manifest.Name)
+			}, "1m", "10s").Should(ConsistOf([]bosh.VM{
+				{"running"},
+				{"running"},
+				{"running"},
+			}))
+		})
+
 		PIt("saves data after a rolling deploy", func() {
 			By("setting a persistent value", func() {
 				err := kv.Set(testKey, testValue)
@@ -64,6 +64,63 @@ var _ = Describe("Scaling down Instances", func() {
 				Eventually(func() ([]bosh.VM, error) {
 					return client.DeploymentVMs(manifest.Name)
 				}, "1m", "10s").Should(ConsistOf([]bosh.VM{
+					{"running"},
+				}))
+			})
+
+			By("reading the value from consul", func() {
+				value, err := kv.Get(testKey)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(value).To(Equal(testValue))
+			})
+		})
+	})
+
+	Describe("scaling from 5 nodes to 3", func() {
+		BeforeEach(func() {
+			guid, err := helpers.NewGUID()
+			Expect(err).NotTo(HaveOccurred())
+
+			testKey = "consul-key-" + guid
+			testValue = "consul-value-" + guid
+
+			manifest, kv, err = helpers.DeployConsulWithInstanceCount(5, client, config)
+			Expect(err).NotTo(HaveOccurred())
+
+			Eventually(func() ([]bosh.VM, error) {
+				return client.DeploymentVMs(manifest.Name)
+			}, "1m", "10s").Should(ConsistOf([]bosh.VM{
+				{"running"},
+				{"running"},
+				{"running"},
+				{"running"},
+				{"running"},
+			}))
+		})
+
+		It("successfully scales to more consul nodes, persisting data", func() {
+			By("setting a persistent value", func() {
+				err := kv.Set(testKey, testValue)
+				Expect(err).NotTo(HaveOccurred())
+			})
+
+			By("scaling from 5 nodes to 3", func() {
+				manifest.Jobs[0], manifest.Properties = destiny.SetJobInstanceCount(manifest.Jobs[0], manifest.Networks[0], manifest.Properties, 3)
+
+				members := manifest.ConsulMembers()
+				Expect(members).To(HaveLen(3))
+
+				yaml, err := manifest.ToYAML()
+				Expect(err).NotTo(HaveOccurred())
+
+				err = client.Deploy(yaml)
+				Expect(err).NotTo(HaveOccurred())
+
+				Eventually(func() ([]bosh.VM, error) {
+					return client.DeploymentVMs(manifest.Name)
+				}, "1m", "10s").Should(ConsistOf([]bosh.VM{
+					{"running"},
+					{"running"},
 					{"running"},
 				}))
 			})
