@@ -43,8 +43,8 @@ var _ = Describe("Scaling down Instances", func() {
 			}))
 		})
 
-		PIt("saves data after a rolling deploy", func() {
-			By("setting a persistent value", func() {
+		It("saves data after a rolling deploy", func() {
+			By("setting a persistent value to check the cluster is up", func() {
 				err := kv.Set(testKey, testValue)
 				Expect(err).NotTo(HaveOccurred())
 			})
@@ -68,10 +68,9 @@ var _ = Describe("Scaling down Instances", func() {
 				}))
 			})
 
-			By("reading the value from consul", func() {
-				value, err := kv.Get(testKey)
+			By("setting a persistent value to check the cluster is up after the scale down", func() {
+				err := kv.Set(testKey, testValue)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(value).To(Equal(testValue))
 			})
 		})
 	})
