@@ -28,6 +28,13 @@ type AgentRunner struct {
 			Error error
 		}
 	}
+
+	WritePIDCall struct {
+		CallCount int
+		Returns   struct {
+			Error error
+		}
+	}
 }
 
 func (r *AgentRunner) Run() error {
@@ -49,6 +56,11 @@ func (r *AgentRunner) Wait() error {
 func (r *AgentRunner) Cleanup() error {
 	r.CleanupCall.CallCount++
 	return r.CleanupCall.Returns.Error
+}
+
+func (r *AgentRunner) WritePID() error {
+	r.WritePIDCall.CallCount++
+	return r.WritePIDCall.Returns.Error
 }
 
 type AgentClient struct {

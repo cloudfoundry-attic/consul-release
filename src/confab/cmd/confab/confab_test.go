@@ -39,6 +39,9 @@ var _ = Describe("confab", func() {
 		pidFile, err = ioutil.TempFile(tempDir, "fake-pid-file")
 		Expect(err).NotTo(HaveOccurred())
 
+		err = os.Remove(pidFile.Name())
+		Expect(err).NotTo(HaveOccurred())
+
 		configFile, err = ioutil.TempFile(tempDir, "config-file")
 		Expect(err).NotTo(HaveOccurred())
 

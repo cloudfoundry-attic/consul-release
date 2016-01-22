@@ -346,6 +346,7 @@ var _ = Describe("Controller", func() {
 			It("does not check that it is synced", func() {
 				Expect(controller.ConfigureServer(confab.NewTimeout(make(chan time.Time)))).To(Succeed())
 				Expect(agentClient.VerifySyncedCalls.CallCount).To(Equal(0))
+				Expect(agentRunner.WritePIDCall.CallCount).To(Equal(1))
 				Expect(logger.Messages).To(ContainSequence([]fakes.LoggerMessage{
 					{
 						Action: "controller.configure-server.is-last-node",
@@ -396,6 +397,7 @@ var _ = Describe("Controller", func() {
 						"key 2",
 						"key 3",
 					}))
+					Expect(agentRunner.WritePIDCall.CallCount).To(Equal(0))
 					Expect(logger.Messages).To(ContainSequence([]fakes.LoggerMessage{
 						{
 							Action: "controller.configure-server.is-last-node",
@@ -444,6 +446,7 @@ var _ = Describe("Controller", func() {
 				It("returns an error", func() {
 					Expect(controller.ConfigureServer(confab.NewTimeout(make(chan time.Time)))).To(MatchError("encrypt keys cannot be empty if ssl is enabled"))
 					Expect(agentClient.SetKeysCall.Receives.Keys).To(BeNil())
+					Expect(agentRunner.WritePIDCall.CallCount).To(Equal(0))
 
 					Expect(logger.Messages).To(ContainSequence([]fakes.LoggerMessage{
 						{
@@ -466,6 +469,7 @@ var _ = Describe("Controller", func() {
 			It("checks that it is synced", func() {
 				Expect(controller.ConfigureServer(confab.NewTimeout(make(chan time.Time)))).To(Succeed())
 				Expect(agentClient.VerifySyncedCalls.CallCount).To(Equal(1))
+				Expect(agentRunner.WritePIDCall.CallCount).To(Equal(1))
 
 				Expect(logger.Messages).To(ContainSequence([]fakes.LoggerMessage{
 					{
@@ -497,6 +501,7 @@ var _ = Describe("Controller", func() {
 					Expect(agentClient.VerifySyncedCalls.CallCount).To(Equal(10))
 					Expect(clock.SleepCall.CallCount).To(Equal(9))
 					Expect(clock.SleepCall.Receives.Duration).To(Equal(10 * time.Millisecond))
+					Expect(agentRunner.WritePIDCall.CallCount).To(Equal(1))
 
 					Expect(logger.Messages).To(ContainSequence([]fakes.LoggerMessage{
 						{
@@ -533,6 +538,7 @@ var _ = Describe("Controller", func() {
 					Expect(err).To(MatchError("timeout exceeded"))
 					Expect(agentClient.VerifySyncedCalls.CallCount).To(Equal(0))
 					Expect(agentClient.SetKeysCall.Receives.Keys).To(BeNil())
+					Expect(agentRunner.WritePIDCall.CallCount).To(Equal(0))
 
 					Expect(logger.Messages).To(ContainSequence([]fakes.LoggerMessage{
 						{
@@ -555,6 +561,7 @@ var _ = Describe("Controller", func() {
 					Expect(controller.ConfigureServer(confab.NewTimeout(make(chan time.Time)))).To(MatchError("some error"))
 					Expect(agentClient.VerifySyncedCalls.CallCount).To(Equal(0))
 					Expect(agentClient.SetKeysCall.Receives.Keys).To(BeNil())
+					Expect(agentRunner.WritePIDCall.CallCount).To(Equal(0))
 					Expect(logger.Messages).To(ContainSequence([]fakes.LoggerMessage{
 						{
 							Action: "controller.configure-server.is-last-node",
@@ -565,6 +572,27 @@ var _ = Describe("Controller", func() {
 						},
 					}))
 				})
+			})
+		})
+
+		Context("when writing the PID file fails", func() {
+			It("returns the error", func() {
+				agentRunner.WritePIDCall.Returns.Error = errors.New("failed to write PIDFILE")
+
+				controller.SSLDisabled = true
+				err := controller.ConfigureServer(confab.NewTimeout(make(chan time.Time)))
+				Expect(err).To(MatchError("failed to write PIDFILE"))
+
+				Expect(agentRunner.WritePIDCall.CallCount).To(Equal(1))
+				Expect(logger.Messages).To(ContainSequence([]fakes.LoggerMessage{
+					{
+						Action: "controller.configure-server.is-last-node",
+					},
+					{
+						Action: "controller.configure-server.write-pid.failed",
+						Error:  errors.New("failed to write PIDFILE"),
+					},
+				}))
 			})
 		})
 	})

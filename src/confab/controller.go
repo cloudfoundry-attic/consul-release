@@ -26,6 +26,7 @@ type agentRunner interface {
 	Stop() error
 	Wait() error
 	Cleanup() error
+	WritePID() error
 }
 
 type agentClient interface {
@@ -130,8 +131,17 @@ func (c Controller) ConfigureServer(timeout Timeout) error {
 		}
 	}
 
+	if err := c.AgentRunner.WritePID(); err != nil {
+		c.Logger.Error("controller.configure-server.write-pid.failed", err)
+		return err
+	}
+
 	c.Logger.Info("controller.configure-server.success")
 	return nil
+}
+
+func (c Controller) ConfigureClient() error {
+	return c.AgentRunner.WritePID()
 }
 
 func (c Controller) StopAgent() {

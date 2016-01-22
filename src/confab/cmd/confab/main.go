@@ -169,11 +169,14 @@ func start(flagSet *flag.FlagSet, path string, controller confab.Controller, age
 
 	if isServer {
 		configureServer(controller, agentClient, timeout)
+	} else {
+		configureClient(controller)
 	}
 }
 
 func configureServer(controller confab.Controller, agentClient *confab.AgentClient, timeout confab.Timeout) {
 	rpcClient, err := agent.NewRPCClient("localhost:8400")
+
 	if err != nil {
 		stderr.Printf("error connecting to RPC server: %s", err)
 		exit(controller, 1)
@@ -183,6 +186,13 @@ func configureServer(controller confab.Controller, agentClient *confab.AgentClie
 	err = controller.ConfigureServer(timeout)
 	if err != nil {
 		stderr.Printf("error configuring server: %s", err)
+		exit(controller, 1)
+	}
+}
+
+func configureClient(controller confab.Controller) {
+	if err := controller.ConfigureClient(); err != nil {
+		stderr.Printf("error configuring client: %s", err)
 		exit(controller, 1)
 	}
 }

@@ -83,13 +83,19 @@ func (r *AgentRunner) Run() error {
 		return err
 	}
 
+	go r.cmd.Wait() // reap child process if it dies
+
+	r.Logger.Info("agent-runner.run.success")
+	return nil
+}
+
+func (r *AgentRunner) WritePID() error {
 	r.Logger.Info("agent-runner.run.write-pidfile", lager.Data{
 		"pid":  r.cmd.Process.Pid,
 		"path": r.PIDFile,
 	})
 
-	err = ioutil.WriteFile(r.PIDFile, []byte(fmt.Sprintf("%d", r.cmd.Process.Pid)), 0644)
-	if err != nil {
+	if err := ioutil.WriteFile(r.PIDFile, []byte(fmt.Sprintf("%d", r.cmd.Process.Pid)), 0644); err != nil {
 		err = fmt.Errorf("error writing PID file: %s", err)
 		r.Logger.Error("agent-runner.run.write-pidfile.failed", err, lager.Data{
 			"pid":  r.cmd.Process.Pid,
@@ -98,13 +104,14 @@ func (r *AgentRunner) Run() error {
 		return err
 	}
 
-	go r.cmd.Wait() // reap child process if it dies
-
-	r.Logger.Info("agent-runner.run.success")
 	return nil
 }
 
 func (r *AgentRunner) getProcess() (*os.Process, error) {
+	if r.cmd != nil && r.cmd.Process != nil {
+		return r.cmd.Process, nil
+	}
+
 	pidFileContents, err := ioutil.ReadFile(r.PIDFile)
 	if err != nil {
 		return nil, err

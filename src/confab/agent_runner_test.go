@@ -159,6 +159,7 @@ var _ = Describe("AgentRunner", func() {
 			By("launching the process, configured to spin", func() {
 				Expect(ioutil.WriteFile(filepath.Join(runner.ConfigDir, "options.json"), []byte(`{ "WaitForHUP": true }`), 0600)).To(Succeed())
 				Expect(runner.Run()).To(Succeed())
+				Expect(runner.WritePID()).To(Succeed())
 			})
 
 			By("waiting for the process to start enough that it has ignored signals", func() {
@@ -202,8 +203,6 @@ var _ = Describe("AgentRunner", func() {
 
 		Context("when the PID file cannot be read", func() {
 			It("returns an error", func() {
-				Expect(runner.Run()).To(Succeed())
-
 				runner.PIDFile = "/tmp/nope-i-do-not-exist"
 				Expect(runner.Stop()).To(MatchError(ContainSubstring("no such file or directory")))
 				Expect(logger.Messages).To(ContainSequence([]fakes.LoggerMessage{
@@ -220,8 +219,6 @@ var _ = Describe("AgentRunner", func() {
 
 		Context("when the PID file contains nonsense", func() {
 			It("returns an error", func() {
-				Expect(runner.Run()).To(Succeed())
-
 				Expect(ioutil.WriteFile(runner.PIDFile, []byte("nonsense"), 0644)).To(Succeed())
 				Expect(runner.Stop()).To(MatchError(ContainSubstring("ParseInt")))
 			})
@@ -229,8 +226,6 @@ var _ = Describe("AgentRunner", func() {
 
 		Context("when the PID file has the wrong PID", func() {
 			It("returns an error", func() {
-				Expect(runner.Run()).To(Succeed())
-
 				Expect(ioutil.WriteFile(runner.PIDFile, []byte("-10"), 0644)).To(Succeed())
 				Expect(runner.Stop()).To(HaveOccurred())
 			})
@@ -242,6 +237,7 @@ var _ = Describe("AgentRunner", func() {
 			By("launching the process, configured to spin", func() {
 				Expect(ioutil.WriteFile(filepath.Join(runner.ConfigDir, "options.json"), []byte(`{ "WaitForHUP": true }`), 0600)).To(Succeed())
 				Expect(runner.Run()).To(Succeed())
+				Expect(runner.WritePID()).To(Succeed())
 			})
 
 			By("waiting for the process to get started", func() {
@@ -304,8 +300,6 @@ var _ = Describe("AgentRunner", func() {
 
 		Context("when the PID file cannot be read", func() {
 			It("returns an error", func() {
-				Expect(runner.Run()).To(Succeed())
-
 				runner.PIDFile = "/tmp/nope-i-do-not-exist"
 				Expect(runner.Wait()).To(MatchError(ContainSubstring("no such file or directory")))
 				Expect(logger.Messages).To(ContainSequence([]fakes.LoggerMessage{
@@ -322,17 +316,59 @@ var _ = Describe("AgentRunner", func() {
 
 		Context("when the PID file contains nonsense", func() {
 			It("returns an error", func() {
-				Expect(runner.Run()).To(Succeed())
-
 				Expect(ioutil.WriteFile(runner.PIDFile, []byte("nonsense"), 0644)).To(Succeed())
 				Expect(runner.Wait()).To(MatchError(ContainSubstring("ParseInt")))
 			})
 		})
 	})
 
-	Describe("Run", func() {
-		It("writes the pid of the agent process to the pid file", func() {
+	Describe("WritePID", func() {
+		BeforeEach(func() {
 			Expect(runner.Run()).To(Succeed())
+		})
+
+		It("writes the pid of the agent process to the pid file", func() {
+			Expect(runner.WritePID()).To(Succeed())
+
+			pid, err := getPID(runner)
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(logger.Messages).To(ContainSequence([]fakes.LoggerMessage{
+				{
+					Action: "agent-runner.run.write-pidfile",
+					Data: []lager.Data{{
+						"pid":  pid,
+						"path": runner.PIDFile,
+					}},
+				},
+			}))
+
+			Expect(runner.Wait()).To(Succeed())
+		})
+
+		It("makes the pid file world readable", func() {
+			Expect(runner.WritePID()).To(Succeed())
+
+			fileInfo, err := os.Stat(runner.PIDFile)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(fileInfo.Mode().Perm()).To(BeEquivalentTo(0644))
+
+			Expect(runner.Wait()).To(Succeed())
+		})
+
+		Context("when writing the PID file errors", func() {
+			It("returns the error", func() {
+				Expect(ioutil.WriteFile(runner.PIDFile, []byte("some-pid"), 0100)).To(Succeed())
+				Expect(runner.WritePID()).To(MatchError(ContainSubstring("error writing PID file")))
+				Expect(runner.WritePID()).To(MatchError(ContainSubstring("permission denied")))
+			})
+		})
+	})
+
+	Describe("Run", func() {
+		It("starts the process", func() {
+			Expect(runner.Run()).To(Succeed())
+			Expect(runner.WritePID()).To(Succeed())
 
 			pid, err := getPID(runner)
 			Expect(err).NotTo(HaveOccurred())
@@ -351,13 +387,6 @@ var _ = Describe("AgentRunner", func() {
 					}},
 				},
 				{
-					Action: "agent-runner.run.write-pidfile",
-					Data: []lager.Data{{
-						"pid":  pid,
-						"path": runner.PIDFile,
-					}},
-				},
-				{
 					Action: "agent-runner.run.success",
 				},
 			}))
@@ -370,18 +399,9 @@ var _ = Describe("AgentRunner", func() {
 			Expect(pid).To(Equal(outputs.PID))
 		})
 
-		It("makes the pid file world readable", func() {
-			Expect(runner.Run()).To(Succeed())
-
-			Expect(runner.Wait()).To(Succeed())
-
-			fileInfo, err := os.Stat(runner.PIDFile)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(fileInfo.Mode().Perm()).To(BeEquivalentTo(0644))
-		})
-
 		It("sets the arguments correctly", func() {
 			Expect(runner.Run()).To(Succeed())
+			Expect(runner.WritePID()).To(Succeed())
 			Expect(runner.Wait()).To(Succeed())
 
 			Expect(getFakeAgentOutput(runner).Args).To(Equal([]string{
@@ -397,6 +417,7 @@ var _ = Describe("AgentRunner", func() {
 			done := make(chan struct{})
 			go func() {
 				runner.Run()
+				Expect(runner.WritePID()).To(Succeed())
 				done <- struct{}{}
 			}()
 			Eventually(done, "1s").Should(Receive())
@@ -414,6 +435,7 @@ var _ = Describe("AgentRunner", func() {
 			runner.Stderr = stderrBytes
 
 			Expect(runner.Run()).To(Succeed())
+			Expect(runner.WritePID()).To(Succeed())
 			Expect(runner.Wait()).To(Succeed())
 
 			Expect(stdoutBytes.String()).To(Equal("some standard out"))
@@ -436,33 +458,22 @@ var _ = Describe("AgentRunner", func() {
 					}))
 				})
 			})
+
 			Context("when the pid file points to a non-existent process", func() {
-				It("overwrites the stale pid file and succeeds", func() {
+				It("succeeds", func() {
 					Expect(ioutil.WriteFile(runner.PIDFile, []byte("-1"), 0666)).To(Succeed())
 
 					Expect(runner.Run()).To(Succeed())
-					pidFileContents, err := ioutil.ReadFile(runner.PIDFile)
-					Expect(err).NotTo(HaveOccurred())
-					Expect(pidFileContents).NotTo(Equal([]byte("some-pid")))
+					Expect(runner.WritePID()).To(Succeed())
 				})
 			})
 		})
 
-		Context("when writing the PID file errors", func() {
-			It("returns the error", func() {
-				Expect(ioutil.WriteFile(runner.PIDFile, []byte("some-pid"), 0100)).To(Succeed())
-				Expect(runner.Run()).To(MatchError(ContainSubstring("error writing PID file")))
-				Expect(runner.Run()).To(MatchError(ContainSubstring("permission denied")))
-			})
-		})
-
 		Context("when starting the process fails", func() {
-			It("returns the error and does not create a pid file", func() {
+			It("returns the error", func() {
 				runner.Path = "/tmp/not-a-thing-we-can-launch"
 				Expect(runner.Run()).To(MatchError(ContainSubstring("no such file or directory")))
 
-				_, err := os.Stat(runner.PIDFile)
-				Expect(err).To(HaveOccurred())
 				Expect(logger.Messages).To(ContainSequence([]fakes.LoggerMessage{
 					{
 						Action: "agent-runner.run.start",
@@ -497,9 +508,6 @@ var _ = Describe("AgentRunner", func() {
 			It("returns an error immediately, without starting a process", func() {
 				runner.ConfigDir = fmt.Sprintf("/tmp/this-directory-does-not-existi-%x", rand.Int31())
 				Expect(runner.Run()).To(MatchError(ContainSubstring("config dir does not exist")))
-
-				_, err := os.Stat(runner.PIDFile)
-				Expect(err).To(HaveOccurred())
 
 				Expect(logger.Messages).To(ContainSequence([]fakes.LoggerMessage{
 					{
