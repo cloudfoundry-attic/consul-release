@@ -78,4 +78,6 @@ builds:
     version: '38'
   2917de8e-87f5-41b9-a991-ffeed9471b62:
     version: '39'
+  c92ded6f-8de3-4dec-9c96-1569b6518b76:
+    version: '40'
 format-version: '2'
