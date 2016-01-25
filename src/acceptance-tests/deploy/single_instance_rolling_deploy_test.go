@@ -10,7 +10,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("Single Instance Rolling deploys", func() {
+var _ = Describe("Single instance rolling deploys", func() {
 	var (
 		manifest  destiny.Manifest
 		kv        consul.KV
@@ -40,7 +40,7 @@ var _ = Describe("Single Instance Rolling deploys", func() {
 		Expect(err).NotTo(HaveOccurred())
 	})
 
-	It("saves data after a rolling deploy", func() {
+	It("persists data throughout the rolling deploy", func() {
 		By("setting a persistent value", func() {
 			err := kv.Set(testKey, testValue)
 			Expect(err).NotTo(HaveOccurred())

@@ -10,7 +10,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("Scaling down Instances", func() {
+var _ = Describe("Scaling down instances", func() {
 	var (
 		manifest  destiny.Manifest
 		kv        consul.KV
@@ -43,7 +43,7 @@ var _ = Describe("Scaling down Instances", func() {
 			}))
 		})
 
-		It("saves data after a rolling deploy", func() {
+		It("provides a functioning server after the scale down", func() {
 			By("setting a persistent value to check the cluster is up", func() {
 				err := kv.Set(testKey, testValue)
 				Expect(err).NotTo(HaveOccurred())
@@ -97,7 +97,7 @@ var _ = Describe("Scaling down Instances", func() {
 			}))
 		})
 
-		It("successfully scales to more consul nodes, persisting data", func() {
+		It("persists data throughout the scale down", func() {
 			By("setting a persistent value", func() {
 				err := kv.Set(testKey, testValue)
 				Expect(err).NotTo(HaveOccurred())

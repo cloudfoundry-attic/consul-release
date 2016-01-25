@@ -41,7 +41,7 @@ var _ = Describe("Scaling up Instances", func() {
 			}))
 		})
 
-		It("successfully scales to more consul nodes, persisting data", func() {
+		It("provides a functioning cluster after the scale up", func() {
 			By("setting a persistent value to check the cluster is up", func() {
 				err := kv.Set(testKey, testValue)
 				Expect(err).NotTo(HaveOccurred())
@@ -95,7 +95,7 @@ var _ = Describe("Scaling up Instances", func() {
 			}))
 		})
 
-		It("successfully scales to more consul nodes, persisting data", func() {
+		It("persists data throughout the scale up", func() {
 			By("setting a persistent value", func() {
 				err := kv.Set(testKey, testValue)
 				Expect(err).NotTo(HaveOccurred())
