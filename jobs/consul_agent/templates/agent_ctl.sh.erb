@@ -37,11 +37,7 @@ function main() {
 
 function setup_resolvconf() {
   local resolvconf_file
-  resolvconf_file=/etc/resolv.conf
-
-  if resolvconf --updates-are-enabled; then
-	  resolvconf_file=/etc/resolvconf/resolv.conf.d/head
-  fi
+	resolvconf_file=/etc/resolvconf/resolv.conf.d/head
 
   if ! grep -q 127.0.0.1 "${resolvconf_file}"; then
 	  if [[ "$(stat -c "%s" "${resolvconf_file}")" = "0" ]]; then
@@ -51,9 +47,7 @@ function setup_resolvconf() {
 	  fi
   fi
 
-  set +e
   resolvconf -u
-  set -e
 }
 
 function start() {
