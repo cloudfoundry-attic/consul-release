@@ -7,22 +7,6 @@ import (
 	"github.com/pivotal-golang/lager"
 )
 
-type Config struct {
-	Node       ConfigNode
-	Agent      ConfigAgent
-	RequireSSL bool `json:"require_ssl"`
-}
-
-type ConfigNode struct {
-	Name  string
-	Index int
-}
-
-type ConfigAgent struct {
-	Services map[string]ServiceDefinition
-	Server   bool
-}
-
 type agentRunner interface {
 	Run() error
 	Stop() error

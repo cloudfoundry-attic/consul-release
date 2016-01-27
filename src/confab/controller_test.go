@@ -35,6 +35,9 @@ var _ = Describe("Controller", func() {
 
 		serviceDefiner = &fakes.ServiceDefiner{}
 
+		confabConfig := confab.DefaultConfig()
+		confabConfig.Node = confab.ConfigNode{Name: "node", Index: 0}
+
 		controller = confab.Controller{
 			AgentClient:    agentClient,
 			AgentRunner:    agentRunner,
@@ -44,9 +47,7 @@ var _ = Describe("Controller", func() {
 			Logger:         logger,
 			ConfigDir:      "/tmp/config",
 			ServiceDefiner: serviceDefiner,
-			Config: confab.Config{
-				Node: confab.ConfigNode{Name: "node", Index: 0},
-			},
+			Config:         confabConfig,
 		}
 	})
 
@@ -342,10 +343,6 @@ var _ = Describe("Controller", func() {
 	})
 
 	Describe("ConfigureServer", func() {
-		BeforeEach(func() {
-			controller.Config.RequireSSL = true
-		})
-
 		Context("when it is not the last node in the cluster", func() {
 			It("does not check that it is synced", func() {
 				Expect(controller.ConfigureServer(confab.NewTimeout(make(chan time.Time)))).To(Succeed())

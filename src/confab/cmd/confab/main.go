@@ -2,7 +2,6 @@ package main
 
 import (
 	"confab"
-	"encoding/json"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -105,8 +104,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	var config confab.Config
-	err = json.Unmarshal(configFileContents, &config)
+	config, err := confab.ConfigFromJSON(configFileContents)
 	if err != nil {
 		stderr.Printf("error reading configuration file: %s", err)
 		os.Exit(1)
