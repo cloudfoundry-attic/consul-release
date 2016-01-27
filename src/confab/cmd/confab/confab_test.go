@@ -45,8 +45,10 @@ var _ = Describe("confab", func() {
 		configFile, err = ioutil.TempFile(tempDir, "config-file")
 		Expect(err).NotTo(HaveOccurred())
 
-		_, err = configFile.Write([]byte("{}"))
+		err = configFile.Close()
 		Expect(err).NotTo(HaveOccurred())
+
+		writeConfigurationFile(configFile.Name(), map[string]interface{}{})
 
 		options := []byte(`{"Members": ["member-1", "member-2", "member-3"]}`)
 		err = ioutil.WriteFile(filepath.Join(consulConfigDir, "options.json"), options, 0600)
@@ -66,7 +68,7 @@ var _ = Describe("confab", func() {
 
 	Context("when managing the entire process lifecycle", func() {
 		BeforeEach(func() {
-			configData, err := json.Marshal(map[string]interface{}{
+			writeConfigurationFile(configFile.Name(), map[string]interface{}{
 				"node": map[string]interface{}{
 					"name":  "my-node",
 					"index": 3,
@@ -86,9 +88,6 @@ var _ = Describe("confab", func() {
 					},
 				},
 			})
-
-			err = ioutil.WriteFile(configFile.Name(), configData, os.ModePerm)
-			Expect(err).NotTo(HaveOccurred())
 		})
 
 		AfterEach(func() {
@@ -181,13 +180,11 @@ var _ = Describe("confab", func() {
 
 		Context("when ssl-disabled is set to true", func() {
 			It("does not set encryption keys", func() {
-				configData, err := json.Marshal(map[string]interface{}{
+				writeConfigurationFile(configFile.Name(), map[string]interface{}{
 					"agent": map[string]interface{}{
 						"server": true,
 					},
 				})
-				err = ioutil.WriteFile(configFile.Name(), configData, os.ModePerm)
-				Expect(err).NotTo(HaveOccurred())
 
 				start := exec.Command(pathToConfab,
 					"start",
@@ -285,14 +282,11 @@ var _ = Describe("confab", func() {
 			BeforeEach(func() {
 				options := []byte(`{"Members": ["member-1", "member-2", "member-3"]}`)
 				Expect(ioutil.WriteFile(filepath.Join(consulConfigDir, "options.json"), options, 0600)).To(Succeed())
-
-				configData, err := json.Marshal(map[string]interface{}{
+				writeConfigurationFile(configFile.Name(), map[string]interface{}{
 					"agent": map[string]interface{}{
 						"server": true,
 					},
 				})
-				err = ioutil.WriteFile(configFile.Name(), configData, os.ModePerm)
-				Expect(err).NotTo(HaveOccurred())
 			})
 
 			AfterEach(func() {
@@ -368,13 +362,11 @@ var _ = Describe("confab", func() {
 			options := []byte(`{"Members": ["member-1", "member-2", "member-3"]}`)
 			Expect(ioutil.WriteFile(filepath.Join(consulConfigDir, "options.json"), options, 0600)).To(Succeed())
 
-			configData, err := json.Marshal(map[string]interface{}{
+			writeConfigurationFile(configFile.Name(), map[string]interface{}{
 				"agent": map[string]interface{}{
 					"server": true,
 				},
 			})
-			err = ioutil.WriteFile(configFile.Name(), configData, os.ModePerm)
-			Expect(err).NotTo(HaveOccurred())
 		})
 
 		It("stops the consul agent", func() {
@@ -575,13 +567,11 @@ var _ = Describe("confab", func() {
 
 		Context("when the rpc connection cannot be created", func() {
 			BeforeEach(func() {
-				configData, err := json.Marshal(map[string]interface{}{
+				writeConfigurationFile(configFile.Name(), map[string]interface{}{
 					"agent": map[string]interface{}{
 						"server": true,
 					},
 				})
-				err = ioutil.WriteFile(configFile.Name(), configData, os.ModePerm)
-				Expect(err).NotTo(HaveOccurred())
 			})
 
 			AfterEach(func() {
@@ -660,7 +650,7 @@ var _ = Describe("confab", func() {
 
 		Context("when the consul config dir is not writeable", func() {
 			BeforeEach(func() {
-				configData, err := json.Marshal(map[string]interface{}{
+				writeConfigurationFile(configFile.Name(), map[string]interface{}{
 					"agent": map[string]interface{}{
 						"services": map[string]interface{}{
 							"router": map[string]interface{}{
@@ -669,9 +659,6 @@ var _ = Describe("confab", func() {
 						},
 					},
 				})
-
-				err = ioutil.WriteFile(configFile.Name(), configData, os.ModePerm)
-				Expect(err).NotTo(HaveOccurred())
 			})
 
 			AfterEach(func() {
@@ -783,4 +770,12 @@ func killProcessAttachedToPort(port int) {
 		Expect(err).NotTo(HaveOccurred())
 		killPID(pid)
 	}
+}
+
+func writeConfigurationFile(filename string, configuration map[string]interface{}) {
+	configData, err := json.Marshal(configuration)
+	Expect(err).NotTo(HaveOccurred())
+
+	err = ioutil.WriteFile(filename, configData, os.ModePerm)
+	Expect(err).NotTo(HaveOccurred())
 }
