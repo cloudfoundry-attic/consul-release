@@ -178,9 +178,10 @@ var _ = Describe("confab", func() {
 			}`))
 		})
 
-		Context("when ssl-disabled is set to true", func() {
+		Context("when require_ssl is set to false", func() {
 			It("does not set encryption keys", func() {
 				writeConfigurationFile(configFile.Name(), map[string]interface{}{
+					"require_ssl": false,
 					"agent": map[string]interface{}{
 						"server": true,
 					},
@@ -196,7 +197,6 @@ var _ = Describe("confab", func() {
 					"--expected-member", "member-3",
 					"--encryption-key", "key-1",
 					"--encryption-key", "key-2",
-					"--ssl-disabled",
 					"--config-file", configFile.Name(),
 				)
 				Eventually(start.Run, COMMAND_TIMEOUT, COMMAND_TIMEOUT).Should(Succeed())
@@ -215,7 +215,6 @@ var _ = Describe("confab", func() {
 					"--expected-member", "member-3",
 					"--encryption-key", "key-1",
 					"--encryption-key", "key-2",
-					"--ssl-disabled",
 					"--config-file", configFile.Name(),
 				)
 				Eventually(stop.Run, COMMAND_TIMEOUT, COMMAND_TIMEOUT).Should(Succeed())
@@ -283,6 +282,7 @@ var _ = Describe("confab", func() {
 				options := []byte(`{"Members": ["member-1", "member-2", "member-3"]}`)
 				Expect(ioutil.WriteFile(filepath.Join(consulConfigDir, "options.json"), options, 0600)).To(Succeed())
 				writeConfigurationFile(configFile.Name(), map[string]interface{}{
+					"require_ssl": true,
 					"agent": map[string]interface{}{
 						"server": true,
 					},
@@ -363,6 +363,7 @@ var _ = Describe("confab", func() {
 			Expect(ioutil.WriteFile(filepath.Join(consulConfigDir, "options.json"), options, 0600)).To(Succeed())
 
 			writeConfigurationFile(configFile.Name(), map[string]interface{}{
+				"require_ssl": true,
 				"agent": map[string]interface{}{
 					"server": true,
 				},
@@ -452,15 +453,15 @@ var _ = Describe("confab", func() {
 		Context("when no command is provided", func() {
 			It("returns a non-zero status code and prints usage", func() {
 				cmd := exec.Command(pathToConfab,
-					"--ssl-disabled=true",
+					"--timeout-seconds=55",
+					"--config-file", configFile.Name(),
 					"--agent-path", pathToFakeAgent,
 					"--pid-file", pidFile.Name(),
-					"--config-file", configFile.Name(),
 				)
 				buffer := bytes.NewBuffer([]byte{})
 				cmd.Stderr = buffer
 				Eventually(cmd.Run, COMMAND_TIMEOUT, COMMAND_TIMEOUT).ShouldNot(Succeed())
-				Expect(buffer).To(ContainSubstring("invalid COMMAND \"--ssl-disabled=true\""))
+				Expect(buffer).To(ContainSubstring("invalid COMMAND \"--timeout-seconds=55\""))
 				Expect(buffer).To(ContainSubstring("usage: confab COMMAND OPTIONS"))
 			})
 		})

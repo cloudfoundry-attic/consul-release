@@ -31,7 +31,6 @@ func (ss *stringSlice) Set(value string) error {
 }
 
 var (
-	sslDisabled     bool
 	agentPath       string
 	consulConfigDir string
 	pidFile         string
@@ -49,7 +48,6 @@ func main() {
 	var controller confab.Controller
 
 	flagSet := flag.NewFlagSet("flags", flag.ContinueOnError)
-	flagSet.BoolVar(&sslDisabled, "ssl-disabled", false, "whether to run the server without ssl")
 	flagSet.StringVar(&agentPath, "agent-path", "", "path to the on-filesystem consul `executable`")
 	flagSet.StringVar(&consulConfigDir, "consul-config-dir", "", "path to consul configuration `directory`")
 	flagSet.StringVar(&pidFile, "pid-file", "", "path to consul PID `file`")
@@ -120,7 +118,6 @@ func main() {
 		SyncRetryDelay: 1 * time.Second,
 		SyncRetryClock: clock.NewClock(),
 		EncryptKeys:    encryptionKeys,
-		SSLDisabled:    sslDisabled,
 		Logger:         logger,
 		ServiceDefiner: confab.ServiceDefiner{logger},
 		ConfigDir:      consulConfigDir,

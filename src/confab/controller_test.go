@@ -342,6 +342,10 @@ var _ = Describe("Controller", func() {
 	})
 
 	Describe("ConfigureServer", func() {
+		BeforeEach(func() {
+			controller.Config.RequireSSL = true
+		})
+
 		Context("when it is not the last node in the cluster", func() {
 			It("does not check that it is synced", func() {
 				Expect(controller.ConfigureServer(confab.NewTimeout(make(chan time.Time)))).To(Succeed())
@@ -421,7 +425,7 @@ var _ = Describe("Controller", func() {
 
 			Context("when the server does not have ssl enabled", func() {
 				BeforeEach(func() {
-					controller.SSLDisabled = true
+					controller.Config.RequireSSL = false
 				})
 
 				It("does not set keys", func() {
@@ -579,7 +583,7 @@ var _ = Describe("Controller", func() {
 			It("returns the error", func() {
 				agentRunner.WritePIDCall.Returns.Error = errors.New("failed to write PIDFILE")
 
-				controller.SSLDisabled = true
+				controller.Config.RequireSSL = false
 				err := controller.ConfigureServer(confab.NewTimeout(make(chan time.Time)))
 				Expect(err).To(MatchError("failed to write PIDFILE"))
 

@@ -8,8 +8,9 @@ import (
 )
 
 type Config struct {
-	Node  ConfigNode
-	Agent ConfigAgent
+	Node       ConfigNode
+	Agent      ConfigAgent
+	RequireSSL bool `json:"require_ssl"`
 }
 
 type ConfigNode struct {
@@ -112,7 +113,7 @@ func (c Controller) ConfigureServer(timeout Timeout) error {
 		}
 	}
 
-	if !c.SSLDisabled {
+	if c.Config.RequireSSL {
 		if len(c.EncryptKeys) == 0 {
 			err := errors.New("encrypt keys cannot be empty if ssl is enabled")
 			c.Logger.Error("controller.configure-server.no-encrypt-keys", err)
