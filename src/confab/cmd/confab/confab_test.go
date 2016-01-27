@@ -45,28 +45,7 @@ var _ = Describe("confab", func() {
 		configFile, err = ioutil.TempFile(tempDir, "config-file")
 		Expect(err).NotTo(HaveOccurred())
 
-		configData, err := json.Marshal(map[string]interface{}{
-			"node": map[string]interface{}{
-				"name":  "my-node",
-				"index": 3,
-			},
-			"agent": map[string]interface{}{
-				"services": map[string]interface{}{
-					"cloud_controller": map[string]interface{}{
-						"checks": []map[string]string{{
-							"name":     "do_something",
-							"script":   "/var/vcap/jobs/cloudcontroller/bin/do_something",
-							"interval": "5m",
-						}},
-					},
-					"router": map[string]interface{}{
-						"name": "gorouter",
-					},
-				},
-			},
-		})
-
-		_, err = configFile.Write(configData)
+		_, err = configFile.Write([]byte("{}"))
 		Expect(err).NotTo(HaveOccurred())
 
 		options := []byte(`{"Members": ["member-1", "member-2", "member-3"]}`)
@@ -86,10 +65,39 @@ var _ = Describe("confab", func() {
 	})
 
 	Context("when managing the entire process lifecycle", func() {
+		BeforeEach(func() {
+			configData, err := json.Marshal(map[string]interface{}{
+				"node": map[string]interface{}{
+					"name":  "my-node",
+					"index": 3,
+				},
+				"agent": map[string]interface{}{
+					"services": map[string]interface{}{
+						"cloud_controller": map[string]interface{}{
+							"checks": []map[string]string{{
+								"name":     "do_something",
+								"script":   "/var/vcap/jobs/cloudcontroller/bin/do_something",
+								"interval": "5m",
+							}},
+						},
+						"router": map[string]interface{}{
+							"name": "gorouter",
+						},
+					},
+				},
+			})
+
+			err = ioutil.WriteFile(configFile.Name(), configData, os.ModePerm)
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		AfterEach(func() {
+			Expect(os.Remove(configFile.Name())).NotTo(HaveOccurred())
+		})
+
 		It("starts and stops the consul process as a daemon", func() {
 			start := exec.Command(pathToConfab,
 				"start",
-				"--server=false",
 				"--pid-file", pidFile.Name(),
 				"--agent-path", pathToFakeAgent,
 				"--consul-config-dir", consulConfigDir,
@@ -108,7 +116,6 @@ var _ = Describe("confab", func() {
 
 			stop := exec.Command(pathToConfab,
 				"stop",
-				"--server=false",
 				"--pid-file", pidFile.Name(),
 				"--agent-path", pathToFakeAgent,
 				"--consul-config-dir", consulConfigDir,
@@ -174,9 +181,16 @@ var _ = Describe("confab", func() {
 
 		Context("when ssl-disabled is set to true", func() {
 			It("does not set encryption keys", func() {
+				configData, err := json.Marshal(map[string]interface{}{
+					"agent": map[string]interface{}{
+						"server": true,
+					},
+				})
+				err = ioutil.WriteFile(configFile.Name(), configData, os.ModePerm)
+				Expect(err).NotTo(HaveOccurred())
+
 				start := exec.Command(pathToConfab,
 					"start",
-					"--server",
 					"--pid-file", pidFile.Name(),
 					"--agent-path", pathToFakeAgent,
 					"--consul-config-dir", consulConfigDir,
@@ -196,7 +210,6 @@ var _ = Describe("confab", func() {
 
 				stop := exec.Command(pathToConfab,
 					"stop",
-					"--server",
 					"--pid-file", pidFile.Name(),
 					"--agent-path", pathToFakeAgent,
 					"--consul-config-dir", consulConfigDir,
@@ -230,6 +243,9 @@ var _ = Describe("confab", func() {
 
 	Context("when starting", func() {
 		AfterEach(func() {
+			err := os.Remove(configFile.Name())
+			Expect(err).NotTo(HaveOccurred())
+
 			killProcessWithPIDFile(pidFile.Name())
 		})
 
@@ -237,7 +253,6 @@ var _ = Describe("confab", func() {
 			It("starts a consul agent as a client", func() {
 				cmd := exec.Command(pathToConfab,
 					"start",
-					"--server=false",
 					"--pid-file", pidFile.Name(),
 					"--agent-path", pathToFakeAgent,
 					"--consul-config-dir", consulConfigDir,
@@ -270,6 +285,14 @@ var _ = Describe("confab", func() {
 			BeforeEach(func() {
 				options := []byte(`{"Members": ["member-1", "member-2", "member-3"]}`)
 				Expect(ioutil.WriteFile(filepath.Join(consulConfigDir, "options.json"), options, 0600)).To(Succeed())
+
+				configData, err := json.Marshal(map[string]interface{}{
+					"agent": map[string]interface{}{
+						"server": true,
+					},
+				})
+				err = ioutil.WriteFile(configFile.Name(), configData, os.ModePerm)
+				Expect(err).NotTo(HaveOccurred())
 			})
 
 			AfterEach(func() {
@@ -279,7 +302,6 @@ var _ = Describe("confab", func() {
 			It("starts a consul agent as a server", func() {
 				cmd := exec.Command(pathToConfab,
 					"start",
-					"--server=true",
 					"--pid-file", pidFile.Name(),
 					"--agent-path", pathToFakeAgent,
 					"--consul-config-dir", consulConfigDir,
@@ -317,7 +339,6 @@ var _ = Describe("confab", func() {
 
 				cmd := exec.Command(pathToConfab,
 					"start",
-					"--server=true",
 					"--pid-file", pidFile.Name(),
 					"--agent-path", pathToFakeAgent,
 					"--consul-config-dir", consulConfigDir,
@@ -346,12 +367,19 @@ var _ = Describe("confab", func() {
 		BeforeEach(func() {
 			options := []byte(`{"Members": ["member-1", "member-2", "member-3"]}`)
 			Expect(ioutil.WriteFile(filepath.Join(consulConfigDir, "options.json"), options, 0600)).To(Succeed())
+
+			configData, err := json.Marshal(map[string]interface{}{
+				"agent": map[string]interface{}{
+					"server": true,
+				},
+			})
+			err = ioutil.WriteFile(configFile.Name(), configData, os.ModePerm)
+			Expect(err).NotTo(HaveOccurred())
 		})
 
 		It("stops the consul agent", func() {
 			cmd := exec.Command(pathToConfab,
 				"start",
-				"--server=true",
 				"--pid-file", pidFile.Name(),
 				"--agent-path", pathToFakeAgent,
 				"--consul-config-dir", consulConfigDir,
@@ -432,7 +460,7 @@ var _ = Describe("confab", func() {
 		Context("when no command is provided", func() {
 			It("returns a non-zero status code and prints usage", func() {
 				cmd := exec.Command(pathToConfab,
-					"--server=false",
+					"--ssl-disabled=true",
 					"--agent-path", pathToFakeAgent,
 					"--pid-file", pidFile.Name(),
 					"--config-file", configFile.Name(),
@@ -440,7 +468,7 @@ var _ = Describe("confab", func() {
 				buffer := bytes.NewBuffer([]byte{})
 				cmd.Stderr = buffer
 				Eventually(cmd.Run, COMMAND_TIMEOUT, COMMAND_TIMEOUT).ShouldNot(Succeed())
-				Expect(buffer).To(ContainSubstring("invalid COMMAND \"--server=false\""))
+				Expect(buffer).To(ContainSubstring("invalid COMMAND \"--ssl-disabled=true\""))
 				Expect(buffer).To(ContainSubstring("usage: confab COMMAND OPTIONS"))
 			})
 		})
@@ -529,7 +557,6 @@ var _ = Describe("confab", func() {
 
 				cmd := exec.Command(pathToConfab,
 					"start",
-					"--server=false",
 					"--pid-file", pidFile.Name(),
 					"--agent-path", pathToFakeAgent,
 					"--consul-config-dir", consulConfigDir,
@@ -547,13 +574,27 @@ var _ = Describe("confab", func() {
 		})
 
 		Context("when the rpc connection cannot be created", func() {
+			BeforeEach(func() {
+				configData, err := json.Marshal(map[string]interface{}{
+					"agent": map[string]interface{}{
+						"server": true,
+					},
+				})
+				err = ioutil.WriteFile(configFile.Name(), configData, os.ModePerm)
+				Expect(err).NotTo(HaveOccurred())
+			})
+
+			AfterEach(func() {
+				err := os.Remove(configFile.Name())
+				Expect(err).NotTo(HaveOccurred())
+			})
+
 			It("returns an error and exits with status 1", func() {
 				options := []byte(`{ "Members": ["member-1", "member-2", "member-3"], "FailRPCServer": true }`)
 				Expect(ioutil.WriteFile(filepath.Join(consulConfigDir, "options.json"), options, 0600)).To(Succeed())
 
 				cmd := exec.Command(pathToConfab,
 					"start",
-					"--server=true",
 					"--pid-file", pidFile.Name(),
 					"--agent-path", pathToFakeAgent,
 					"--consul-config-dir", consulConfigDir,
@@ -618,6 +659,26 @@ var _ = Describe("confab", func() {
 		})
 
 		Context("when the consul config dir is not writeable", func() {
+			BeforeEach(func() {
+				configData, err := json.Marshal(map[string]interface{}{
+					"agent": map[string]interface{}{
+						"services": map[string]interface{}{
+							"router": map[string]interface{}{
+								"name": "gorouter",
+							},
+						},
+					},
+				})
+
+				err = ioutil.WriteFile(configFile.Name(), configData, os.ModePerm)
+				Expect(err).NotTo(HaveOccurred())
+			})
+
+			AfterEach(func() {
+				err := os.Remove(configFile.Name())
+				Expect(err).NotTo(HaveOccurred())
+			})
+
 			It("returns an error and exits with status 1", func() {
 				err := os.Chmod(consulConfigDir, 0000)
 				Expect(err).NotTo(HaveOccurred())

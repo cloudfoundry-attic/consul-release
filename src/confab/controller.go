@@ -19,6 +19,7 @@ type ConfigNode struct {
 
 type ConfigAgent struct {
 	Services map[string]ServiceDefinition
+	Server   bool
 }
 
 type agentRunner interface {

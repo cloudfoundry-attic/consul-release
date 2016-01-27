@@ -31,7 +31,6 @@ func (ss *stringSlice) Set(value string) error {
 }
 
 var (
-	isServer        bool
 	sslDisabled     bool
 	agentPath       string
 	consulConfigDir string
@@ -50,7 +49,6 @@ func main() {
 	var controller confab.Controller
 
 	flagSet := flag.NewFlagSet("flags", flag.ContinueOnError)
-	flagSet.BoolVar(&isServer, "server", false, "whether to start the agent in server mode")
 	flagSet.BoolVar(&sslDisabled, "ssl-disabled", false, "whether to run the server without ssl")
 	flagSet.StringVar(&agentPath, "agent-path", "", "path to the on-filesystem consul `executable`")
 	flagSet.StringVar(&consulConfigDir, "consul-config-dir", "", "path to consul configuration `directory`")
@@ -167,7 +165,7 @@ func start(flagSet *flag.FlagSet, path string, controller confab.Controller, age
 		os.Exit(1)
 	}
 
-	if isServer {
+	if controller.Config.Agent.Server {
 		configureServer(controller, agentClient, timeout)
 	} else {
 		configureClient(controller)
