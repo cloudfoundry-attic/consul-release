@@ -19,6 +19,9 @@ var _ = Describe("Config", func() {
 					ConsulConfigDir: "/var/vcap/jobs/consul_agent/config",
 					PIDFile:         "/var/vcap/sys/run/consul_agent/consul_agent.pid",
 				},
+				Confab: confab.ConfigConfab{
+					TimeoutInSeconds: 55,
+				},
 			}
 			Expect(confab.DefaultConfig()).To(Equal(config))
 		})
@@ -47,6 +50,9 @@ var _ = Describe("Config", func() {
 					},
 					"require_ssl": true,
 					"encrypt_keys": ["key-1", "key-2"]
+				},
+				"confab": {
+					"timeout_in_seconds": 30
 				}
 			}`)
 			config, err := confab.ConfigFromJSON(json)
@@ -73,6 +79,9 @@ var _ = Describe("Config", func() {
 					RequireSSL:  true,
 					EncryptKeys: []string{"key-1", "key-2"},
 				},
+				Confab: confab.ConfigConfab{
+					TimeoutInSeconds: 30,
+				},
 			}))
 		})
 
@@ -88,6 +97,9 @@ var _ = Describe("Config", func() {
 				},
 				Consul: confab.ConfigConsul{
 					RequireSSL: true,
+				},
+				Confab: confab.ConfigConfab{
+					TimeoutInSeconds: 55,
 				},
 			}))
 		})

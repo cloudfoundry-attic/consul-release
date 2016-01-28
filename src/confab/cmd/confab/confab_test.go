@@ -335,12 +335,32 @@ var _ = Describe("confab", func() {
 			})
 
 			It("checks sync state up to the timeout", func() {
+				writeConfigurationFile(configFile.Name(), map[string]interface{}{
+					"path": map[string]interface{}{
+						"agent_path":        pathToFakeAgent,
+						"consul_config_dir": consulConfigDir,
+						"pid_file":          pidFile.Name(),
+					},
+					"consul": map[string]interface{}{
+						"require_ssl": true,
+						"agent": map[string]interface{}{
+							"server": true,
+							"servers": map[string]interface{}{
+								"lan": []string{"member-1", "member-2", "member-3"},
+							},
+						},
+						"encrypt_keys": []string{"key-1", "key-2"},
+					},
+					"confab": map[string]interface{}{
+						"timeout_in_seconds": 3,
+					},
+				})
+
 				options := []byte(`{"Members": ["member-1", "member-2", "member-3"], "FailStatsEndpoint": true}`)
 				Expect(ioutil.WriteFile(filepath.Join(consulConfigDir, "options.json"), options, 0600)).To(Succeed())
 
 				cmd := exec.Command(pathToConfab,
 					"start",
-					"--timeout-seconds", "3",
 					"--config-file", configFile.Name(),
 				)
 
@@ -454,13 +474,13 @@ var _ = Describe("confab", func() {
 		Context("when no command is provided", func() {
 			It("returns a non-zero status code and prints usage", func() {
 				cmd := exec.Command(pathToConfab,
-					"--timeout-seconds=55",
+					"--recursor=8.8.8.8",
 					"--config-file", configFile.Name(),
 				)
 				buffer := bytes.NewBuffer([]byte{})
 				cmd.Stderr = buffer
 				Eventually(cmd.Run, COMMAND_TIMEOUT, COMMAND_TIMEOUT).ShouldNot(Succeed())
-				Expect(buffer).To(ContainSubstring("invalid COMMAND \"--timeout-seconds=55\""))
+				Expect(buffer).To(ContainSubstring("invalid COMMAND \"--recursor=8.8.8.8\""))
 				Expect(buffer).To(ContainSubstring("usage: confab COMMAND OPTIONS"))
 			})
 		})

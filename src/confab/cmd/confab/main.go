@@ -30,9 +30,8 @@ func (ss *stringSlice) Set(value string) error {
 }
 
 var (
-	recursors      stringSlice
-	timeoutSeconds int
-	configFile     string
+	recursors  stringSlice
+	configFile string
 
 	stdout = log.New(os.Stdout, "", 0)
 	stderr = log.New(os.Stderr, "", 0)
@@ -43,7 +42,6 @@ func main() {
 
 	flagSet := flag.NewFlagSet("flags", flag.ContinueOnError)
 	flagSet.Var(&recursors, "recursor", "specifies the address of an upstream DNS `server`, may be specified multiple times")
-	flagSet.IntVar(&timeoutSeconds, "timeout-seconds", 55, "specifies the maximum `number` of seconds before timeout")
 	flagSet.StringVar(&configFile, "config-file", "", "specifies the config `file`")
 
 	if len(os.Args) < 2 {
@@ -123,7 +121,7 @@ func main() {
 }
 
 func start(flagSet *flag.FlagSet, path string, controller confab.Controller, agentClient *confab.AgentClient) {
-	timeout := confab.NewTimeout(time.After(time.Duration(timeoutSeconds) * time.Second))
+	timeout := confab.NewTimeout(time.After(time.Duration(controller.Config.Confab.TimeoutInSeconds) * time.Second))
 
 	_, err := os.Stat(controller.Config.Path.ConsulConfigDir)
 	if err != nil {

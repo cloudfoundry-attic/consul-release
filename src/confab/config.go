@@ -4,8 +4,13 @@ import "encoding/json"
 
 type Config struct {
 	Node   ConfigNode
+	Confab ConfigConfab
 	Consul ConfigConsul
 	Path   ConfigPath
+}
+
+type ConfigConfab struct {
+	TimeoutInSeconds int `json:"timeout_in_seconds"`
 }
 
 type ConfigConsul struct {
@@ -44,6 +49,9 @@ func DefaultConfig() Config {
 		},
 		Consul: ConfigConsul{
 			RequireSSL: true,
+		},
+		Confab: ConfigConfab{
+			TimeoutInSeconds: 55,
 		},
 	}
 }
