@@ -111,7 +111,6 @@ function start() {
 
   chpst -u vcap:vcap "${confab_package}/bin/confab" \
     start \
-    -consul-config-dir="${CONF_DIR}" \
     -pid-file="${PIDFILE}" \
     ${recursors} \
     --config-file ${JOB_DIR}/confab.json \
@@ -125,9 +124,7 @@ function stop() {
 
   "${confab_package}/bin/confab" \
     stop \
-    -consul-config-dir "${CONF_DIR}" \
     -pid-file "${PIDFILE}" \
-    -agent-path="${PKG}/bin/consul" \
     --config-file ${JOB_DIR}/confab.json \
     2> >(tee -a ${LOG_DIR}/consul_agent.stderr.log | logger -p user.error -t vcap.consul-agent) \
     1> >(tee -a ${LOG_DIR}/consul_agent.stdout.log | logger -p user.info  -t vcap.consul-agent)

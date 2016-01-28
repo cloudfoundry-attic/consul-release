@@ -15,7 +15,8 @@ var _ = Describe("Config", func() {
 					RequireSSL: true,
 				},
 				Path: confab.ConfigPath{
-					AgentPath: "/var/vcap/packages/consul/bin/consul",
+					AgentPath:       "/var/vcap/packages/consul/bin/consul",
+					ConsulConfigDir: "/var/vcap/jobs/consul_agent/config",
 				},
 			}
 			Expect(confab.DefaultConfig()).To(Equal(config))
@@ -30,7 +31,8 @@ var _ = Describe("Config", func() {
 					"index": 1234
 				},
 				"path": {
-					"agent_path": "/path/to/agent"
+					"agent_path": "/path/to/agent",
+					"consul_config_dir": "/consul/config/dir"
 				},
 				"consul": {
 					"agent": {
@@ -49,7 +51,8 @@ var _ = Describe("Config", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(config).To(Equal(confab.Config{
 				Path: confab.ConfigPath{
-					AgentPath: "/path/to/agent",
+					AgentPath:       "/path/to/agent",
+					ConsulConfigDir: "/consul/config/dir",
 				},
 				Node: confab.ConfigNode{
 					Name:  "nodename",
@@ -76,7 +79,8 @@ var _ = Describe("Config", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(config).To(Equal(confab.Config{
 				Path: confab.ConfigPath{
-					AgentPath: "/var/vcap/packages/consul/bin/consul",
+					AgentPath:       "/var/vcap/packages/consul/bin/consul",
+					ConsulConfigDir: "/var/vcap/jobs/consul_agent/config",
 				},
 				Consul: confab.ConfigConsul{
 					RequireSSL: true,

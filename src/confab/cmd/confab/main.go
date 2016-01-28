@@ -30,11 +30,10 @@ func (ss *stringSlice) Set(value string) error {
 }
 
 var (
-	consulConfigDir string
-	pidFile         string
-	recursors       stringSlice
-	timeoutSeconds  int
-	configFile      string
+	pidFile        string
+	recursors      stringSlice
+	timeoutSeconds int
+	configFile     string
 
 	stdout = log.New(os.Stdout, "", 0)
 	stderr = log.New(os.Stderr, "", 0)
@@ -44,7 +43,6 @@ func main() {
 	var controller confab.Controller
 
 	flagSet := flag.NewFlagSet("flags", flag.ContinueOnError)
-	flagSet.StringVar(&consulConfigDir, "consul-config-dir", "", "path to consul configuration `directory`")
 	flagSet.StringVar(&pidFile, "pid-file", "", "path to consul PID `file`")
 	flagSet.Var(&recursors, "recursor", "specifies the address of an upstream DNS `server`, may be specified multiple times")
 	flagSet.IntVar(&timeoutSeconds, "timeout-seconds", 55, "specifies the maximum `number` of seconds before timeout")
@@ -85,7 +83,7 @@ func main() {
 	agentRunner := &confab.AgentRunner{
 		Path:      path,
 		PIDFile:   pidFile,
-		ConfigDir: consulConfigDir,
+		ConfigDir: config.Path.ConsulConfigDir,
 		Recursors: recursors,
 		Stdout:    os.Stdout,
 		Stderr:    os.Stderr,
@@ -112,7 +110,7 @@ func main() {
 		EncryptKeys:    config.Consul.EncryptKeys,
 		Logger:         logger,
 		ServiceDefiner: confab.ServiceDefiner{logger},
-		ConfigDir:      consulConfigDir,
+		ConfigDir:      config.Path.ConsulConfigDir,
 		Config:         config,
 	}
 
@@ -129,9 +127,10 @@ func main() {
 func start(flagSet *flag.FlagSet, path string, controller confab.Controller, agentClient *confab.AgentClient) {
 	timeout := confab.NewTimeout(time.After(time.Duration(timeoutSeconds) * time.Second))
 
-	_, err := os.Stat(consulConfigDir)
+	_, err := os.Stat(controller.Config.Path.ConsulConfigDir)
 	if err != nil {
-		printUsageAndExit(fmt.Sprintf("\"consul-config-dir\" %q could not be found", consulConfigDir), flagSet)
+		printUsageAndExit(fmt.Sprintf("\"consul_config_dir\" %q could not be found",
+			controller.Config.Path.ConsulConfigDir), flagSet)
 	}
 
 	if len(agentClient.ExpectedMembers) == 0 {

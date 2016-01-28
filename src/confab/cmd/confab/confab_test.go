@@ -74,7 +74,8 @@ var _ = Describe("confab", func() {
 					"index": 3,
 				},
 				"path": map[string]interface{}{
-					"agent_path": pathToFakeAgent,
+					"agent_path":        pathToFakeAgent,
+					"consul_config_dir": consulConfigDir,
 				},
 				"consul": map[string]interface{}{
 					"agent": map[string]interface{}{
@@ -106,7 +107,6 @@ var _ = Describe("confab", func() {
 			start := exec.Command(pathToConfab,
 				"start",
 				"--pid-file", pidFile.Name(),
-				"--consul-config-dir", consulConfigDir,
 				"--recursor", "8.8.8.8",
 				"--recursor", "10.0.2.3",
 				"--config-file", configFile.Name(),
@@ -120,7 +120,6 @@ var _ = Describe("confab", func() {
 			stop := exec.Command(pathToConfab,
 				"stop",
 				"--pid-file", pidFile.Name(),
-				"--consul-config-dir", consulConfigDir,
 				"--config-file", configFile.Name(),
 			)
 			Eventually(stop.Run, COMMAND_TIMEOUT, COMMAND_TIMEOUT).Should(Succeed())
@@ -182,7 +181,8 @@ var _ = Describe("confab", func() {
 			It("does not set encryption keys", func() {
 				writeConfigurationFile(configFile.Name(), map[string]interface{}{
 					"path": map[string]interface{}{
-						"agent_path": pathToFakeAgent,
+						"agent_path":        pathToFakeAgent,
+						"consul_config_dir": consulConfigDir,
 					},
 					"consul": map[string]interface{}{
 						"require_ssl": false,
@@ -199,7 +199,6 @@ var _ = Describe("confab", func() {
 				start := exec.Command(pathToConfab,
 					"start",
 					"--pid-file", pidFile.Name(),
-					"--consul-config-dir", consulConfigDir,
 					"--config-file", configFile.Name(),
 				)
 				Eventually(start.Run, COMMAND_TIMEOUT, COMMAND_TIMEOUT).Should(Succeed())
@@ -211,7 +210,6 @@ var _ = Describe("confab", func() {
 				stop := exec.Command(pathToConfab,
 					"stop",
 					"--pid-file", pidFile.Name(),
-					"--consul-config-dir", consulConfigDir,
 					"--config-file", configFile.Name(),
 				)
 				Eventually(stop.Run, COMMAND_TIMEOUT, COMMAND_TIMEOUT).Should(Succeed())
@@ -238,7 +236,8 @@ var _ = Describe("confab", func() {
 		BeforeEach(func() {
 			writeConfigurationFile(configFile.Name(), map[string]interface{}{
 				"path": map[string]interface{}{
-					"agent_path": pathToFakeAgent,
+					"agent_path":        pathToFakeAgent,
+					"consul_config_dir": consulConfigDir,
 				},
 				"consul": map[string]interface{}{
 					"agent": map[string]interface{}{
@@ -262,7 +261,6 @@ var _ = Describe("confab", func() {
 				cmd := exec.Command(pathToConfab,
 					"start",
 					"--pid-file", pidFile.Name(),
-					"--consul-config-dir", consulConfigDir,
 					"--config-file", configFile.Name(),
 				)
 				Eventually(cmd.Run, COMMAND_TIMEOUT, COMMAND_TIMEOUT).Should(Succeed())
@@ -291,7 +289,8 @@ var _ = Describe("confab", func() {
 				Expect(ioutil.WriteFile(filepath.Join(consulConfigDir, "options.json"), options, 0600)).To(Succeed())
 				writeConfigurationFile(configFile.Name(), map[string]interface{}{
 					"path": map[string]interface{}{
-						"agent_path": pathToFakeAgent,
+						"agent_path":        pathToFakeAgent,
+						"consul_config_dir": consulConfigDir,
 					},
 					"consul": map[string]interface{}{
 						"require_ssl": true,
@@ -314,7 +313,6 @@ var _ = Describe("confab", func() {
 				cmd := exec.Command(pathToConfab,
 					"start",
 					"--pid-file", pidFile.Name(),
-					"--consul-config-dir", consulConfigDir,
 					"--config-file", configFile.Name(),
 				)
 				Eventually(cmd.Run, COMMAND_TIMEOUT, COMMAND_TIMEOUT).Should(Succeed())
@@ -345,7 +343,6 @@ var _ = Describe("confab", func() {
 				cmd := exec.Command(pathToConfab,
 					"start",
 					"--pid-file", pidFile.Name(),
-					"--consul-config-dir", consulConfigDir,
 					"--timeout-seconds", "3",
 					"--config-file", configFile.Name(),
 				)
@@ -369,7 +366,8 @@ var _ = Describe("confab", func() {
 
 			writeConfigurationFile(configFile.Name(), map[string]interface{}{
 				"path": map[string]interface{}{
-					"agent_path": pathToFakeAgent,
+					"agent_path":        pathToFakeAgent,
+					"consul_config_dir": consulConfigDir,
 				},
 				"consul": map[string]interface{}{
 					"require_ssl": true,
@@ -388,7 +386,6 @@ var _ = Describe("confab", func() {
 			cmd := exec.Command(pathToConfab,
 				"start",
 				"--pid-file", pidFile.Name(),
-				"--consul-config-dir", consulConfigDir,
 				"--config-file", configFile.Name(),
 			)
 			Eventually(cmd.Run, COMMAND_TIMEOUT, COMMAND_TIMEOUT).Should(Succeed())
@@ -432,7 +429,8 @@ var _ = Describe("confab", func() {
 		BeforeEach(func() {
 			writeConfigurationFile(configFile.Name(), map[string]interface{}{
 				"path": map[string]interface{}{
-					"agent_path": pathToFakeAgent,
+					"agent_path":        pathToFakeAgent,
+					"consul_config_dir": consulConfigDir,
 				},
 			})
 		})
@@ -447,8 +445,6 @@ var _ = Describe("confab", func() {
 				usageLines := []string{
 					"usage: confab COMMAND OPTIONS",
 					"COMMAND: \"start\" or \"stop\"",
-					"-consul-config-dir directory",
-					"path to consul configuration directory",
 					"-pid-file file",
 					"path to consul PID file",
 					"-config-file",
@@ -479,7 +475,6 @@ var _ = Describe("confab", func() {
 			It("returns a non-zero status code and prints usage", func() {
 				cmd := exec.Command(pathToConfab, "banana",
 					"--pid-file", pidFile.Name(),
-					"--consul-config-dir", consulConfigDir,
 					"--config-file", configFile.Name())
 				buffer := bytes.NewBuffer([]byte{})
 				cmd.Stderr = buffer
@@ -493,7 +488,6 @@ var _ = Describe("confab", func() {
 			It("prints an error and usage", func() {
 				cmd := exec.Command(pathToConfab, "start",
 					"--pid-file", pidFile.Name(),
-					"--consul-config-dir", consulConfigDir,
 					"--config-file", configFile.Name())
 				buffer := bytes.NewBuffer([]byte{})
 				cmd.Stderr = buffer
@@ -507,7 +501,8 @@ var _ = Describe("confab", func() {
 			BeforeEach(func() {
 				writeConfigurationFile(configFile.Name(), map[string]interface{}{
 					"path": map[string]interface{}{
-						"agent_path": "/tmp/path/that/does/not/exist",
+						"agent_path":        "/tmp/path/that/does/not/exist",
+						"consul_config_dir": consulConfigDir,
 					},
 					"consul": map[string]interface{}{
 						"agent": map[string]interface{}{
@@ -522,7 +517,6 @@ var _ = Describe("confab", func() {
 			It("prints an error and usage", func() {
 				cmd := exec.Command(pathToConfab, "start",
 					"--pid-file", pidFile.Name(),
-					"--consul-config-dir", consulConfigDir,
 					"--config-file", configFile.Name())
 				buffer := bytes.NewBuffer([]byte{})
 				cmd.Stderr = buffer
@@ -536,7 +530,8 @@ var _ = Describe("confab", func() {
 			BeforeEach(func() {
 				writeConfigurationFile(configFile.Name(), map[string]interface{}{
 					"path": map[string]interface{}{
-						"agent_path": pathToFakeAgent,
+						"agent_path":        pathToFakeAgent,
+						"consul_config_dir": consulConfigDir,
 					},
 					"consul": map[string]interface{}{
 						"agent": map[string]interface{}{
@@ -550,7 +545,6 @@ var _ = Describe("confab", func() {
 
 			It("prints an error and usage", func() {
 				cmd := exec.Command(pathToConfab, "start",
-					"--consul-config-dir", consulConfigDir,
 					"--config-file", configFile.Name())
 				buffer := bytes.NewBuffer([]byte{})
 				cmd.Stderr = buffer
@@ -564,7 +558,8 @@ var _ = Describe("confab", func() {
 			BeforeEach(func() {
 				writeConfigurationFile(configFile.Name(), map[string]interface{}{
 					"path": map[string]interface{}{
-						"agent_path": pathToFakeAgent,
+						"agent_path":        pathToFakeAgent,
+						"consul_config_dir": "/tmp/path/that/does/not/exist",
 					},
 					"consul": map[string]interface{}{
 						"agent": map[string]interface{}{
@@ -579,12 +574,11 @@ var _ = Describe("confab", func() {
 			It("prints an error and usage", func() {
 				cmd := exec.Command(pathToConfab, "start",
 					"--pid-file", pidFile.Name(),
-					"--consul-config-dir", "/tmp/path/that/does/not/exist",
 					"--config-file", configFile.Name())
 				buffer := bytes.NewBuffer([]byte{})
 				cmd.Stderr = buffer
 				Eventually(cmd.Run, COMMAND_TIMEOUT, COMMAND_TIMEOUT).ShouldNot(Succeed())
-				Expect(buffer).To(ContainSubstring("\"consul-config-dir\" \"/tmp/path/that/does/not/exist\" could not be found"))
+				Expect(buffer).To(ContainSubstring("\"consul_config_dir\" \"/tmp/path/that/does/not/exist\" could not be found"))
 				Expect(buffer).To(ContainSubstring("usage: confab COMMAND OPTIONS"))
 			})
 		})
@@ -593,7 +587,8 @@ var _ = Describe("confab", func() {
 			BeforeEach(func() {
 				writeConfigurationFile(configFile.Name(), map[string]interface{}{
 					"path": map[string]interface{}{
-						"agent_path": pathToFakeAgent,
+						"agent_path":        pathToFakeAgent,
+						"consul_config_dir": consulConfigDir,
 					},
 					"consul": map[string]interface{}{
 						"agent": map[string]interface{}{
@@ -612,7 +607,6 @@ var _ = Describe("confab", func() {
 				cmd := exec.Command(pathToConfab,
 					"start",
 					"--pid-file", pidFile.Name(),
-					"--consul-config-dir", consulConfigDir,
 					"--config-file", configFile.Name(),
 				)
 				buffer := bytes.NewBuffer([]byte{})
@@ -627,7 +621,8 @@ var _ = Describe("confab", func() {
 			BeforeEach(func() {
 				writeConfigurationFile(configFile.Name(), map[string]interface{}{
 					"path": map[string]interface{}{
-						"agent_path": pathToFakeAgent,
+						"agent_path":        pathToFakeAgent,
+						"consul_config_dir": consulConfigDir,
 					},
 					"consul": map[string]interface{}{
 						"agent": map[string]interface{}{
@@ -652,7 +647,6 @@ var _ = Describe("confab", func() {
 				cmd := exec.Command(pathToConfab,
 					"start",
 					"--pid-file", pidFile.Name(),
-					"--consul-config-dir", consulConfigDir,
 					"--config-file", configFile.Name(),
 				)
 				buffer := bytes.NewBuffer([]byte{})
@@ -712,7 +706,8 @@ var _ = Describe("confab", func() {
 			BeforeEach(func() {
 				writeConfigurationFile(configFile.Name(), map[string]interface{}{
 					"path": map[string]interface{}{
-						"agent_path": pathToFakeAgent,
+						"agent_path":        pathToFakeAgent,
+						"consul_config_dir": consulConfigDir,
 					},
 					"consul": map[string]interface{}{
 						"agent": map[string]interface{}{
@@ -742,7 +737,6 @@ var _ = Describe("confab", func() {
 					"start",
 					"--pid-file", pidFile.Name(),
 					"--config-file", configFile.Name(),
-					"--consul-config-dir", consulConfigDir,
 				)
 				buffer := bytes.NewBuffer([]byte{})
 				cmd.Stderr = buffer
