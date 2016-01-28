@@ -30,7 +30,6 @@ func (ss *stringSlice) Set(value string) error {
 }
 
 var (
-	pidFile        string
 	recursors      stringSlice
 	timeoutSeconds int
 	configFile     string
@@ -43,7 +42,6 @@ func main() {
 	var controller confab.Controller
 
 	flagSet := flag.NewFlagSet("flags", flag.ContinueOnError)
-	flagSet.StringVar(&pidFile, "pid-file", "", "path to consul PID `file`")
 	flagSet.Var(&recursors, "recursor", "specifies the address of an upstream DNS `server`, may be specified multiple times")
 	flagSet.IntVar(&timeoutSeconds, "timeout-seconds", 55, "specifies the maximum `number` of seconds before timeout")
 	flagSet.StringVar(&configFile, "config-file", "", "specifies the config `file`")
@@ -73,8 +71,8 @@ func main() {
 		printUsageAndExit(fmt.Sprintf("\"agent_path\" %q cannot be found", config.Path.AgentPath), flagSet)
 	}
 
-	if len(pidFile) == 0 {
-		printUsageAndExit("\"pid-file\" cannot be empty", flagSet)
+	if len(config.Path.PIDFile) == 0 {
+		printUsageAndExit("\"pid_file\" cannot be empty", flagSet)
 	}
 
 	logger := lager.NewLogger("confab")
@@ -82,7 +80,7 @@ func main() {
 
 	agentRunner := &confab.AgentRunner{
 		Path:      path,
-		PIDFile:   pidFile,
+		PIDFile:   config.Path.PIDFile,
 		ConfigDir: config.Path.ConsulConfigDir,
 		Recursors: recursors,
 		Stdout:    os.Stdout,

@@ -17,6 +17,7 @@ type ConfigConsul struct {
 type ConfigPath struct {
 	AgentPath       string `json:"agent_path"`
 	ConsulConfigDir string `json:"consul_config_dir"`
+	PIDFile         string `json:"pid_file"`
 }
 
 type ConfigNode struct {
@@ -39,6 +40,7 @@ func DefaultConfig() Config {
 		Path: ConfigPath{
 			AgentPath:       "/var/vcap/packages/consul/bin/consul",
 			ConsulConfigDir: "/var/vcap/jobs/consul_agent/config",
+			PIDFile:         "/var/vcap/sys/run/consul_agent/consul_agent.pid",
 		},
 		Consul: ConfigConsul{
 			RequireSSL: true,

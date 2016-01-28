@@ -17,6 +17,7 @@ var _ = Describe("Config", func() {
 				Path: confab.ConfigPath{
 					AgentPath:       "/var/vcap/packages/consul/bin/consul",
 					ConsulConfigDir: "/var/vcap/jobs/consul_agent/config",
+					PIDFile:         "/var/vcap/sys/run/consul_agent/consul_agent.pid",
 				},
 			}
 			Expect(confab.DefaultConfig()).To(Equal(config))
@@ -32,7 +33,8 @@ var _ = Describe("Config", func() {
 				},
 				"path": {
 					"agent_path": "/path/to/agent",
-					"consul_config_dir": "/consul/config/dir"
+					"consul_config_dir": "/consul/config/dir",
+					"pid_file": "/path/to/pidfile"
 				},
 				"consul": {
 					"agent": {
@@ -53,6 +55,7 @@ var _ = Describe("Config", func() {
 				Path: confab.ConfigPath{
 					AgentPath:       "/path/to/agent",
 					ConsulConfigDir: "/consul/config/dir",
+					PIDFile:         "/path/to/pidfile",
 				},
 				Node: confab.ConfigNode{
 					Name:  "nodename",
@@ -81,6 +84,7 @@ var _ = Describe("Config", func() {
 				Path: confab.ConfigPath{
 					AgentPath:       "/var/vcap/packages/consul/bin/consul",
 					ConsulConfigDir: "/var/vcap/jobs/consul_agent/config",
+					PIDFile:         "/var/vcap/sys/run/consul_agent/consul_agent.pid",
 				},
 				Consul: confab.ConfigConsul{
 					RequireSSL: true,
