@@ -33,7 +33,6 @@ var (
 	agentPath       string
 	consulConfigDir string
 	pidFile         string
-	expectedMembers stringSlice
 	encryptionKeys  stringSlice
 	recursors       stringSlice
 	timeoutSeconds  int
@@ -50,7 +49,6 @@ func main() {
 	flagSet.StringVar(&agentPath, "agent-path", "", "path to the on-filesystem consul `executable`")
 	flagSet.StringVar(&consulConfigDir, "consul-config-dir", "", "path to consul configuration `directory`")
 	flagSet.StringVar(&pidFile, "pid-file", "", "path to consul PID `file`")
-	flagSet.Var(&expectedMembers, "expected-member", "address `list` of the expected members, may be specified multiple times")
 	flagSet.Var(&encryptionKeys, "encryption-key", "`key` used to encrypt consul traffic, may be specified multiple times")
 	flagSet.Var(&recursors, "recursor", "specifies the address of an upstream DNS `server`, may be specified multiple times")
 	flagSet.IntVar(&timeoutSeconds, "timeout-seconds", 55, "specifies the maximum `number` of seconds before timeout")
@@ -91,13 +89,6 @@ func main() {
 		panic(err) // not tested, NewClient never errors
 	}
 
-	agentClient := &confab.AgentClient{
-		ExpectedMembers: expectedMembers,
-		ConsulAPIAgent:  consulAPIClient.Agent(),
-		ConsulRPCClient: nil,
-		Logger:          logger,
-	}
-
 	configFileContents, err := ioutil.ReadFile(configFile)
 	if err != nil {
 		stderr.Printf("error reading configuration file: %s", err)
@@ -108,6 +99,13 @@ func main() {
 	if err != nil {
 		stderr.Printf("error reading configuration file: %s", err)
 		os.Exit(1)
+	}
+
+	agentClient := &confab.AgentClient{
+		ExpectedMembers: config.Agent.Servers.LAN,
+		ConsulAPIAgent:  consulAPIClient.Agent(),
+		ConsulRPCClient: nil,
+		Logger:          logger,
 	}
 
 	controller = confab.Controller{
@@ -140,7 +138,7 @@ func start(flagSet *flag.FlagSet, path string, controller confab.Controller, age
 		printUsageAndExit(fmt.Sprintf("\"consul-config-dir\" %q could not be found", consulConfigDir), flagSet)
 	}
 
-	if len(expectedMembers) == 0 {
+	if len(agentClient.ExpectedMembers) == 0 {
 		printUsageAndExit("at least one \"expected-member\" must be provided", flagSet)
 	}
 

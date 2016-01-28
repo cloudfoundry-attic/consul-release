@@ -14,8 +14,13 @@ type ConfigNode struct {
 }
 
 type ConfigAgent struct {
+	Servers  ConfigAgentServer
 	Services map[string]ServiceDefinition
 	Server   bool
+}
+
+type ConfigAgentServer struct {
+	LAN []string
 }
 
 func DefaultConfig() Config {

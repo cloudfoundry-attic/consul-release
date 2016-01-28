@@ -74,6 +74,9 @@ var _ = Describe("confab", func() {
 					"index": 3,
 				},
 				"agent": map[string]interface{}{
+					"servers": map[string]interface{}{
+						"lan": []string{"member-1", "member-2", "member-3"},
+					},
 					"services": map[string]interface{}{
 						"cloud_controller": map[string]interface{}{
 							"checks": []map[string]string{{
@@ -100,9 +103,6 @@ var _ = Describe("confab", func() {
 				"--pid-file", pidFile.Name(),
 				"--agent-path", pathToFakeAgent,
 				"--consul-config-dir", consulConfigDir,
-				"--expected-member", "member-1",
-				"--expected-member", "member-2",
-				"--expected-member", "member-3",
 				"--recursor", "8.8.8.8",
 				"--recursor", "10.0.2.3",
 				"--config-file", configFile.Name(),
@@ -118,9 +118,6 @@ var _ = Describe("confab", func() {
 				"--pid-file", pidFile.Name(),
 				"--agent-path", pathToFakeAgent,
 				"--consul-config-dir", consulConfigDir,
-				"--expected-member", "member-1",
-				"--expected-member", "member-2",
-				"--expected-member", "member-3",
 				"--config-file", configFile.Name(),
 			)
 			Eventually(stop.Run, COMMAND_TIMEOUT, COMMAND_TIMEOUT).Should(Succeed())
@@ -184,6 +181,9 @@ var _ = Describe("confab", func() {
 					"require_ssl": false,
 					"agent": map[string]interface{}{
 						"server": true,
+						"servers": map[string]interface{}{
+							"lan": []string{"member-1", "member-2", "member-3"},
+						},
 					},
 				})
 
@@ -192,9 +192,6 @@ var _ = Describe("confab", func() {
 					"--pid-file", pidFile.Name(),
 					"--agent-path", pathToFakeAgent,
 					"--consul-config-dir", consulConfigDir,
-					"--expected-member", "member-1",
-					"--expected-member", "member-2",
-					"--expected-member", "member-3",
 					"--encryption-key", "key-1",
 					"--encryption-key", "key-2",
 					"--config-file", configFile.Name(),
@@ -210,9 +207,6 @@ var _ = Describe("confab", func() {
 					"--pid-file", pidFile.Name(),
 					"--agent-path", pathToFakeAgent,
 					"--consul-config-dir", consulConfigDir,
-					"--expected-member", "member-1",
-					"--expected-member", "member-2",
-					"--expected-member", "member-3",
 					"--encryption-key", "key-1",
 					"--encryption-key", "key-2",
 					"--config-file", configFile.Name(),
@@ -238,6 +232,16 @@ var _ = Describe("confab", func() {
 	})
 
 	Context("when starting", func() {
+		BeforeEach(func() {
+			writeConfigurationFile(configFile.Name(), map[string]interface{}{
+				"agent": map[string]interface{}{
+					"servers": map[string]interface{}{
+						"lan": []string{"member-1", "member-2", "member-3"},
+					},
+				},
+			})
+		})
+
 		AfterEach(func() {
 			err := os.Remove(configFile.Name())
 			Expect(err).NotTo(HaveOccurred())
@@ -252,9 +256,6 @@ var _ = Describe("confab", func() {
 					"--pid-file", pidFile.Name(),
 					"--agent-path", pathToFakeAgent,
 					"--consul-config-dir", consulConfigDir,
-					"--expected-member", "member-1",
-					"--expected-member", "member-2",
-					"--expected-member", "member-3",
 					"--config-file", configFile.Name(),
 				)
 				Eventually(cmd.Run, COMMAND_TIMEOUT, COMMAND_TIMEOUT).Should(Succeed())
@@ -285,6 +286,9 @@ var _ = Describe("confab", func() {
 					"require_ssl": true,
 					"agent": map[string]interface{}{
 						"server": true,
+						"servers": map[string]interface{}{
+							"lan": []string{"member-1", "member-2", "member-3"},
+						},
 					},
 				})
 			})
@@ -299,9 +303,6 @@ var _ = Describe("confab", func() {
 					"--pid-file", pidFile.Name(),
 					"--agent-path", pathToFakeAgent,
 					"--consul-config-dir", consulConfigDir,
-					"--expected-member", "member-1",
-					"--expected-member", "member-2",
-					"--expected-member", "member-3",
 					"--encryption-key", "key-1",
 					"--encryption-key", "key-2",
 					"--config-file", configFile.Name(),
@@ -336,9 +337,6 @@ var _ = Describe("confab", func() {
 					"--pid-file", pidFile.Name(),
 					"--agent-path", pathToFakeAgent,
 					"--consul-config-dir", consulConfigDir,
-					"--expected-member", "member-1",
-					"--expected-member", "member-2",
-					"--expected-member", "member-3",
 					"--encryption-key", "key-1",
 					"--encryption-key", "key-2",
 					"--timeout-seconds", "3",
@@ -366,6 +364,9 @@ var _ = Describe("confab", func() {
 				"require_ssl": true,
 				"agent": map[string]interface{}{
 					"server": true,
+					"servers": map[string]interface{}{
+						"lan": []string{"member-1", "member-2", "member-3"},
+					},
 				},
 			})
 		})
@@ -376,9 +377,6 @@ var _ = Describe("confab", func() {
 				"--pid-file", pidFile.Name(),
 				"--agent-path", pathToFakeAgent,
 				"--consul-config-dir", consulConfigDir,
-				"--expected-member", "member-1",
-				"--expected-member", "member-2",
-				"--expected-member", "member-3",
 				"--encryption-key", "key-1",
 				"--encryption-key", "key-2",
 				"--config-file", configFile.Name(),
@@ -437,8 +435,6 @@ var _ = Describe("confab", func() {
 					"path to the on-filesystem consul executable",
 					"-consul-config-dir directory",
 					"path to consul configuration directory",
-					"-expected-member list",
-					"address list of the expected members",
 					"-pid-file file",
 					"path to consul PID file",
 					"-config-file",
@@ -497,9 +493,18 @@ var _ = Describe("confab", func() {
 		})
 
 		Context("when the agent executable does not exist", func() {
+			BeforeEach(func() {
+				writeConfigurationFile(configFile.Name(), map[string]interface{}{
+					"agent": map[string]interface{}{
+						"servers": map[string]interface{}{
+							"lan": []string{"member-1"},
+						},
+					},
+				})
+			})
+
 			It("prints an error and usage", func() {
 				cmd := exec.Command(pathToConfab, "start",
-					"--expected-member", "member-1",
 					"--agent-path", "/tmp/path/that/does/not/exist",
 					"--pid-file", pidFile.Name(),
 					"--consul-config-dir", consulConfigDir,
@@ -513,9 +518,18 @@ var _ = Describe("confab", func() {
 		})
 
 		Context("when the PID file option is not provided", func() {
+			BeforeEach(func() {
+				writeConfigurationFile(configFile.Name(), map[string]interface{}{
+					"agent": map[string]interface{}{
+						"servers": map[string]interface{}{
+							"lan": []string{"member-1"},
+						},
+					},
+				})
+			})
+
 			It("prints an error and usage", func() {
 				cmd := exec.Command(pathToConfab, "start",
-					"--expected-member", "member-1",
 					"--agent-path", pathToFakeAgent,
 					"--consul-config-dir", consulConfigDir,
 					"--config-file", configFile.Name())
@@ -528,9 +542,18 @@ var _ = Describe("confab", func() {
 		})
 
 		Context("when the consul config dir is not provided", func() {
+			BeforeEach(func() {
+				writeConfigurationFile(configFile.Name(), map[string]interface{}{
+					"agent": map[string]interface{}{
+						"servers": map[string]interface{}{
+							"lan": []string{"member-1"},
+						},
+					},
+				})
+			})
+
 			It("prints an error and usage", func() {
 				cmd := exec.Command(pathToConfab, "start",
-					"--expected-member", "member-1",
 					"--agent-path", pathToFakeAgent,
 					"--pid-file", pidFile.Name(),
 					"--consul-config-dir", "/tmp/path/that/does/not/exist",
@@ -544,6 +567,16 @@ var _ = Describe("confab", func() {
 		})
 
 		Context("when the pid file contains the pid of a running process", func() {
+			BeforeEach(func() {
+				writeConfigurationFile(configFile.Name(), map[string]interface{}{
+					"agent": map[string]interface{}{
+						"servers": map[string]interface{}{
+							"lan": []string{"member-1", "member-2", "member-3"},
+						},
+					},
+				})
+			})
+
 			It("prints an error and exits status 1", func() {
 				myPID := os.Getpid()
 				Expect(ioutil.WriteFile(pidFile.Name(), []byte(fmt.Sprintf("%d", myPID)), 0644)).To(Succeed())
@@ -553,9 +586,6 @@ var _ = Describe("confab", func() {
 					"--pid-file", pidFile.Name(),
 					"--agent-path", pathToFakeAgent,
 					"--consul-config-dir", consulConfigDir,
-					"--expected-member", "member-1",
-					"--expected-member", "member-2",
-					"--expected-member", "member-3",
 					"--config-file", configFile.Name(),
 				)
 				buffer := bytes.NewBuffer([]byte{})
@@ -571,6 +601,9 @@ var _ = Describe("confab", func() {
 				writeConfigurationFile(configFile.Name(), map[string]interface{}{
 					"agent": map[string]interface{}{
 						"server": true,
+						"servers": map[string]interface{}{
+							"lan": []string{"member-1", "member-2", "member-3"},
+						},
 					},
 				})
 			})
@@ -589,9 +622,6 @@ var _ = Describe("confab", func() {
 					"--pid-file", pidFile.Name(),
 					"--agent-path", pathToFakeAgent,
 					"--consul-config-dir", consulConfigDir,
-					"--expected-member", "member-1",
-					"--expected-member", "member-2",
-					"--expected-member", "member-3",
 					"--config-file", configFile.Name(),
 				)
 				buffer := bytes.NewBuffer([]byte{})
@@ -658,6 +688,9 @@ var _ = Describe("confab", func() {
 								"name": "gorouter",
 							},
 						},
+						"servers": map[string]interface{}{
+							"lan": []string{"member-1"},
+						},
 					},
 				})
 			})
@@ -676,7 +709,6 @@ var _ = Describe("confab", func() {
 					"--pid-file", pidFile.Name(),
 					"--agent-path", pathToFakeAgent,
 					"--config-file", configFile.Name(),
-					"--expected-member", "member-1",
 					"--consul-config-dir", consulConfigDir,
 				)
 				buffer := bytes.NewBuffer([]byte{})

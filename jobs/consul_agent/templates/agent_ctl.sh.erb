@@ -115,9 +115,6 @@ function start() {
     -consul-config-dir="${CONF_DIR}" \
     -pid-file="${PIDFILE}" \
     ${recursors} \
-    <% p("consul.agent.servers.lan").each do |server| %> \
-      -expected-member <%= server %> \
-    <% end %> \
     <% if_p("consul.encrypt_keys") do |encrypt_keys| %> \
       <% encrypt_keys.each do |key| %> \
         -encryption-key <%= key %> \
