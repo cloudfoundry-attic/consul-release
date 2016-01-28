@@ -3,9 +3,10 @@ package confab
 import "encoding/json"
 
 type Config struct {
-	Node       ConfigNode
-	Agent      ConfigAgent
-	RequireSSL bool `json:"require_ssl"`
+	Node        ConfigNode
+	Agent       ConfigAgent
+	RequireSSL  bool     `json:"require_ssl"`
+	EncryptKeys []string `json:"encrypt_keys"`
 }
 
 type ConfigNode struct {

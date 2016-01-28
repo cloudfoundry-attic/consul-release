@@ -185,6 +185,7 @@ var _ = Describe("confab", func() {
 							"lan": []string{"member-1", "member-2", "member-3"},
 						},
 					},
+					"encrypt_keys": []string{"key-1", "key-2"},
 				})
 
 				start := exec.Command(pathToConfab,
@@ -192,8 +193,6 @@ var _ = Describe("confab", func() {
 					"--pid-file", pidFile.Name(),
 					"--agent-path", pathToFakeAgent,
 					"--consul-config-dir", consulConfigDir,
-					"--encryption-key", "key-1",
-					"--encryption-key", "key-2",
 					"--config-file", configFile.Name(),
 				)
 				Eventually(start.Run, COMMAND_TIMEOUT, COMMAND_TIMEOUT).Should(Succeed())
@@ -207,8 +206,6 @@ var _ = Describe("confab", func() {
 					"--pid-file", pidFile.Name(),
 					"--agent-path", pathToFakeAgent,
 					"--consul-config-dir", consulConfigDir,
-					"--encryption-key", "key-1",
-					"--encryption-key", "key-2",
 					"--config-file", configFile.Name(),
 				)
 				Eventually(stop.Run, COMMAND_TIMEOUT, COMMAND_TIMEOUT).Should(Succeed())
@@ -290,6 +287,7 @@ var _ = Describe("confab", func() {
 							"lan": []string{"member-1", "member-2", "member-3"},
 						},
 					},
+					"encrypt_keys": []string{"key-1", "key-2"},
 				})
 			})
 
@@ -303,8 +301,6 @@ var _ = Describe("confab", func() {
 					"--pid-file", pidFile.Name(),
 					"--agent-path", pathToFakeAgent,
 					"--consul-config-dir", consulConfigDir,
-					"--encryption-key", "key-1",
-					"--encryption-key", "key-2",
 					"--config-file", configFile.Name(),
 				)
 				Eventually(cmd.Run, COMMAND_TIMEOUT, COMMAND_TIMEOUT).Should(Succeed())
@@ -337,8 +333,6 @@ var _ = Describe("confab", func() {
 					"--pid-file", pidFile.Name(),
 					"--agent-path", pathToFakeAgent,
 					"--consul-config-dir", consulConfigDir,
-					"--encryption-key", "key-1",
-					"--encryption-key", "key-2",
 					"--timeout-seconds", "3",
 					"--config-file", configFile.Name(),
 				)
@@ -368,6 +362,7 @@ var _ = Describe("confab", func() {
 						"lan": []string{"member-1", "member-2", "member-3"},
 					},
 				},
+				"encrypt_keys": []string{"key-1", "key-2"},
 			})
 		})
 
@@ -377,8 +372,6 @@ var _ = Describe("confab", func() {
 				"--pid-file", pidFile.Name(),
 				"--agent-path", pathToFakeAgent,
 				"--consul-config-dir", consulConfigDir,
-				"--encryption-key", "key-1",
-				"--encryption-key", "key-2",
 				"--config-file", configFile.Name(),
 			)
 			Eventually(cmd.Run, COMMAND_TIMEOUT, COMMAND_TIMEOUT).Should(Succeed())

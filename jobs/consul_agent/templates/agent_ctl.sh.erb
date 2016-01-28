@@ -115,11 +115,6 @@ function start() {
     -consul-config-dir="${CONF_DIR}" \
     -pid-file="${PIDFILE}" \
     ${recursors} \
-    <% if_p("consul.encrypt_keys") do |encrypt_keys| %> \
-      <% encrypt_keys.each do |key| %> \
-        -encryption-key <%= key %> \
-      <% end %> \
-    <% end %> \
     --config-file ${JOB_DIR}/confab.json \
     2> >(tee -a ${LOG_DIR}/consul_agent.stderr.log | logger -p user.error -t vcap.consul-agent) \
     1> >(tee -a ${LOG_DIR}/consul_agent.stdout.log | logger -p user.info  -t vcap.consul-agent)

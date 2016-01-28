@@ -33,7 +33,6 @@ var (
 	agentPath       string
 	consulConfigDir string
 	pidFile         string
-	encryptionKeys  stringSlice
 	recursors       stringSlice
 	timeoutSeconds  int
 	configFile      string
@@ -49,7 +48,6 @@ func main() {
 	flagSet.StringVar(&agentPath, "agent-path", "", "path to the on-filesystem consul `executable`")
 	flagSet.StringVar(&consulConfigDir, "consul-config-dir", "", "path to consul configuration `directory`")
 	flagSet.StringVar(&pidFile, "pid-file", "", "path to consul PID `file`")
-	flagSet.Var(&encryptionKeys, "encryption-key", "`key` used to encrypt consul traffic, may be specified multiple times")
 	flagSet.Var(&recursors, "recursor", "specifies the address of an upstream DNS `server`, may be specified multiple times")
 	flagSet.IntVar(&timeoutSeconds, "timeout-seconds", 55, "specifies the maximum `number` of seconds before timeout")
 	flagSet.StringVar(&configFile, "config-file", "", "specifies the config `file`")
@@ -113,7 +111,7 @@ func main() {
 		AgentClient:    agentClient,
 		SyncRetryDelay: 1 * time.Second,
 		SyncRetryClock: clock.NewClock(),
-		EncryptKeys:    encryptionKeys,
+		EncryptKeys:    config.EncryptKeys,
 		Logger:         logger,
 		ServiceDefiner: confab.ServiceDefiner{logger},
 		ConfigDir:      consulConfigDir,
