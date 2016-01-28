@@ -50,7 +50,7 @@ var _ = BeforeSuite(func() {
 
 		manifestConfig := destiny.Config{
 			DirectorUUID: info.UUID,
-			Name:         "turbulence-" + guid,
+			Name:         "turbulence-consul-" + guid,
 			BOSH: destiny.ConfigBOSH{
 				Target:         config.BOSH.Target,
 				Username:       config.BOSH.Username,
