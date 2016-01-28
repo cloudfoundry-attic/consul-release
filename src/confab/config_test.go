@@ -14,6 +14,9 @@ var _ = Describe("Config", func() {
 				Consul: confab.ConfigConsul{
 					RequireSSL: true,
 				},
+				Path: confab.ConfigPath{
+					AgentPath: "/var/vcap/packages/consul/bin/consul",
+				},
 			}
 			Expect(confab.DefaultConfig()).To(Equal(config))
 		})
@@ -25,6 +28,9 @@ var _ = Describe("Config", func() {
 				"node": {
 					"name": "nodename",
 					"index": 1234
+				},
+				"path": {
+					"agent_path": "/path/to/agent"
 				},
 				"consul": {
 					"agent": {
@@ -42,6 +48,9 @@ var _ = Describe("Config", func() {
 			config, err := confab.ConfigFromJSON(json)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(config).To(Equal(confab.Config{
+				Path: confab.ConfigPath{
+					AgentPath: "/path/to/agent",
+				},
 				Node: confab.ConfigNode{
 					Name:  "nodename",
 					Index: 1234,
@@ -66,6 +75,9 @@ var _ = Describe("Config", func() {
 			config, err := confab.ConfigFromJSON(json)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(config).To(Equal(confab.Config{
+				Path: confab.ConfigPath{
+					AgentPath: "/var/vcap/packages/consul/bin/consul",
+				},
 				Consul: confab.ConfigConsul{
 					RequireSSL: true,
 				},

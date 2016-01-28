@@ -30,7 +30,6 @@ func (ss *stringSlice) Set(value string) error {
 }
 
 var (
-	agentPath       string
 	consulConfigDir string
 	pidFile         string
 	recursors       stringSlice
@@ -45,7 +44,6 @@ func main() {
 	var controller confab.Controller
 
 	flagSet := flag.NewFlagSet("flags", flag.ContinueOnError)
-	flagSet.StringVar(&agentPath, "agent-path", "", "path to the on-filesystem consul `executable`")
 	flagSet.StringVar(&consulConfigDir, "consul-config-dir", "", "path to consul configuration `directory`")
 	flagSet.StringVar(&pidFile, "pid-file", "", "path to consul PID `file`")
 	flagSet.Var(&recursors, "recursor", "specifies the address of an upstream DNS `server`, may be specified multiple times")
@@ -60,9 +58,21 @@ func main() {
 		os.Exit(1)
 	}
 
-	path, err := exec.LookPath(agentPath)
+	configFileContents, err := ioutil.ReadFile(configFile)
 	if err != nil {
-		printUsageAndExit(fmt.Sprintf("\"agent-path\" %q cannot be found", agentPath), flagSet)
+		stderr.Printf("error reading configuration file: %s", err)
+		os.Exit(1)
+	}
+
+	config, err := confab.ConfigFromJSON(configFileContents)
+	if err != nil {
+		stderr.Printf("error reading configuration file: %s", err)
+		os.Exit(1)
+	}
+
+	path, err := exec.LookPath(config.Path.AgentPath)
+	if err != nil {
+		printUsageAndExit(fmt.Sprintf("\"agent_path\" %q cannot be found", config.Path.AgentPath), flagSet)
 	}
 
 	if len(pidFile) == 0 {
@@ -85,18 +95,6 @@ func main() {
 	consulAPIClient, err := api.NewClient(api.DefaultConfig())
 	if err != nil {
 		panic(err) // not tested, NewClient never errors
-	}
-
-	configFileContents, err := ioutil.ReadFile(configFile)
-	if err != nil {
-		stderr.Printf("error reading configuration file: %s", err)
-		os.Exit(1)
-	}
-
-	config, err := confab.ConfigFromJSON(configFileContents)
-	if err != nil {
-		stderr.Printf("error reading configuration file: %s", err)
-		os.Exit(1)
 	}
 
 	agentClient := &confab.AgentClient{

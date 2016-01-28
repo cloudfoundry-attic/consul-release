@@ -5,12 +5,17 @@ import "encoding/json"
 type Config struct {
 	Node   ConfigNode
 	Consul ConfigConsul
+	Path   ConfigPath
 }
 
 type ConfigConsul struct {
 	Agent       ConfigAgent
 	RequireSSL  bool     `json:"require_ssl"`
 	EncryptKeys []string `json:"encrypt_keys"`
+}
+
+type ConfigPath struct {
+	AgentPath string `json:"agent_path"`
 }
 
 type ConfigNode struct {
@@ -30,6 +35,9 @@ type ConfigAgentServer struct {
 
 func DefaultConfig() Config {
 	return Config{
+		Path: ConfigPath{
+			AgentPath: "/var/vcap/packages/consul/bin/consul",
+		},
 		Consul: ConfigConsul{
 			RequireSSL: true,
 		},
