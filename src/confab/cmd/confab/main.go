@@ -100,7 +100,7 @@ func main() {
 	}
 
 	agentClient := &confab.AgentClient{
-		ExpectedMembers: config.Agent.Servers.LAN,
+		ExpectedMembers: config.Consul.Agent.Servers.LAN,
 		ConsulAPIAgent:  consulAPIClient.Agent(),
 		ConsulRPCClient: nil,
 		Logger:          logger,
@@ -111,7 +111,7 @@ func main() {
 		AgentClient:    agentClient,
 		SyncRetryDelay: 1 * time.Second,
 		SyncRetryClock: clock.NewClock(),
-		EncryptKeys:    config.EncryptKeys,
+		EncryptKeys:    config.Consul.EncryptKeys,
 		Logger:         logger,
 		ServiceDefiner: confab.ServiceDefiner{logger},
 		ConfigDir:      consulConfigDir,
@@ -156,7 +156,7 @@ func start(flagSet *flag.FlagSet, path string, controller confab.Controller, age
 		os.Exit(1)
 	}
 
-	if controller.Config.Agent.Server {
+	if controller.Config.Consul.Agent.Server {
 		configureServer(controller, agentClient, timeout)
 	} else {
 		configureClient(controller)

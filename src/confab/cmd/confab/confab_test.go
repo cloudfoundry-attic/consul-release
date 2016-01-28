@@ -73,20 +73,22 @@ var _ = Describe("confab", func() {
 					"name":  "my-node",
 					"index": 3,
 				},
-				"agent": map[string]interface{}{
-					"servers": map[string]interface{}{
-						"lan": []string{"member-1", "member-2", "member-3"},
-					},
-					"services": map[string]interface{}{
-						"cloud_controller": map[string]interface{}{
-							"checks": []map[string]string{{
-								"name":     "do_something",
-								"script":   "/var/vcap/jobs/cloudcontroller/bin/do_something",
-								"interval": "5m",
-							}},
+				"consul": map[string]interface{}{
+					"agent": map[string]interface{}{
+						"servers": map[string]interface{}{
+							"lan": []string{"member-1", "member-2", "member-3"},
 						},
-						"router": map[string]interface{}{
-							"name": "gorouter",
+						"services": map[string]interface{}{
+							"cloud_controller": map[string]interface{}{
+								"checks": []map[string]string{{
+									"name":     "do_something",
+									"script":   "/var/vcap/jobs/cloudcontroller/bin/do_something",
+									"interval": "5m",
+								}},
+							},
+							"router": map[string]interface{}{
+								"name": "gorouter",
+							},
 						},
 					},
 				},
@@ -178,14 +180,16 @@ var _ = Describe("confab", func() {
 		Context("when require_ssl is set to false", func() {
 			It("does not set encryption keys", func() {
 				writeConfigurationFile(configFile.Name(), map[string]interface{}{
-					"require_ssl": false,
-					"agent": map[string]interface{}{
-						"server": true,
-						"servers": map[string]interface{}{
-							"lan": []string{"member-1", "member-2", "member-3"},
+					"consul": map[string]interface{}{
+						"require_ssl": false,
+						"agent": map[string]interface{}{
+							"server": true,
+							"servers": map[string]interface{}{
+								"lan": []string{"member-1", "member-2", "member-3"},
+							},
 						},
+						"encrypt_keys": []string{"key-1", "key-2"},
 					},
-					"encrypt_keys": []string{"key-1", "key-2"},
 				})
 
 				start := exec.Command(pathToConfab,
@@ -231,9 +235,11 @@ var _ = Describe("confab", func() {
 	Context("when starting", func() {
 		BeforeEach(func() {
 			writeConfigurationFile(configFile.Name(), map[string]interface{}{
-				"agent": map[string]interface{}{
-					"servers": map[string]interface{}{
-						"lan": []string{"member-1", "member-2", "member-3"},
+				"consul": map[string]interface{}{
+					"agent": map[string]interface{}{
+						"servers": map[string]interface{}{
+							"lan": []string{"member-1", "member-2", "member-3"},
+						},
 					},
 				},
 			})
@@ -280,14 +286,16 @@ var _ = Describe("confab", func() {
 				options := []byte(`{"Members": ["member-1", "member-2", "member-3"]}`)
 				Expect(ioutil.WriteFile(filepath.Join(consulConfigDir, "options.json"), options, 0600)).To(Succeed())
 				writeConfigurationFile(configFile.Name(), map[string]interface{}{
-					"require_ssl": true,
-					"agent": map[string]interface{}{
-						"server": true,
-						"servers": map[string]interface{}{
-							"lan": []string{"member-1", "member-2", "member-3"},
+					"consul": map[string]interface{}{
+						"require_ssl": true,
+						"agent": map[string]interface{}{
+							"server": true,
+							"servers": map[string]interface{}{
+								"lan": []string{"member-1", "member-2", "member-3"},
+							},
 						},
+						"encrypt_keys": []string{"key-1", "key-2"},
 					},
-					"encrypt_keys": []string{"key-1", "key-2"},
 				})
 			})
 
@@ -355,14 +363,16 @@ var _ = Describe("confab", func() {
 			Expect(ioutil.WriteFile(filepath.Join(consulConfigDir, "options.json"), options, 0600)).To(Succeed())
 
 			writeConfigurationFile(configFile.Name(), map[string]interface{}{
-				"require_ssl": true,
-				"agent": map[string]interface{}{
-					"server": true,
-					"servers": map[string]interface{}{
-						"lan": []string{"member-1", "member-2", "member-3"},
+				"consul": map[string]interface{}{
+					"require_ssl": true,
+					"agent": map[string]interface{}{
+						"server": true,
+						"servers": map[string]interface{}{
+							"lan": []string{"member-1", "member-2", "member-3"},
+						},
 					},
+					"encrypt_keys": []string{"key-1", "key-2"},
 				},
-				"encrypt_keys": []string{"key-1", "key-2"},
 			})
 		})
 
@@ -488,9 +498,11 @@ var _ = Describe("confab", func() {
 		Context("when the agent executable does not exist", func() {
 			BeforeEach(func() {
 				writeConfigurationFile(configFile.Name(), map[string]interface{}{
-					"agent": map[string]interface{}{
-						"servers": map[string]interface{}{
-							"lan": []string{"member-1"},
+					"consul": map[string]interface{}{
+						"agent": map[string]interface{}{
+							"servers": map[string]interface{}{
+								"lan": []string{"member-1"},
+							},
 						},
 					},
 				})
@@ -513,9 +525,11 @@ var _ = Describe("confab", func() {
 		Context("when the PID file option is not provided", func() {
 			BeforeEach(func() {
 				writeConfigurationFile(configFile.Name(), map[string]interface{}{
-					"agent": map[string]interface{}{
-						"servers": map[string]interface{}{
-							"lan": []string{"member-1"},
+					"consul": map[string]interface{}{
+						"agent": map[string]interface{}{
+							"servers": map[string]interface{}{
+								"lan": []string{"member-1"},
+							},
 						},
 					},
 				})
@@ -537,9 +551,11 @@ var _ = Describe("confab", func() {
 		Context("when the consul config dir is not provided", func() {
 			BeforeEach(func() {
 				writeConfigurationFile(configFile.Name(), map[string]interface{}{
-					"agent": map[string]interface{}{
-						"servers": map[string]interface{}{
-							"lan": []string{"member-1"},
+					"consul": map[string]interface{}{
+						"agent": map[string]interface{}{
+							"servers": map[string]interface{}{
+								"lan": []string{"member-1"},
+							},
 						},
 					},
 				})
@@ -562,9 +578,11 @@ var _ = Describe("confab", func() {
 		Context("when the pid file contains the pid of a running process", func() {
 			BeforeEach(func() {
 				writeConfigurationFile(configFile.Name(), map[string]interface{}{
-					"agent": map[string]interface{}{
-						"servers": map[string]interface{}{
-							"lan": []string{"member-1", "member-2", "member-3"},
+					"consul": map[string]interface{}{
+						"agent": map[string]interface{}{
+							"servers": map[string]interface{}{
+								"lan": []string{"member-1", "member-2", "member-3"},
+							},
 						},
 					},
 				})
@@ -592,10 +610,12 @@ var _ = Describe("confab", func() {
 		Context("when the rpc connection cannot be created", func() {
 			BeforeEach(func() {
 				writeConfigurationFile(configFile.Name(), map[string]interface{}{
-					"agent": map[string]interface{}{
-						"server": true,
-						"servers": map[string]interface{}{
-							"lan": []string{"member-1", "member-2", "member-3"},
+					"consul": map[string]interface{}{
+						"agent": map[string]interface{}{
+							"server": true,
+							"servers": map[string]interface{}{
+								"lan": []string{"member-1", "member-2", "member-3"},
+							},
 						},
 					},
 				})
@@ -675,14 +695,16 @@ var _ = Describe("confab", func() {
 		Context("when the consul config dir is not writeable", func() {
 			BeforeEach(func() {
 				writeConfigurationFile(configFile.Name(), map[string]interface{}{
-					"agent": map[string]interface{}{
-						"services": map[string]interface{}{
-							"router": map[string]interface{}{
-								"name": "gorouter",
+					"consul": map[string]interface{}{
+						"agent": map[string]interface{}{
+							"services": map[string]interface{}{
+								"router": map[string]interface{}{
+									"name": "gorouter",
+								},
 							},
-						},
-						"servers": map[string]interface{}{
-							"lan": []string{"member-1"},
+							"servers": map[string]interface{}{
+								"lan": []string{"member-1"},
+							},
 						},
 					},
 				})

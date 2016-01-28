@@ -4,8 +4,6 @@
 		name: name,
 		index: spec.index,
 	},
-	agent: p('consul.agent'),
-	require_ssl: p('consul.require_ssl'),
-	encrypt_keys: p('consul.encrypt_keys')
+	consul: p('consul')
 }.to_json
 %>

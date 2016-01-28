@@ -422,7 +422,7 @@ var _ = Describe("Controller", func() {
 
 			Context("when the server does not have ssl enabled", func() {
 				BeforeEach(func() {
-					controller.Config.RequireSSL = false
+					controller.Config.Consul.RequireSSL = false
 				})
 
 				It("does not set keys", func() {
@@ -580,7 +580,7 @@ var _ = Describe("Controller", func() {
 			It("returns the error", func() {
 				agentRunner.WritePIDCall.Returns.Error = errors.New("failed to write PIDFILE")
 
-				controller.Config.RequireSSL = false
+				controller.Config.Consul.RequireSSL = false
 				err := controller.ConfigureServer(confab.NewTimeout(make(chan time.Time)))
 				Expect(err).To(MatchError("failed to write PIDFILE"))
 

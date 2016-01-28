@@ -49,7 +49,7 @@ type ServiceDefiner struct {
 func (s ServiceDefiner) GenerateDefinitions(config Config) []ServiceDefinition {
 	definitions := []ServiceDefinition{}
 
-	for name, service := range config.Agent.Services {
+	for name, service := range config.Consul.Agent.Services {
 		s.Logger.Info("service-definer.generate-definitions.define", lager.Data{
 			"service": name,
 		})

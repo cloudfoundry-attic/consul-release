@@ -38,11 +38,13 @@ var _ = Describe("ServiceDefiner", func() {
 					Name:  "some_node",
 					Index: 0,
 				},
-				Agent: confab.ConfigAgent{
-					Services: map[string]confab.ServiceDefinition{
-						"router":           {},
-						"cloud_controller": {},
-						"doppler":          {},
+				Consul: confab.ConfigConsul{
+					Agent: confab.ConfigAgent{
+						Services: map[string]confab.ServiceDefinition{
+							"router":           {},
+							"cloud_controller": {},
+							"doppler":          {},
+						},
 					},
 				},
 			})
@@ -72,9 +74,11 @@ var _ = Describe("ServiceDefiner", func() {
 					Name:  "some_node",
 					Index: 0,
 				},
-				Agent: confab.ConfigAgent{
-					Services: map[string]confab.ServiceDefinition{
-						"router": {},
+				Consul: confab.ConfigConsul{
+					Agent: confab.ConfigAgent{
+						Services: map[string]confab.ServiceDefinition{
+							"router": {},
+						},
 					},
 				},
 			})
@@ -98,9 +102,11 @@ var _ = Describe("ServiceDefiner", func() {
 					Name:  "some_node",
 					Index: 0,
 				},
-				Agent: confab.ConfigAgent{
-					Services: map[string]confab.ServiceDefinition{
-						"cloud_controller": {},
+				Consul: confab.ConfigConsul{
+					Agent: confab.ConfigAgent{
+						Services: map[string]confab.ServiceDefinition{
+							"cloud_controller": {},
+						},
 					},
 				},
 			})
@@ -124,13 +130,15 @@ var _ = Describe("ServiceDefiner", func() {
 					Name:  "some_node",
 					Index: 0,
 				},
-				Agent: confab.ConfigAgent{
-					Services: map[string]confab.ServiceDefinition{
-						"doppler": {
-							Check: &confab.ServiceDefinitionCheck{
-								Name:     "my-script",
-								Script:   "/var/vcap/jobs/doppler/bin/my-script",
-								Interval: "5m",
+				Consul: confab.ConfigConsul{
+					Agent: confab.ConfigAgent{
+						Services: map[string]confab.ServiceDefinition{
+							"doppler": {
+								Check: &confab.ServiceDefinitionCheck{
+									Name:     "my-script",
+									Script:   "/var/vcap/jobs/doppler/bin/my-script",
+									Interval: "5m",
+								},
 							},
 						},
 					},
@@ -156,14 +164,16 @@ var _ = Describe("ServiceDefiner", func() {
 					Name:  "some_node",
 					Index: 0,
 				},
-				Agent: confab.ConfigAgent{
-					Services: map[string]confab.ServiceDefinition{
-						"uaa": {
-							Checks: []confab.ServiceDefinitionCheck{{
-								Name:     "check-login",
-								Script:   "/var/vcap/jobs/uaa/bin/check-login",
-								Interval: "1m",
-							}},
+				Consul: confab.ConfigConsul{
+					Agent: confab.ConfigAgent{
+						Services: map[string]confab.ServiceDefinition{
+							"uaa": {
+								Checks: []confab.ServiceDefinitionCheck{{
+									Name:     "check-login",
+									Script:   "/var/vcap/jobs/uaa/bin/check-login",
+									Interval: "1m",
+								}},
+							},
 						},
 					},
 				},
@@ -193,10 +203,12 @@ var _ = Describe("ServiceDefiner", func() {
 					Name:  "some_node",
 					Index: 0,
 				},
-				Agent: confab.ConfigAgent{
-					Services: map[string]confab.ServiceDefinition{
-						"cell": {
-							Name: "cell_z1",
+				Consul: confab.ConfigConsul{
+					Agent: confab.ConfigAgent{
+						Services: map[string]confab.ServiceDefinition{
+							"cell": {
+								Name: "cell_z1",
+							},
 						},
 					},
 				},
@@ -221,10 +233,12 @@ var _ = Describe("ServiceDefiner", func() {
 					Name:  "some_node",
 					Index: 0,
 				},
-				Agent: confab.ConfigAgent{
-					Services: map[string]confab.ServiceDefinition{
-						"dea": {
-							Tags: []string{"runner"},
+				Consul: confab.ConfigConsul{
+					Agent: confab.ConfigAgent{
+						Services: map[string]confab.ServiceDefinition{
+							"dea": {
+								Tags: []string{"runner"},
+							},
 						},
 					},
 				},
@@ -249,10 +263,12 @@ var _ = Describe("ServiceDefiner", func() {
 					Name:  "some_node",
 					Index: 0,
 				},
-				Agent: confab.ConfigAgent{
-					Services: map[string]confab.ServiceDefinition{
-						"dea": {
-							Address: "192.168.1.1",
+				Consul: confab.ConfigConsul{
+					Agent: confab.ConfigAgent{
+						Services: map[string]confab.ServiceDefinition{
+							"dea": {
+								Address: "192.168.1.1",
+							},
 						},
 					},
 				},
@@ -278,10 +294,12 @@ var _ = Describe("ServiceDefiner", func() {
 					Name:  "some_node",
 					Index: 0,
 				},
-				Agent: confab.ConfigAgent{
-					Services: map[string]confab.ServiceDefinition{
-						"router": {
-							Port: 12345,
+				Consul: confab.ConfigConsul{
+					Agent: confab.ConfigAgent{
+						Services: map[string]confab.ServiceDefinition{
+							"router": {
+								Port: 12345,
+							},
 						},
 					},
 				},
@@ -307,10 +325,12 @@ var _ = Describe("ServiceDefiner", func() {
 					Name:  "some_node",
 					Index: 0,
 				},
-				Agent: confab.ConfigAgent{
-					Services: map[string]confab.ServiceDefinition{
-						"router": {
-							EnableTagOverride: true,
+				Consul: confab.ConfigConsul{
+					Agent: confab.ConfigAgent{
+						Services: map[string]confab.ServiceDefinition{
+							"router": {
+								EnableTagOverride: true,
+							},
 						},
 					},
 				},
@@ -336,10 +356,12 @@ var _ = Describe("ServiceDefiner", func() {
 					Name:  "some_node",
 					Index: 0,
 				},
-				Agent: confab.ConfigAgent{
-					Services: map[string]confab.ServiceDefinition{
-						"router": {
-							ID: "some-id",
+				Consul: confab.ConfigConsul{
+					Agent: confab.ConfigAgent{
+						Services: map[string]confab.ServiceDefinition{
+							"router": {
+								ID: "some-id",
+							},
 						},
 					},
 				},
@@ -365,10 +387,12 @@ var _ = Describe("ServiceDefiner", func() {
 					Name:  "some_node",
 					Index: 0,
 				},
-				Agent: confab.ConfigAgent{
-					Services: map[string]confab.ServiceDefinition{
-						"router": {
-							Token: "some-token",
+				Consul: confab.ConfigConsul{
+					Agent: confab.ConfigAgent{
+						Services: map[string]confab.ServiceDefinition{
+							"router": {
+								Token: "some-token",
+							},
 						},
 					},
 				},
@@ -394,23 +418,25 @@ var _ = Describe("ServiceDefiner", func() {
 					Name:  "some_node",
 					Index: 0,
 				},
-				Agent: confab.ConfigAgent{
-					Services: map[string]confab.ServiceDefinition{
-						"router": {
-							Check: &confab.ServiceDefinitionCheck{
-								Name:              "some-check-name",
-								ID:                "some-check-id",
-								Script:            "/var/vcap/jobs/router/bin/my-script",
-								HTTP:              "http://some-endpoint.com",
-								TCP:               "localhost:2120",
-								TTL:               "30s",
-								Interval:          "10s",
-								Timeout:           "20s",
-								Notes:             "some-notes",
-								DockerContainerID: "some-docker-container-id",
-								Shell:             "/bin/bash",
-								Status:            "some-status",
-								ServiceID:         "some-service-id",
+				Consul: confab.ConfigConsul{
+					Agent: confab.ConfigAgent{
+						Services: map[string]confab.ServiceDefinition{
+							"router": {
+								Check: &confab.ServiceDefinitionCheck{
+									Name:              "some-check-name",
+									ID:                "some-check-id",
+									Script:            "/var/vcap/jobs/router/bin/my-script",
+									HTTP:              "http://some-endpoint.com",
+									TCP:               "localhost:2120",
+									TTL:               "30s",
+									Interval:          "10s",
+									Timeout:           "20s",
+									Notes:             "some-notes",
+									DockerContainerID: "some-docker-container-id",
+									Shell:             "/bin/bash",
+									Status:            "some-status",
+									ServiceID:         "some-service-id",
+								},
 							},
 						},
 					},

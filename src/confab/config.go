@@ -3,7 +3,11 @@ package confab
 import "encoding/json"
 
 type Config struct {
-	Node        ConfigNode
+	Node   ConfigNode
+	Consul ConfigConsul
+}
+
+type ConfigConsul struct {
 	Agent       ConfigAgent
 	RequireSSL  bool     `json:"require_ssl"`
 	EncryptKeys []string `json:"encrypt_keys"`
@@ -26,7 +30,9 @@ type ConfigAgentServer struct {
 
 func DefaultConfig() Config {
 	return Config{
-		RequireSSL: true,
+		Consul: ConfigConsul{
+			RequireSSL: true,
+		},
 	}
 }
 

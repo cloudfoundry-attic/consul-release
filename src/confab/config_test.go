@@ -11,7 +11,9 @@ var _ = Describe("Config", func() {
 	Describe("DefaultConfig", func() {
 		It("returns a default configuration", func() {
 			config := confab.Config{
-				RequireSSL: true,
+				Consul: confab.ConfigConsul{
+					RequireSSL: true,
+				},
 			}
 			Expect(confab.DefaultConfig()).To(Equal(config))
 		})
@@ -24,15 +26,18 @@ var _ = Describe("Config", func() {
 					"name": "nodename",
 					"index": 1234
 				},
-				"agent": {
-					"services": {
-						"myservice": {
-							"name" : "myservicename"	
-						}
+				"consul": {
+					"agent": {
+						"services": {
+							"myservice": {
+								"name" : "myservicename"	
+							}
+						},
+						"server": true
 					},
-					"server": true
-				},
-				"require_ssl": true
+					"require_ssl": true,
+					"encrypt_keys": ["key-1", "key-2"]
+				}
 			}`)
 			config, err := confab.ConfigFromJSON(json)
 			Expect(err).NotTo(HaveOccurred())
@@ -41,15 +46,18 @@ var _ = Describe("Config", func() {
 					Name:  "nodename",
 					Index: 1234,
 				},
-				Agent: confab.ConfigAgent{
-					Services: map[string]confab.ServiceDefinition{
-						"myservice": confab.ServiceDefinition{
-							Name: "myservicename",
+				Consul: confab.ConfigConsul{
+					Agent: confab.ConfigAgent{
+						Services: map[string]confab.ServiceDefinition{
+							"myservice": confab.ServiceDefinition{
+								Name: "myservicename",
+							},
 						},
+						Server: true,
 					},
-					Server: true,
+					RequireSSL:  true,
+					EncryptKeys: []string{"key-1", "key-2"},
 				},
-				RequireSSL: true,
 			}))
 		})
 
@@ -58,7 +66,9 @@ var _ = Describe("Config", func() {
 			config, err := confab.ConfigFromJSON(json)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(config).To(Equal(confab.Config{
-				RequireSSL: true,
+				Consul: confab.ConfigConsul{
+					RequireSSL: true,
+				},
 			}))
 		})
 
