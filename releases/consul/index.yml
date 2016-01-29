@@ -96,4 +96,6 @@ builds:
     version: '47'
   6ed5e90f-4d24-4a3a-ab2f-9fe86eca124b:
     version: '48'
+  65dbcdf6-886a-477a-b56e-51c228cd1d4d:
+    version: '49'
 format-version: '2'
