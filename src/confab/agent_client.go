@@ -60,11 +60,9 @@ func (c AgentClient) VerifyJoined() error {
 	})
 
 	for _, member := range members {
-		for _, expectedMember := range c.ExpectedMembers {
-			if member.Addr == expectedMember {
-				c.Logger.Info("agent-client.verify-joined.members.joined")
-				return nil
-			}
+		if member.Tags["role"] == "consul" {
+			c.Logger.Info("agent-client.verify-joined.members.joined")
+			return nil
 		}
 	}
 

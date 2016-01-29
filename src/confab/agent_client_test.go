@@ -37,9 +37,24 @@ var _ = Describe("AgentClient", func() {
 			It("succeeds", func() {
 				client.ExpectedMembers = []string{"member1", "member2", "member3"}
 				consulAPIAgent.MembersReturns([]*api.AgentMember{
-					&api.AgentMember{Addr: "member1"},
-					&api.AgentMember{Addr: "member2"},
-					&api.AgentMember{Addr: "member3"},
+					&api.AgentMember{
+						Addr: "member1",
+						Tags: map[string]string{
+							"role": "consul",
+						},
+					},
+					&api.AgentMember{
+						Addr: "member2",
+						Tags: map[string]string{
+							"role": "consul",
+						},
+					},
+					&api.AgentMember{
+						Addr: "member3",
+						Tags: map[string]string{
+							"role": "consul",
+						},
+					},
 				}, nil)
 
 				Expect(client.VerifyJoined()).To(Succeed())
