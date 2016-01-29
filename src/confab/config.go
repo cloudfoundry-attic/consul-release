@@ -31,9 +31,12 @@ type ConfigNode struct {
 }
 
 type ConfigAgent struct {
-	Servers  ConfigAgentServer
-	Services map[string]ServiceDefinition
-	Server   bool
+	Servers         ConfigAgentServer
+	Services        map[string]ServiceDefinition
+	Server          bool
+	Datacenter      string `json:"datacenter"`
+	LogLevel        string `json:"log_level"`
+	ProtocolVersion int    `json:"protocol_version"`
 }
 
 type ConfigAgentServer struct {

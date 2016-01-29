@@ -1,9 +1,17 @@
 <%=
+
+class OpenStruct
+  def marshal_dump
+    self.each_pair do |key, value|
+      case value
+      when OpenStruct
+        self[key] = value.marshal_dump
+      end
+    end
+  end
+end
+
 {
-	node: {
-		name: name,
-		index: spec.index,
-	},
-	consul: p('consul')
+	spec: spec.marshal_dump
 }.to_json
 %>

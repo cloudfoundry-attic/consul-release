@@ -1,7 +1,11 @@
 package confab
 
 import (
+	"encoding/json"
 	"errors"
+	"io/ioutil"
+	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/pivotal-golang/lager"
@@ -165,5 +169,21 @@ func (c Controller) WriteServiceDefinitions() error {
 	}
 
 	c.Logger.Info("controller.write-service-definitions.success")
+	return nil
+}
+
+func (c Controller) WriteConsulConfig() error {
+	consulConfig := GenerateConfiguration(c.Config)
+
+	data, err := json.Marshal(&consulConfig)
+	if err != nil {
+		panic(err)
+	}
+
+	err = ioutil.WriteFile(filepath.Join(c.Config.Path.ConsulConfigDir, "config.json"), data, os.ModePerm)
+	if err != nil {
+		panic(err)
+	}
+
 	return nil
 }

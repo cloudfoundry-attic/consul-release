@@ -104,13 +104,15 @@ var _ = Describe("confab", func() {
 			Expect(os.Remove(configFile.Name())).NotTo(HaveOccurred())
 		})
 
-		It("starts and stops the consul process as a daemon", func() {
+		FIt("starts and stops the consul process as a daemon", func() {
 			start := exec.Command(pathToConfab,
 				"start",
 				"--recursor", "8.8.8.8",
 				"--recursor", "10.0.2.3",
 				"--config-file", configFile.Name(),
 			)
+			start.Stdout = os.Stdout
+			start.Stderr = os.Stderr
 			Eventually(start.Run, COMMAND_TIMEOUT, COMMAND_TIMEOUT).Should(Succeed())
 
 			pid, err := getPID(pidFile.Name())
@@ -173,6 +175,12 @@ var _ = Describe("confab", func() {
 					},
 					"tags": ["my-node-3"]
 				}
+			}`))
+
+			consulConfig, err := ioutil.ReadFile(filepath.Join(consulConfigDir, "config.json"))
+			Expect(err).NotTo(HaveOccurred())
+			Expect(string(consulConfig)).To(MatchJSON(`{
+				"server": false
 			}`))
 		})
 

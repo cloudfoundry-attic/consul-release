@@ -7,7 +7,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("Config", func() {
+var _ = FDescribe("Config", func() {
 	Describe("DefaultConfig", func() {
 		It("returns a default configuration", func() {
 			config := confab.Config{
@@ -46,7 +46,10 @@ var _ = Describe("Config", func() {
 								"name" : "myservicename"	
 							}
 						},
-						"server": true
+						"server": true,
+						"datacenter": "dc1",
+						"log_level": "debug",
+						"protocol_version": 1
 					},
 					"require_ssl": true,
 					"encrypt_keys": ["key-1", "key-2"]
@@ -74,7 +77,10 @@ var _ = Describe("Config", func() {
 								Name: "myservicename",
 							},
 						},
-						Server: true,
+						Server:          true,
+						Datacenter:      "dc1",
+						LogLevel:        "debug",
+						ProtocolVersion: 1,
 					},
 					RequireSSL:  true,
 					EncryptKeys: []string{"key-1", "key-2"},

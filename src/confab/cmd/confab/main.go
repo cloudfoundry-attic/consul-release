@@ -133,6 +133,11 @@ func start(flagSet *flag.FlagSet, path string, controller confab.Controller, age
 		printUsageAndExit("at least one \"expected-member\" must be provided", flagSet)
 	}
 
+	//err = controller.WriteConsulConfig()
+	//if err != nil {
+	//panic(err)
+	//}
+
 	err = controller.WriteServiceDefinitions()
 	if err != nil {
 		stderr.Printf("error writing service definitions: %s", err)
