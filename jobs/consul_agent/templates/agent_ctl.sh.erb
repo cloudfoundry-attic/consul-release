@@ -37,7 +37,7 @@ function main() {
 
 function setup_resolvconf() {
   local resolvconf_file
-	resolvconf_file=/etc/resolvconf/resolv.conf.d/head
+  resolvconf_file=/etc/resolvconf/resolv.conf.d/head
 
   if ! grep -q 127.0.0.1 "${resolvconf_file}"; then
 	  if [[ "$(stat -c "%s" "${resolvconf_file}")" = "0" ]]; then
