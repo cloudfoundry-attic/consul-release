@@ -142,11 +142,7 @@ func start(flagSet *flag.FlagSet, path string, controller confab.Controller, age
 	err = controller.BootAgent(timeout)
 	if err != nil {
 		stderr.Printf("error booting consul agent: %s", err)
-
-		// DO NOT call StopAgent:
-		//   - the agent may aleady be running
-		//   - the pidfile may contain the PID of another running process
-		os.Exit(1)
+		exit(controller, 1)
 	}
 
 	if controller.Config.Consul.Agent.Server {

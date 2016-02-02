@@ -615,18 +615,26 @@ var _ = Describe("confab", func() {
 			})
 
 			It("prints an error and exits status 1", func() {
-				myPID := os.Getpid()
-				Expect(ioutil.WriteFile(pidFile.Name(), []byte(fmt.Sprintf("%d", myPID)), 0644)).To(Succeed())
-
 				cmd := exec.Command(pathToConfab,
 					"start",
 					"--config-file", configFile.Name(),
 				)
-				buffer := bytes.NewBuffer([]byte{})
-				cmd.Stderr = buffer
+				Eventually(cmd.Run, COMMAND_TIMEOUT, COMMAND_TIMEOUT).Should(Succeed())
+
+				cmd = exec.Command(pathToConfab,
+					"start",
+					"--config-file", configFile.Name(),
+				)
+
+				stdout := bytes.NewBuffer([]byte{})
+				stderr := bytes.NewBuffer([]byte{})
+				cmd.Stdout = stdout
+				cmd.Stderr = stderr
+
 				Eventually(cmd.Run, COMMAND_TIMEOUT, COMMAND_TIMEOUT).ShouldNot(Succeed())
-				Expect(buffer).To(ContainSubstring("error booting consul agent"))
-				Expect(buffer).To(ContainSubstring("already running"))
+				Expect(stderr).To(ContainSubstring("error booting consul agent"))
+				Expect(stderr).To(ContainSubstring("already running"))
+				Expect(stdout).To(ContainSubstring("controller.stop-agent.success"))
 			})
 		})
 
