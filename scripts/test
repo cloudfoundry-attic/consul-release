@@ -1,11 +1,13 @@
-#!/bin/bash -eux
+#!/bin/bash -exu
 
 consul_release_version="99999+dev.${RANDOM}"
 warden_cpi_version="28"
 turbulence_version="0.4"
 
 function check_dependencies() {
-  if [[ $(which jq) == '' ]]; then
+  test -n "${CONSATS_CONFIG?"CONSATS_CONFIG is a required environment variable"}"
+
+  if [[ -z "$(which jq)" ]]; then
     echo "This test runner requires 'jq'"
     exit 1
   fi
@@ -23,9 +25,9 @@ function main() {
 
 function parse_config() {
   set +x
-  export BOSH_DIRECTOR=$(jq --raw-output '.bosh.target' "${CONSATS_CONFIG}")
-  export BOSH_USER=$(jq --raw-output '.bosh.username' "${CONSATS_CONFIG}")
-  export BOSH_PASSWORD=$(jq --raw-output '.bosh.password' "${CONSATS_CONFIG}")
+  export BOSH_DIRECTOR="$(jq --raw-output '.bosh.target' "${CONSATS_CONFIG}")"
+  export BOSH_USER="$(jq --raw-output '.bosh.username' "${CONSATS_CONFIG}")"
+  export BOSH_PASSWORD="$(jq --raw-output '.bosh.password' "${CONSATS_CONFIG}")"
   set -x
 }
 
@@ -54,9 +56,11 @@ function upload_releases() {
 }
 
 function cleanup_releases() {
+  set +e
   bosh -t "${BOSH_DIRECTOR}" -n delete release turbulence "${turbulence_version}"
   bosh -t "${BOSH_DIRECTOR}" -n delete release bosh-warden-cpi "${warden_cpi_version}"
   bosh -t "${BOSH_DIRECTOR}" -n delete release consul "${consul_release_version}"
+  set -e
 }
 
 check_dependencies

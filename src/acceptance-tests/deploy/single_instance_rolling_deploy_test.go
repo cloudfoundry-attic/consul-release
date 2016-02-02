@@ -36,8 +36,10 @@ var _ = Describe("Single instance rolling deploys", func() {
 	})
 
 	AfterEach(func() {
-		err := client.DeleteDeployment(manifest.Name)
-		Expect(err).NotTo(HaveOccurred())
+		if !CurrentGinkgoTestDescription().Failed {
+			err := client.DeleteDeployment(manifest.Name)
+			Expect(err).NotTo(HaveOccurred())
+		}
 	})
 
 	It("persists data throughout the rolling deploy", func() {

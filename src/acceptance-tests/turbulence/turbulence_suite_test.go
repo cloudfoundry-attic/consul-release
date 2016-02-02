@@ -119,7 +119,9 @@ var _ = BeforeSuite(func() {
 
 var _ = AfterSuite(func() {
 	By("deleting the turbulence deployment", func() {
-		err := client.DeleteDeployment(turbulenceManifest.Name)
-		Expect(err).NotTo(HaveOccurred())
+		if !CurrentGinkgoTestDescription().Failed {
+			err := client.DeleteDeployment(turbulenceManifest.Name)
+			Expect(err).NotTo(HaveOccurred())
+		}
 	})
 })

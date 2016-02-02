@@ -56,8 +56,10 @@ var _ = Describe("KillVm", func() {
 		})
 
 		By("deleting the deployment", func() {
-			err := client.DeleteDeployment(consulManifest.Name)
-			Expect(err).NotTo(HaveOccurred())
+			if !CurrentGinkgoTestDescription().Failed {
+				err := client.DeleteDeployment(consulManifest.Name)
+				Expect(err).NotTo(HaveOccurred())
+			}
 		})
 	})
 
