@@ -16,16 +16,16 @@ function main() {
       -r \
       -race \
       -failFast \
-      -skipPackage vendor \
+      -succinct \
       precheck
 
     ginkgo \
       -r \
       -race \
       -failFast \
+      -succinct \
       -randomizeAllSpecs \
       -randomizeSuites \
-      -skipPackage vendor \
       -skipPackage precheck \
       -slowSpecThreshold 300 \
       "$@"
