@@ -109,3 +109,6 @@
 [submodule "src/acceptance-tests/vendor/golang.org/x/crypto"]
 	path = src/acceptance-tests/vendor/golang.org/x/crypto
 	url = https://go.googlesource.com/crypto
+[submodule "src/acceptance-tests/vendor/github.com/pivotal-cf-experimental/bosh-test"]
+	path = src/acceptance-tests/vendor/github.com/pivotal-cf-experimental/bosh-test
+	url = git://github.com/pivotal-cf-experimental/bosh-test

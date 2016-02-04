@@ -16,9 +16,17 @@ function main() {
       -r \
       -race \
       -failFast \
+      -skipPackage vendor \
+      precheck
+
+    ginkgo \
+      -r \
+      -race \
+      -failFast \
       -randomizeAllSpecs \
       -randomizeSuites \
       -skipPackage vendor \
+      -skipPackage precheck \
       -slowSpecThreshold 300 \
       "$@"
   popd > /dev/null
