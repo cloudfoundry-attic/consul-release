@@ -106,3 +106,6 @@
 [submodule "src/acceptance-tests/vendor/github.com/onsi/gomega"]
 	path = src/acceptance-tests/vendor/github.com/onsi/gomega
 	url = git://github.com/onsi/gomega
+[submodule "src/acceptance-tests/vendor/golang.org/x/crypto"]
+	path = src/acceptance-tests/vendor/golang.org/x/crypto
+	url = https://go.googlesource.com/crypto

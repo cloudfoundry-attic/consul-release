@@ -8,7 +8,8 @@ const (
 	AWSStemcell    = "bosh-aws-xen-hvm-ubuntu-trusty-go_agent"
 	WardenStemcell = "bosh-warden-boshlite-ubuntu-trusty-go_agent"
 
-	EncryptKey = "Atzo3VBv+YVDzQAzlQRPRA=="
+	EncryptKey = "Twas brillig, and the slithy toves Did gyre and gimble in the wabe; All mimsy were the borogoves, And the mome raths outgrabe."
+	Encrypt    = "Atzo3VBv+YVDzQAzlQRPRA=="
 
 	AgentKey = `-----BEGIN RSA PRIVATE KEY-----
 MIIEpAIBAAKCAQEAvcm4PwEWludyLZYS0JRKG7c6owoDHIauhvE/PmOp1fJUxQff

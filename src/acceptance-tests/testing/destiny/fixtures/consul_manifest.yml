@@ -164,7 +164,7 @@ properties:
       /QlnEFyH789135x864ym1G2fvaPTqcgIc7jfw3tMTs5TtP/VSTn0
       -----END CERTIFICATE-----
     encrypt_keys:
-    - Atzo3VBv+YVDzQAzlQRPRA==
+    - Twas brillig, and the slithy toves Did gyre and gimble in the wabe; All mimsy were the borogoves, And the mome raths outgrabe.
     require_ssl: true
     server_cert: |+
       -----BEGIN CERTIFICATE-----

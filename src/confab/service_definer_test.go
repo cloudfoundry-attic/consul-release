@@ -39,7 +39,7 @@ var _ = Describe("ServiceDefiner", func() {
 					Index: 0,
 				},
 				Consul: confab.ConfigConsul{
-					Agent: confab.ConfigAgent{
+					Agent: confab.ConfigConsulAgent{
 						Services: map[string]confab.ServiceDefinition{
 							"router":           {},
 							"cloud_controller": {},
@@ -75,7 +75,7 @@ var _ = Describe("ServiceDefiner", func() {
 					Index: 0,
 				},
 				Consul: confab.ConfigConsul{
-					Agent: confab.ConfigAgent{
+					Agent: confab.ConfigConsulAgent{
 						Services: map[string]confab.ServiceDefinition{
 							"router": {},
 						},
@@ -103,7 +103,7 @@ var _ = Describe("ServiceDefiner", func() {
 					Index: 0,
 				},
 				Consul: confab.ConfigConsul{
-					Agent: confab.ConfigAgent{
+					Agent: confab.ConfigConsulAgent{
 						Services: map[string]confab.ServiceDefinition{
 							"cloud_controller": {},
 						},
@@ -131,7 +131,7 @@ var _ = Describe("ServiceDefiner", func() {
 					Index: 0,
 				},
 				Consul: confab.ConfigConsul{
-					Agent: confab.ConfigAgent{
+					Agent: confab.ConfigConsulAgent{
 						Services: map[string]confab.ServiceDefinition{
 							"doppler": {
 								Check: &confab.ServiceDefinitionCheck{
@@ -165,7 +165,7 @@ var _ = Describe("ServiceDefiner", func() {
 					Index: 0,
 				},
 				Consul: confab.ConfigConsul{
-					Agent: confab.ConfigAgent{
+					Agent: confab.ConfigConsulAgent{
 						Services: map[string]confab.ServiceDefinition{
 							"uaa": {
 								Checks: []confab.ServiceDefinitionCheck{{
@@ -204,7 +204,7 @@ var _ = Describe("ServiceDefiner", func() {
 					Index: 0,
 				},
 				Consul: confab.ConfigConsul{
-					Agent: confab.ConfigAgent{
+					Agent: confab.ConfigConsulAgent{
 						Services: map[string]confab.ServiceDefinition{
 							"cell": {
 								Name: "cell_z1",
@@ -234,7 +234,7 @@ var _ = Describe("ServiceDefiner", func() {
 					Index: 0,
 				},
 				Consul: confab.ConfigConsul{
-					Agent: confab.ConfigAgent{
+					Agent: confab.ConfigConsulAgent{
 						Services: map[string]confab.ServiceDefinition{
 							"dea": {
 								Tags: []string{"runner"},
@@ -264,7 +264,7 @@ var _ = Describe("ServiceDefiner", func() {
 					Index: 0,
 				},
 				Consul: confab.ConfigConsul{
-					Agent: confab.ConfigAgent{
+					Agent: confab.ConfigConsulAgent{
 						Services: map[string]confab.ServiceDefinition{
 							"dea": {
 								Address: "192.168.1.1",
@@ -295,7 +295,7 @@ var _ = Describe("ServiceDefiner", func() {
 					Index: 0,
 				},
 				Consul: confab.ConfigConsul{
-					Agent: confab.ConfigAgent{
+					Agent: confab.ConfigConsulAgent{
 						Services: map[string]confab.ServiceDefinition{
 							"router": {
 								Port: 12345,
@@ -326,7 +326,7 @@ var _ = Describe("ServiceDefiner", func() {
 					Index: 0,
 				},
 				Consul: confab.ConfigConsul{
-					Agent: confab.ConfigAgent{
+					Agent: confab.ConfigConsulAgent{
 						Services: map[string]confab.ServiceDefinition{
 							"router": {
 								EnableTagOverride: true,
@@ -357,7 +357,7 @@ var _ = Describe("ServiceDefiner", func() {
 					Index: 0,
 				},
 				Consul: confab.ConfigConsul{
-					Agent: confab.ConfigAgent{
+					Agent: confab.ConfigConsulAgent{
 						Services: map[string]confab.ServiceDefinition{
 							"router": {
 								ID: "some-id",
@@ -388,7 +388,7 @@ var _ = Describe("ServiceDefiner", func() {
 					Index: 0,
 				},
 				Consul: confab.ConfigConsul{
-					Agent: confab.ConfigAgent{
+					Agent: confab.ConfigConsulAgent{
 						Services: map[string]confab.ServiceDefinition{
 							"router": {
 								Token: "some-token",
@@ -419,7 +419,7 @@ var _ = Describe("ServiceDefiner", func() {
 					Index: 0,
 				},
 				Consul: confab.ConfigConsul{
-					Agent: confab.ConfigAgent{
+					Agent: confab.ConfigConsulAgent{
 						Services: map[string]confab.ServiceDefinition{
 							"router": {
 								Check: &confab.ServiceDefinitionCheck{

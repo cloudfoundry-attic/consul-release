@@ -34,7 +34,7 @@ var _ = Describe("Agent", func() {
 			Key:        destiny.AgentKey,
 			Cert:       destiny.AgentCert,
 			CACert:     destiny.CACert,
-			Encrypt:    destiny.EncryptKey,
+			Encrypt:    destiny.Encrypt,
 			ServerName: "consul agent",
 			RetryJoin:  []string{"127.0.0.1:8301"},
 		})

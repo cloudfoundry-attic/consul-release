@@ -1,9 +1,13 @@
 package helpers
 
 import (
+	"crypto/sha1"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"io/ioutil"
+
+	"golang.org/x/crypto/pbkdf2"
 
 	"acceptance-tests/testing/bosh"
 	"acceptance-tests/testing/consul"
@@ -89,7 +93,8 @@ func DeployConsulWithInstanceCount(count int, client bosh.Client, config Config)
 
 	var encryptKey string
 	if len(manifest.Properties.Consul.EncryptKeys) > 0 {
-		encryptKey = manifest.Properties.Consul.EncryptKeys[0]
+		key := manifest.Properties.Consul.EncryptKeys[0]
+		encryptKey = base64.StdEncoding.EncodeToString(pbkdf2.Key([]byte(key), []byte(""), 20000, 16, sha1.New))
 	}
 
 	agent := consul.NewAgent(consul.AgentOptions{

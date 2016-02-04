@@ -14,7 +14,7 @@ type ConfigConfab struct {
 }
 
 type ConfigConsul struct {
-	Agent       ConfigAgent
+	Agent       ConfigConsulAgent
 	RequireSSL  bool     `json:"require_ssl"`
 	EncryptKeys []string `json:"encrypt_keys"`
 }
@@ -26,20 +26,21 @@ type ConfigPath struct {
 }
 
 type ConfigNode struct {
-	Name  string
-	Index int
+	Name       string
+	Index      int
+	ExternalIP string `json:"external_ip"`
 }
 
-type ConfigAgent struct {
-	Servers         ConfigAgentServer
+type ConfigConsulAgent struct {
+	Servers         ConfigConsulAgentServers
 	Services        map[string]ServiceDefinition
-	Server          bool
+	Mode            string
 	Datacenter      string `json:"datacenter"`
 	LogLevel        string `json:"log_level"`
 	ProtocolVersion int    `json:"protocol_version"`
 }
 
-type ConfigAgentServer struct {
+type ConfigConsulAgentServers struct {
 	LAN []string
 }
 
@@ -52,6 +53,11 @@ func DefaultConfig() Config {
 		},
 		Consul: ConfigConsul{
 			RequireSSL: true,
+			Agent: ConfigConsulAgent{
+				Servers: ConfigConsulAgentServers{
+					LAN: []string{},
+				},
+			},
 		},
 		Confab: ConfigConfab{
 			TimeoutInSeconds: 55,

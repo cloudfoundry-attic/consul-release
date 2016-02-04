@@ -7,12 +7,17 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = FDescribe("Config", func() {
+var _ = Describe("Config", func() {
 	Describe("DefaultConfig", func() {
 		It("returns a default configuration", func() {
 			config := confab.Config{
 				Consul: confab.ConfigConsul{
 					RequireSSL: true,
+					Agent: confab.ConfigConsulAgent{
+						Servers: confab.ConfigConsulAgentServers{
+							LAN: []string{},
+						},
+					},
 				},
 				Path: confab.ConfigPath{
 					AgentPath:       "/var/vcap/packages/consul/bin/consul",
@@ -32,7 +37,8 @@ var _ = FDescribe("Config", func() {
 			json := []byte(`{
 				"node": {
 					"name": "nodename",
-					"index": 1234
+					"index": 1234,
+					"external_ip": "10.0.0.1"
 				},
 				"path": {
 					"agent_path": "/path/to/agent",
@@ -46,7 +52,7 @@ var _ = FDescribe("Config", func() {
 								"name" : "myservicename"	
 							}
 						},
-						"server": true,
+						"mode": "server",
 						"datacenter": "dc1",
 						"log_level": "debug",
 						"protocol_version": 1
@@ -58,6 +64,7 @@ var _ = FDescribe("Config", func() {
 					"timeout_in_seconds": 30
 				}
 			}`)
+
 			config, err := confab.ConfigFromJSON(json)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(config).To(Equal(confab.Config{
@@ -67,20 +74,24 @@ var _ = FDescribe("Config", func() {
 					PIDFile:         "/path/to/pidfile",
 				},
 				Node: confab.ConfigNode{
-					Name:  "nodename",
-					Index: 1234,
+					Name:       "nodename",
+					Index:      1234,
+					ExternalIP: "10.0.0.1",
 				},
 				Consul: confab.ConfigConsul{
-					Agent: confab.ConfigAgent{
+					Agent: confab.ConfigConsulAgent{
 						Services: map[string]confab.ServiceDefinition{
 							"myservice": confab.ServiceDefinition{
 								Name: "myservicename",
 							},
 						},
-						Server:          true,
+						Mode:            "server",
 						Datacenter:      "dc1",
 						LogLevel:        "debug",
 						ProtocolVersion: 1,
+						Servers: confab.ConfigConsulAgentServers{
+							LAN: []string{},
+						},
 					},
 					RequireSSL:  true,
 					EncryptKeys: []string{"key-1", "key-2"},
@@ -103,6 +114,11 @@ var _ = FDescribe("Config", func() {
 				},
 				Consul: confab.ConfigConsul{
 					RequireSSL: true,
+					Agent: confab.ConfigConsulAgent{
+						Servers: confab.ConfigConsulAgentServers{
+							LAN: []string{},
+						},
+					},
 				},
 				Confab: confab.ConfigConfab{
 					TimeoutInSeconds: 55,

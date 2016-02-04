@@ -70,8 +70,9 @@ var _ = Describe("confab", func() {
 		BeforeEach(func() {
 			writeConfigurationFile(configFile.Name(), map[string]interface{}{
 				"node": map[string]interface{}{
-					"name":  "my-node",
-					"index": 3,
+					"name":        "my-node",
+					"index":       3,
+					"external_ip": "10.0.0.1",
 				},
 				"path": map[string]interface{}{
 					"agent_path":        pathToFakeAgent,
@@ -79,7 +80,10 @@ var _ = Describe("confab", func() {
 					"pid_file":          pidFile.Name(),
 				},
 				"consul": map[string]interface{}{
+					"encrypt_keys": []string{"banana"},
 					"agent": map[string]interface{}{
+						"datacenter": "dc1",
+						"log_level":  "debug",
 						"servers": map[string]interface{}{
 							"lan": []string{"member-1", "member-2", "member-3"},
 						},
@@ -104,15 +108,13 @@ var _ = Describe("confab", func() {
 			Expect(os.Remove(configFile.Name())).NotTo(HaveOccurred())
 		})
 
-		FIt("starts and stops the consul process as a daemon", func() {
+		It("starts and stops the consul process as a daemon", func() {
 			start := exec.Command(pathToConfab,
 				"start",
 				"--recursor", "8.8.8.8",
 				"--recursor", "10.0.2.3",
 				"--config-file", configFile.Name(),
 			)
-			start.Stdout = os.Stdout
-			start.Stderr = os.Stderr
 			Eventually(start.Run, COMMAND_TIMEOUT, COMMAND_TIMEOUT).Should(Succeed())
 
 			pid, err := getPID(pidFile.Name())
@@ -180,13 +182,43 @@ var _ = Describe("confab", func() {
 			consulConfig, err := ioutil.ReadFile(filepath.Join(consulConfigDir, "config.json"))
 			Expect(err).NotTo(HaveOccurred())
 			Expect(string(consulConfig)).To(MatchJSON(`{
-				"server": false
+				"server": false,
+				"domain": "cf.internal",
+				"datacenter": "dc1",
+				"data_dir": "/var/vcap/store/consul_agent",
+				"log_level": "debug",
+				"node_name": "my-node-3",
+				"ports": {
+					"dns": 53
+				},
+				"rejoin_after_leave": true,
+				"retry_join": [
+					"member-1",
+					"member-2",
+					"member-3"
+				],
+				"bind_addr": "10.0.0.1",
+				"disable_remote_exec": true,
+				"disable_update_check": true,
+				"protocol": 0,
+				"verify_outgoing": true,
+				"verify_incoming": true,
+				"verify_server_hostname": true,
+				"ca_file": "/var/vcap/jobs/consul_agent/config/certs/ca.crt",
+				"key_file": "/var/vcap/jobs/consul_agent/config/certs/agent.key",
+				"cert_file": "/var/vcap/jobs/consul_agent/config/certs/agent.crt",
+				"encrypt": "enqzXBmgKOy13WIGsmUk+g=="
 			}`))
 		})
 
 		Context("when require_ssl is set to false", func() {
 			It("does not set encryption keys", func() {
 				writeConfigurationFile(configFile.Name(), map[string]interface{}{
+					"node": map[string]interface{}{
+						"name":        "some-node",
+						"index":       1,
+						"external_ip": "192.168.1.2",
+					},
 					"path": map[string]interface{}{
 						"agent_path":        pathToFakeAgent,
 						"consul_config_dir": consulConfigDir,
@@ -195,7 +227,9 @@ var _ = Describe("confab", func() {
 					"consul": map[string]interface{}{
 						"require_ssl": false,
 						"agent": map[string]interface{}{
-							"server": true,
+							"datacenter": "dc2",
+							"log_level":  "info",
+							"mode":       "server",
 							"servers": map[string]interface{}{
 								"lan": []string{"member-1", "member-2", "member-3"},
 							},
@@ -234,6 +268,31 @@ var _ = Describe("confab", func() {
 					"InstallKeyCallCount": float64(0),
 					"StatsCallCount":      float64(1),
 				}))
+
+				consulConfig, err := ioutil.ReadFile(filepath.Join(consulConfigDir, "config.json"))
+				Expect(err).NotTo(HaveOccurred())
+				Expect(string(consulConfig)).To(MatchJSON(`{
+					"server": true,
+					"domain": "cf.internal",
+					"datacenter": "dc2",
+					"data_dir": "/var/vcap/store/consul_agent",
+					"log_level": "info",
+					"node_name": "some-node-1",
+					"ports": {
+						"dns": 53
+					},
+					"rejoin_after_leave": true,
+					"retry_join": [
+						"member-1",
+						"member-2",
+						"member-3"
+					],
+					"bind_addr": "192.168.1.2",
+					"disable_remote_exec": true,
+					"disable_update_check": true,
+					"protocol": 0,
+					"bootstrap_expect": 3
+				}`))
 			})
 		})
 	})
@@ -302,7 +361,7 @@ var _ = Describe("confab", func() {
 					"consul": map[string]interface{}{
 						"require_ssl": true,
 						"agent": map[string]interface{}{
-							"server": true,
+							"mode": "server",
 							"servers": map[string]interface{}{
 								"lan": []string{"member-1", "member-2", "member-3"},
 							},
@@ -352,7 +411,7 @@ var _ = Describe("confab", func() {
 					"consul": map[string]interface{}{
 						"require_ssl": true,
 						"agent": map[string]interface{}{
-							"server": true,
+							"mode": "server",
 							"servers": map[string]interface{}{
 								"lan": []string{"member-1", "member-2", "member-3"},
 							},
@@ -398,7 +457,7 @@ var _ = Describe("confab", func() {
 				"consul": map[string]interface{}{
 					"require_ssl": true,
 					"agent": map[string]interface{}{
-						"server": true,
+						"mode": "server",
 						"servers": map[string]interface{}{
 							"lan": []string{"member-1", "member-2", "member-3"},
 						},
@@ -656,7 +715,7 @@ var _ = Describe("confab", func() {
 					},
 					"consul": map[string]interface{}{
 						"agent": map[string]interface{}{
-							"server": true,
+							"mode": "server",
 							"servers": map[string]interface{}{
 								"lan": []string{"member-1", "member-2", "member-3"},
 							},

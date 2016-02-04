@@ -133,10 +133,10 @@ func start(flagSet *flag.FlagSet, path string, controller confab.Controller, age
 		printUsageAndExit("at least one \"expected-member\" must be provided", flagSet)
 	}
 
-	//err = controller.WriteConsulConfig()
-	//if err != nil {
-	//panic(err)
-	//}
+	err = controller.WriteConsulConfig()
+	if err != nil {
+		panic(err)
+	}
 
 	err = controller.WriteServiceDefinitions()
 	if err != nil {
@@ -150,7 +150,7 @@ func start(flagSet *flag.FlagSet, path string, controller confab.Controller, age
 		exit(controller, 1)
 	}
 
-	if controller.Config.Consul.Agent.Server {
+	if controller.Config.Consul.Agent.Mode == "server" {
 		configureServer(controller, agentClient, timeout)
 	} else {
 		configureClient(controller)
