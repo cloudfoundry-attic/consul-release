@@ -1,31 +1,32 @@
-package confab_test
+package agent_test
 
 import (
-	"confab"
+	"confab/agent"
 	"confab/fakes"
 	"errors"
 
+	"github.com/hashicorp/consul/api"
 	"github.com/pivotal-golang/lager"
 
-	"github.com/hashicorp/consul/api"
+	. "confab/testing/helpers"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("AgentClient", func() {
+var _ = Describe("Client", func() {
 	var (
 		consulAPIAgent  *fakes.FakeconsulAPIAgent
 		consulRPCClient *fakes.FakeconsulRPCClient
 		logger          *fakes.Logger
-		client          confab.AgentClient
+		client          agent.Client
 	)
 
 	BeforeEach(func() {
 		consulAPIAgent = &fakes.FakeconsulAPIAgent{}
 		consulRPCClient = &fakes.FakeconsulRPCClient{}
 		logger = &fakes.Logger{}
-		client = confab.AgentClient{
+		client = agent.Client{
 			ConsulAPIAgent:  consulAPIAgent,
 			ConsulRPCClient: consulRPCClient,
 			Logger:          logger,

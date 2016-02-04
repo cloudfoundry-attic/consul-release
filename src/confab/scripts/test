@@ -6,7 +6,12 @@ function main() {
   else
     local dir
     dir="$(cd "$(dirname "${0}")/.." && pwd)"
-    ginkgo -skipPackage=vendor -r "${dir}"
+    ginkgo \
+		-r \
+		-randomizeAllSpecs \
+		-randomizeSuites \
+		-skipPackage=vendor \
+		"${dir}"
   fi
 }
 

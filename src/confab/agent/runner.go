@@ -1,4 +1,4 @@
-package confab
+package agent
 
 import (
 	"errors"
@@ -14,7 +14,7 @@ import (
 	"github.com/pivotal-golang/lager"
 )
 
-type AgentRunner struct {
+type Runner struct {
 	Path      string
 	PIDFile   string
 	ConfigDir string
@@ -44,7 +44,7 @@ func isRunningProcess(pidFilePath string) bool {
 	return err == nil
 }
 
-func (r *AgentRunner) Run() error {
+func (r *Runner) Run() error {
 	if isRunningProcess(r.PIDFile) {
 		err := fmt.Errorf("consul_agent is already running, please stop it first")
 		r.Logger.Error("agent-runner.run.consul-already-running", err)
@@ -89,7 +89,7 @@ func (r *AgentRunner) Run() error {
 	return nil
 }
 
-func (r *AgentRunner) WritePID() error {
+func (r *Runner) WritePID() error {
 	r.Logger.Info("agent-runner.run.write-pidfile", lager.Data{
 		"pid":  r.cmd.Process.Pid,
 		"path": r.PIDFile,
@@ -107,7 +107,7 @@ func (r *AgentRunner) WritePID() error {
 	return nil
 }
 
-func (r *AgentRunner) getProcess() (*os.Process, error) {
+func (r *Runner) getProcess() (*os.Process, error) {
 	if r.cmd != nil && r.cmd.Process != nil {
 		return r.cmd.Process, nil
 	}
@@ -130,7 +130,7 @@ func (r *AgentRunner) getProcess() (*os.Process, error) {
 	return process, nil
 }
 
-func (r *AgentRunner) Wait() error {
+func (r *Runner) Wait() error {
 	r.Logger.Info("agent-runner.wait.get-process")
 
 	process, err := r.getProcess()
@@ -161,7 +161,7 @@ func (r *AgentRunner) Wait() error {
 	return nil
 }
 
-func (r *AgentRunner) Stop() error {
+func (r *Runner) Stop() error {
 	r.Logger.Info("agent-runner.stop.get-process")
 
 	process, err := r.getProcess()
@@ -188,7 +188,7 @@ func (r *AgentRunner) Stop() error {
 	return nil
 }
 
-func (r *AgentRunner) Cleanup() error {
+func (r *Runner) Cleanup() error {
 	r.Logger.Info("agent-runner.cleanup.remove", lager.Data{
 		"pidfile": r.PIDFile,
 	})

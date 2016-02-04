@@ -10,4 +10,4 @@ export GO15VENDOREXPERIMENT=1
 mkdir "${BOSH_INSTALL_TARGET}/src"
 cp -a * "${BOSH_INSTALL_TARGET}/src"
 
-go install "${package_name}/cmd/confab"
+go install "${package_name}/confab"

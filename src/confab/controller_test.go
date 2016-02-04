@@ -8,6 +8,8 @@ import (
 
 	"github.com/pivotal-golang/lager"
 
+	. "confab/testing/helpers"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )

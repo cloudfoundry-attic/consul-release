@@ -1,4 +1,4 @@
-package confab
+package agent
 
 import (
 	"crypto/sha1"
@@ -29,14 +29,14 @@ type consulRPCClient interface {
 	Leave() error
 }
 
-type AgentClient struct {
+type Client struct {
 	ExpectedMembers []string
 	ConsulAPIAgent  consulAPIAgent
 	ConsulRPCClient consulRPCClient
 	Logger          logger
 }
 
-func (c AgentClient) VerifyJoined() error {
+func (c Client) VerifyJoined() error {
 	c.Logger.Info("agent-client.verify-joined.members.request", lager.Data{
 		"wan": false,
 	})
@@ -75,7 +75,7 @@ func (c AgentClient) VerifyJoined() error {
 	return err
 }
 
-func (c AgentClient) VerifySynced() error {
+func (c Client) VerifySynced() error {
 	c.Logger.Info("agent-client.verify-synced.stats.request")
 
 	stats, err := c.ConsulRPCClient.Stats()
@@ -108,7 +108,7 @@ func (c AgentClient) VerifySynced() error {
 	return nil
 }
 
-func (c AgentClient) IsLastNode() (bool, error) {
+func (c Client) IsLastNode() (bool, error) {
 	c.Logger.Info("agent-client.is-last-node.members.request", lager.Data{
 		"wan": false,
 	})
@@ -149,7 +149,7 @@ func (c AgentClient) IsLastNode() (bool, error) {
 	return hasAllExpectedMembers, nil
 }
 
-func (c AgentClient) SetKeys(keys []string) error {
+func (c Client) SetKeys(keys []string) error {
 	if keys == nil {
 		err := errors.New("must provide a non-nil slice of keys")
 		c.Logger.Error("agent-client.set-keys.nil-slice", err)
@@ -242,7 +242,7 @@ func (c AgentClient) SetKeys(keys []string) error {
 	return nil
 }
 
-func (c AgentClient) Leave() error {
+func (c Client) Leave() error {
 	if c.ConsulRPCClient == nil {
 		err := errors.New("consul rpc client is nil")
 		c.Logger.Error("agent-client.leave.nil-rpc-client", err)

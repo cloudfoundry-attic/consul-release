@@ -1,8 +1,8 @@
-package confab_test
+package agent_test
 
 import (
 	"bytes"
-	"confab"
+	"confab/agent"
 	"confab/fakes"
 	"encoding/json"
 	"errors"
@@ -16,56 +16,15 @@ import (
 
 	"github.com/pivotal-golang/lager"
 
+	. "confab/testing/helpers"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
 
-type FakeAgentOutput struct {
-	Args []string
-	PID  int
-}
-
-func getFakeAgentOutput(runner confab.AgentRunner) FakeAgentOutput {
-	bytes, err := ioutil.ReadFile(filepath.Join(runner.ConfigDir, "fake-output.json"))
-	if err != nil {
-		return FakeAgentOutput{}
-	}
-	var output FakeAgentOutput
-	if err = json.Unmarshal(bytes, &output); err != nil {
-		return FakeAgentOutput{}
-	}
-	return output
-}
-
-func getPID(runner confab.AgentRunner) (int, error) {
-	pidFileContents, err := ioutil.ReadFile(runner.PIDFile)
-	if err != nil {
-		return 0, err
-	}
-
-	pid, err := strconv.Atoi(string(pidFileContents))
-	if err != nil {
-		return 0, err
-	}
-
-	return pid, nil
-}
-
-func processIsRunning(runner confab.AgentRunner) bool {
-	pid, err := getPID(runner)
-	Expect(err).NotTo(HaveOccurred())
-
-	process, err := os.FindProcess(pid)
-	Expect(err).NotTo(HaveOccurred())
-
-	errorSendingSignal := process.Signal(syscall.Signal(0))
-
-	return (errorSendingSignal == nil)
-}
-
-var _ = Describe("AgentRunner", func() {
+var _ = Describe("Runner", func() {
 	var (
-		runner confab.AgentRunner
+		runner agent.Runner
 		logger *fakes.Logger
 	)
 
@@ -82,7 +41,7 @@ var _ = Describe("AgentRunner", func() {
 
 		logger = &fakes.Logger{}
 
-		runner = confab.AgentRunner{
+		runner = agent.Runner{
 			Path:      pathToFakeProcess,
 			ConfigDir: configDir,
 			Recursors: []string{"8.8.8.8", "10.0.2.3"},
@@ -519,3 +478,46 @@ var _ = Describe("AgentRunner", func() {
 		})
 	})
 })
+
+type FakeAgentOutput struct {
+	Args []string
+	PID  int
+}
+
+func getFakeAgentOutput(runner agent.Runner) FakeAgentOutput {
+	bytes, err := ioutil.ReadFile(filepath.Join(runner.ConfigDir, "fake-output.json"))
+	if err != nil {
+		return FakeAgentOutput{}
+	}
+	var output FakeAgentOutput
+	if err = json.Unmarshal(bytes, &output); err != nil {
+		return FakeAgentOutput{}
+	}
+	return output
+}
+
+func getPID(runner agent.Runner) (int, error) {
+	pidFileContents, err := ioutil.ReadFile(runner.PIDFile)
+	if err != nil {
+		return 0, err
+	}
+
+	pid, err := strconv.Atoi(string(pidFileContents))
+	if err != nil {
+		return 0, err
+	}
+
+	return pid, nil
+}
+
+func processIsRunning(runner agent.Runner) bool {
+	pid, err := getPID(runner)
+	Expect(err).NotTo(HaveOccurred())
+
+	process, err := os.FindProcess(pid)
+	Expect(err).NotTo(HaveOccurred())
+
+	errorSendingSignal := process.Signal(syscall.Signal(0))
+
+	return (errorSendingSignal == nil)
+}

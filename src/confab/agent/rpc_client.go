@@ -1,4 +1,4 @@
-package confab
+package agent
 
 import (
 	"errors"

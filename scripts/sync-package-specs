@@ -6,7 +6,7 @@ set -o pipefail
 pushd packages/confab
   {
     cat spec | grep -v '# gosub'
-    gosub list -a confab/cmd/confab/... | \
+    gosub list -a confab/confab/... | \
       sed -e 's/\(.*\)/  - \1\/*.go # gosub/g'
   } > spec.new
 

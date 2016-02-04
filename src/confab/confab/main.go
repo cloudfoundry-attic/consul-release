@@ -2,6 +2,7 @@ package main
 
 import (
 	"confab"
+	"confab/agent"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -13,7 +14,7 @@ import (
 	"github.com/pivotal-golang/lager"
 
 	"github.com/hashicorp/consul/api"
-	"github.com/hashicorp/consul/command/agent"
+	consulagent "github.com/hashicorp/consul/command/agent"
 	"github.com/pivotal-golang/clock"
 )
 
@@ -76,7 +77,7 @@ func main() {
 	logger := lager.NewLogger("confab")
 	logger.RegisterSink(lager.NewWriterSink(os.Stdout, lager.INFO))
 
-	agentRunner := &confab.AgentRunner{
+	agentRunner := &agent.Runner{
 		Path:      path,
 		PIDFile:   config.Path.PIDFile,
 		ConfigDir: config.Path.ConsulConfigDir,
@@ -91,7 +92,7 @@ func main() {
 		panic(err) // not tested, NewClient never errors
 	}
 
-	agentClient := &confab.AgentClient{
+	agentClient := &agent.Client{
 		ExpectedMembers: config.Consul.Agent.Servers.LAN,
 		ConsulAPIAgent:  consulAPIClient.Agent(),
 		ConsulRPCClient: nil,
@@ -120,7 +121,7 @@ func main() {
 	}
 }
 
-func start(flagSet *flag.FlagSet, path string, controller confab.Controller, agentClient *confab.AgentClient) {
+func start(flagSet *flag.FlagSet, path string, controller confab.Controller, agentClient *agent.Client) {
 	timeout := confab.NewTimeout(time.After(time.Duration(controller.Config.Confab.TimeoutInSeconds) * time.Second))
 
 	_, err := os.Stat(controller.Config.Path.ConsulConfigDir)
@@ -157,15 +158,15 @@ func start(flagSet *flag.FlagSet, path string, controller confab.Controller, age
 	}
 }
 
-func configureServer(controller confab.Controller, agentClient *confab.AgentClient, timeout confab.Timeout) {
-	rpcClient, err := agent.NewRPCClient("localhost:8400")
+func configureServer(controller confab.Controller, agentClient *agent.Client, timeout confab.Timeout) {
+	rpcClient, err := consulagent.NewRPCClient("localhost:8400")
 
 	if err != nil {
 		stderr.Printf("error connecting to RPC server: %s", err)
 		exit(controller, 1)
 	}
 
-	agentClient.ConsulRPCClient = &confab.RPCClient{*rpcClient}
+	agentClient.ConsulRPCClient = &agent.RPCClient{*rpcClient}
 	err = controller.ConfigureServer(timeout)
 	if err != nil {
 		stderr.Printf("error configuring server: %s", err)
@@ -180,14 +181,14 @@ func configureClient(controller confab.Controller) {
 	}
 }
 
-func stop(path string, controller confab.Controller, agentClient *confab.AgentClient) {
-	rpcClient, err := agent.NewRPCClient("localhost:8400")
+func stop(path string, controller confab.Controller, agentClient *agent.Client) {
+	rpcClient, err := consulagent.NewRPCClient("localhost:8400")
 	if err != nil {
 		stderr.Printf("error connecting to RPC server: %s", err)
 		exit(controller, 1)
 	}
 
-	agentClient.ConsulRPCClient = &confab.RPCClient{*rpcClient}
+	agentClient.ConsulRPCClient = &agent.RPCClient{*rpcClient}
 	stderr.Printf("stopping agent")
 	controller.StopAgent()
 	stderr.Printf("stopped agent")

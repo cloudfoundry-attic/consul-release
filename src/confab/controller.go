@@ -36,6 +36,11 @@ type clock interface {
 	Sleep(time.Duration)
 }
 
+type logger interface {
+	Info(action string, data ...lager.Data)
+	Error(action string, err error, data ...lager.Data)
+}
+
 type Controller struct {
 	AgentRunner    agentRunner
 	AgentClient    agentClient

@@ -1,9 +1,9 @@
-package confab_test
+package agent_test
 
 import (
-	"confab"
+	"confab/agent"
 
-	"github.com/hashicorp/consul/command/agent"
+	consulagent "github.com/hashicorp/consul/command/agent"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -11,7 +11,7 @@ import (
 var _ = Describe("HandleErrors", func() {
 	Context("when there are no errors", func() {
 		It("returns nil", func() {
-			err := confab.HandleRPCErrors([]agent.KeyringInfo{
+			err := agent.HandleRPCErrors([]consulagent.KeyringInfo{
 				{},
 				{},
 			})
@@ -21,7 +21,7 @@ var _ = Describe("HandleErrors", func() {
 
 	Context("when there are errors", func() {
 		It("returns nil", func() {
-			err := confab.HandleRPCErrors([]agent.KeyringInfo{
+			err := agent.HandleRPCErrors([]consulagent.KeyringInfo{
 				{},
 				{Error: "there was a bad"},
 			})
