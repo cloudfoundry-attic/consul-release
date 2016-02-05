@@ -83,9 +83,7 @@ func GenerateConfiguration(config Config) ConsulConfig {
 		}
 
 		if len(config.Consul.EncryptKeys) > 0 {
-			key := config.Consul.EncryptKeys[0]
-			encrypt := base64.StdEncoding.EncodeToString(pbkdf2.Key([]byte(key), []byte(""), 20000, 16, sha1.New))
-			consulConfig.Encrypt = strPtr(encrypt)
+			consulConfig.Encrypt = encryptKey(config.Consul.EncryptKeys[0])
 		}
 	}
 
@@ -94,6 +92,16 @@ func GenerateConfiguration(config Config) ConsulConfig {
 	}
 
 	return consulConfig
+}
+
+func encryptKey(key string) *string {
+	decodedKey, err := base64.StdEncoding.DecodeString(key)
+
+	if err != nil || len(decodedKey) != 16 {
+		return strPtr(base64.StdEncoding.EncodeToString(pbkdf2.Key([]byte(key), []byte(""), 20000, 16, sha1.New)))
+	} else {
+		return strPtr(key)
+	}
 }
 
 func intPtr(i int) *int {

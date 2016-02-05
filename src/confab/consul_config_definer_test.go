@@ -373,14 +373,27 @@ var _ = Describe("ConsulConfigDefiner", func() {
 					})
 				})
 
-				Context("when `consul.encrypt_keys` is provided with a key", func() {
-					It("is an encoded version of that key", func() {
-						consulConfig = confab.GenerateConfiguration(confab.Config{
-							Consul: confab.ConfigConsul{
-								RequireSSL:  true,
-								EncryptKeys: []string{"banana"},
-							},
-						})
+				Context("when `consul.encrypt_keys` is provided with keys", func() {
+					It("base 64 encodes the key if it is not already encoded", func() {
+						consulConfig = confab.GenerateConfiguration(
+							confab.Config{
+								Consul: confab.ConfigConsul{
+									RequireSSL:  true,
+									EncryptKeys: []string{"banana"},
+								},
+							})
+						Expect(consulConfig.Encrypt).NotTo(BeNil())
+						Expect(*consulConfig.Encrypt).To(Equal("enqzXBmgKOy13WIGsmUk+g=="))
+					})
+
+					It("leaves the key alone if it is already base 64 encoded", func() {
+						consulConfig = confab.GenerateConfiguration(
+							confab.Config{
+								Consul: confab.ConfigConsul{
+									RequireSSL:  true,
+									EncryptKeys: []string{"enqzXBmgKOy13WIGsmUk+g=="},
+								},
+							})
 						Expect(consulConfig.Encrypt).NotTo(BeNil())
 						Expect(*consulConfig.Encrypt).To(Equal("enqzXBmgKOy13WIGsmUk+g=="))
 					})
