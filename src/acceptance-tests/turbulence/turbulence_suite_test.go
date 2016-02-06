@@ -4,7 +4,9 @@ import (
 	"acceptance-tests/testing/bosh"
 	"acceptance-tests/testing/destiny"
 	"acceptance-tests/testing/helpers"
-	"acceptance-tests/testing/turbulence"
+	"time"
+
+	"github.com/pivotal-cf-experimental/bosh-test/turbulence"
 
 	"fmt"
 
@@ -113,7 +115,7 @@ var _ = BeforeSuite(func() {
 			turbulenceManifest.Properties.TurbulenceAPI.Password,
 			turbulenceManifest.Jobs[0].Networks[0].StaticIPs[0])
 
-		turbulenceClient = turbulence.NewClient(turbulenceUrl)
+		turbulenceClient = turbulence.NewClient(turbulenceUrl, 5*time.Minute, 2*time.Second)
 	})
 })
 
