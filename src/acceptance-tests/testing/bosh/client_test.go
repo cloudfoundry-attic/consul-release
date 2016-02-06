@@ -10,10 +10,9 @@ import (
 	"net/http/httptest"
 	"time"
 
-	. "acceptance-tests/testing/matchers"
-
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	. "github.com/pivotal-cf-experimental/gomegamatchers"
 )
 
 var _ = Describe("client", func() {

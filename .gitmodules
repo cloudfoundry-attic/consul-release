@@ -112,3 +112,6 @@
 [submodule "src/acceptance-tests/vendor/github.com/pivotal-cf-experimental/bosh-test"]
 	path = src/acceptance-tests/vendor/github.com/pivotal-cf-experimental/bosh-test
 	url = git://github.com/pivotal-cf-experimental/bosh-test
+[submodule "src/acceptance-tests/vendor/github.com/pivotal-cf-experimental/gomegamatchers"]
+	path = src/acceptance-tests/vendor/github.com/pivotal-cf-experimental/gomegamatchers
+	url = git://github.com/pivotal-cf-experimental/gomegamatchers
