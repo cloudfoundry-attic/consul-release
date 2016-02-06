@@ -70,6 +70,12 @@ func DeployConsulWithInstanceCount(count int, client bosh.Client, config Config)
 		return
 	}
 
+	kv, err = NewKV(manifest, count)
+
+	return
+}
+
+func NewKV(manifest destiny.Manifest, count int) (kv consul.KV, err error) {
 	members := manifest.ConsulMembers()
 	if len(members) != count {
 		err = fmt.Errorf("expected %d consul members, found %d", count, len(members))
@@ -110,6 +116,7 @@ func DeployConsulWithInstanceCount(count int, client bosh.Client, config Config)
 	})
 
 	agentLocation := "http://127.0.0.1:8500"
+
 	kv = consul.NewManagedKV(consul.ManagedKVConfig{
 		Agent:   agent,
 		KV:      consul.NewHTTPKV(agentLocation),

@@ -53,6 +53,24 @@ var _ = Describe("Controller", func() {
 		}
 	})
 
+	Describe("ConfigureClient", func() {
+		It("writes the pid file", func() {
+			err := controller.ConfigureClient()
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(agentRunner.WritePIDCall.CallCount).To(Equal(1))
+		})
+
+		Context("failure cases", func() {
+			It("returns an error when the pid file can not be written", func() {
+				agentRunner.WritePIDCall.Returns.Error = errors.New("something bad happened")
+
+				err := controller.ConfigureClient()
+				Expect(err).To(MatchError("something bad happened"))
+			})
+		})
+	})
+
 	Describe("WriteServiceDefinitions", func() {
 		It("delegates to the service definer", func() {
 			definitions := []confab.ServiceDefinition{{

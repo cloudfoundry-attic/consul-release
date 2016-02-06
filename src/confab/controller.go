@@ -136,7 +136,12 @@ func (c Controller) ConfigureServer(timeout Timeout) error {
 }
 
 func (c Controller) ConfigureClient() error {
-	return c.AgentRunner.WritePID()
+	err := c.AgentRunner.WritePID()
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (c Controller) StopAgent() {
