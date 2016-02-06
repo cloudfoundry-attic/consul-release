@@ -136,7 +136,8 @@ func start(flagSet *flag.FlagSet, path string, controller confab.Controller, age
 
 	err = controller.WriteConsulConfig()
 	if err != nil {
-		panic(err)
+		stderr.Printf("error writing consul config file: %s", err)
+		os.Exit(1)
 	}
 
 	err = controller.WriteServiceDefinitions()

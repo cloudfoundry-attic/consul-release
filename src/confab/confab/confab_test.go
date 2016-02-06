@@ -518,6 +518,7 @@ var _ = Describe("confab", func() {
 				},
 			})
 		})
+
 		Context("when no arguments are provided", func() {
 			It("returns a non-zero status code and prints usage", func() {
 				cmd := exec.Command(pathToConfab)
@@ -827,7 +828,7 @@ var _ = Describe("confab", func() {
 				buffer := bytes.NewBuffer([]byte{})
 				cmd.Stderr = buffer
 				Eventually(cmd.Run, COMMAND_TIMEOUT, COMMAND_TIMEOUT).ShouldNot(Succeed())
-				Expect(buffer).To(ContainSubstring("permission denied"))
+				Expect(buffer).To(ContainSubstring(fmt.Sprintf("error writing consul config file: open %s: permission denied", filepath.Join(consulConfigDir, "config.json"))))
 			})
 		})
 	})

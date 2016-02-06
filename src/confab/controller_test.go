@@ -4,6 +4,10 @@ import (
 	"confab"
 	"confab/fakes"
 	"errors"
+	"fmt"
+	"io/ioutil"
+	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/pivotal-golang/lager"
@@ -51,6 +55,90 @@ var _ = Describe("Controller", func() {
 			ServiceDefiner: serviceDefiner,
 			Config:         confabConfig,
 		}
+	})
+
+	Describe("WriteConsulConfig", func() {
+		var configDir string
+
+		BeforeEach(func() {
+			var err error
+			configDir, err = ioutil.TempDir("", "")
+			Expect(err).NotTo(HaveOccurred())
+
+			controller.Config.Path.ConsulConfigDir = configDir
+		})
+
+		It("writes a config file to the consul_config dir", func() {
+			err := controller.WriteConsulConfig()
+			Expect(err).NotTo(HaveOccurred())
+
+			buf, err := ioutil.ReadFile(filepath.Join(configDir, "config.json"))
+			Expect(err).NotTo(HaveOccurred())
+			Expect(buf).To(MatchJSON(`{
+				"server": false,
+				"domain": "cf.internal",
+				"datacenter": "",
+				"data_dir": "/var/vcap/store/consul_agent",
+				"log_level": "",
+				"node_name": "node-0",
+				"ports": {
+					"dns": 53
+				},
+				"rejoin_after_leave": true,
+				"retry_join": [],
+				"bind_addr": "",
+				"disable_remote_exec": true,
+				"disable_update_check": true,
+				"protocol": 0,
+				"verify_outgoing": true,
+				"verify_incoming": true,
+				"verify_server_hostname": true,
+				"ca_file": "/var/vcap/jobs/consul_agent/config/certs/ca.crt",
+				"key_file": "/var/vcap/jobs/consul_agent/config/certs/agent.key",
+				"cert_file": "/var/vcap/jobs/consul_agent/config/certs/agent.crt"
+			}`))
+
+			Expect(logger.Messages).To(ContainSequence([]fakes.LoggerMessage{
+				{
+					Action: "controller.write-consul-config.generate-configuration",
+				},
+				{
+					Action: "controller.write-consul-config.write-configuration",
+					Data: []lager.Data{{
+						"config": confab.GenerateConfiguration(controller.Config),
+					}},
+				},
+				{
+					Action: "controller.write-consul-config.success",
+				},
+			}))
+		})
+
+		Context("failure cases", func() {
+			It("returns an error when the config file can't be written to", func() {
+				err := os.Chmod(configDir, 0000)
+				Expect(err).NotTo(HaveOccurred())
+
+				err = controller.WriteConsulConfig()
+				Expect(err).To(MatchError(ContainSubstring("permission denied")))
+
+				Expect(logger.Messages).To(ContainSequence([]fakes.LoggerMessage{
+					{
+						Action: "controller.write-consul-config.generate-configuration",
+					},
+					{
+						Action: "controller.write-consul-config.write-configuration",
+						Data: []lager.Data{{
+							"config": confab.GenerateConfiguration(controller.Config),
+						}},
+					},
+					{
+						Action: "controller.write-consul-config.write-configuration.failed",
+						Error:  fmt.Errorf("open %s: permission denied", filepath.Join(configDir, "config.json")),
+					},
+				}))
+			})
+		})
 	})
 
 	Describe("ConfigureClient", func() {

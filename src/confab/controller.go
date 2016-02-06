@@ -183,17 +183,23 @@ func (c Controller) WriteServiceDefinitions() error {
 }
 
 func (c Controller) WriteConsulConfig() error {
+	c.Logger.Info("controller.write-consul-config.generate-configuration")
 	consulConfig := GenerateConfiguration(c.Config)
 
 	data, err := json.Marshal(&consulConfig)
 	if err != nil {
-		panic(err)
+		return err
 	}
 
+	c.Logger.Info("controller.write-consul-config.write-configuration", lager.Data{
+		"config": consulConfig,
+	})
 	err = ioutil.WriteFile(filepath.Join(c.Config.Path.ConsulConfigDir, "config.json"), data, os.ModePerm)
 	if err != nil {
-		panic(err)
+		c.Logger.Error("controller.write-consul-config.write-configuration.failed", errors.New(err.Error()))
+		return err
 	}
 
+	c.Logger.Info("controller.write-consul-config.success")
 	return nil
 }
