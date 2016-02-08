@@ -8,7 +8,7 @@ import (
 	"github.com/hashicorp/consul/api"
 	"github.com/pivotal-golang/lager"
 
-	. "confab/testing/helpers"
+	. "github.com/pivotal-cf-experimental/gomegamatchers"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"

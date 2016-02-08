@@ -115,3 +115,9 @@
 [submodule "src/acceptance-tests/vendor/github.com/pivotal-cf-experimental/gomegamatchers"]
 	path = src/acceptance-tests/vendor/github.com/pivotal-cf-experimental/gomegamatchers
 	url = git://github.com/pivotal-cf-experimental/gomegamatchers
+[submodule "src/confab/vendor/github.com/pivotal-cf-experimental/gomegamatchers"]
+	path = src/confab/vendor/github.com/pivotal-cf-experimental/gomegamatchers
+	url = https://github.com/pivotal-cf-experimental/gomegamatchers.git
+[submodule "src/confab/vendor/github.com/cloudfoundry-incubator/candiedyaml"]
+	path = src/confab/vendor/github.com/cloudfoundry-incubator/candiedyaml
+	url = https://github.com/cloudfoundry-incubator/candiedyaml.git
