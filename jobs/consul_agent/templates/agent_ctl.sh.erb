@@ -86,6 +86,10 @@ function start() {
   local server
   server=<%=p("consul.agent.mode") == "server"%>
 
+  if [ "${server}" != "true" ]; then
+    rm -f $DATA_DIR/serf/local.keyring
+  fi
+
   setcap cap_net_bind_service=+ep $PKG/bin/consul
 
   GOMAXPROCS=$(nproc)
