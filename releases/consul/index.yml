@@ -110,4 +110,6 @@ builds:
     version: '54'
   3667c60b-ef96-4c6f-98cd-9b55d508fe19:
     version: '55'
+  8af3e5df-c0a0-4aa8-9ad4-004d5a8100f2:
+    version: '56'
 format-version: '2'
