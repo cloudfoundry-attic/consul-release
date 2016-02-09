@@ -10,9 +10,9 @@ import (
 	"golang.org/x/crypto/pbkdf2"
 
 	"acceptance-tests/testing/consul"
-	"acceptance-tests/testing/destiny"
 
 	"github.com/pivotal-cf-experimental/bosh-test/bosh"
+	"github.com/pivotal-cf-experimental/destiny"
 )
 
 func DeployConsulWithInstanceCount(count int, client bosh.Client, config Config) (manifest destiny.Manifest, kv consul.KV, err error) {
@@ -49,7 +49,7 @@ func DeployConsulWithInstanceCount(count int, client bosh.Client, config Config)
 
 	manifest = destiny.NewConsul(manifestConfig)
 
-	manifest.Jobs[0], manifest.Properties = destiny.SetJobInstanceCount(manifest.Jobs[0], manifest.Networks[0], manifest.Properties, count)
+	manifest.Jobs[0], manifest.Properties = SetJobInstanceCount(manifest.Jobs[0], manifest.Networks[0], manifest.Properties, count)
 
 	yaml, err := manifest.ToYAML()
 	if err != nil {
@@ -125,4 +125,17 @@ func NewKV(manifest destiny.Manifest, count int) (kv consul.KV, err error) {
 	})
 
 	return
+}
+
+func SetJobInstanceCount(job destiny.Job, network destiny.Network, properties destiny.Properties, count int) (destiny.Job, destiny.Properties) {
+	job.Instances = count
+	for i, net := range job.Networks {
+		if net.Name == network.Name {
+			net.StaticIPs = network.StaticIPs(count)
+			properties.Consul.Agent.Servers.Lan = net.StaticIPs
+		}
+		job.Networks[i] = net
+	}
+
+	return job, properties
 }

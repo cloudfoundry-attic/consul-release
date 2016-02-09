@@ -1,12 +1,12 @@
 package turbulence_test
 
 import (
-	"acceptance-tests/testing/destiny"
 	"acceptance-tests/testing/helpers"
 	"time"
 
 	"github.com/pivotal-cf-experimental/bosh-test/bosh"
 	"github.com/pivotal-cf-experimental/bosh-test/turbulence"
+	"github.com/pivotal-cf-experimental/destiny"
 
 	"fmt"
 

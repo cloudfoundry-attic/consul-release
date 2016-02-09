@@ -2,10 +2,10 @@ package deploy_test
 
 import (
 	"acceptance-tests/testing/consul"
-	"acceptance-tests/testing/destiny"
 	"acceptance-tests/testing/helpers"
 
 	"github.com/pivotal-cf-experimental/bosh-test/bosh"
+	"github.com/pivotal-cf-experimental/destiny"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -51,7 +51,7 @@ var _ = Describe("Scaling up Instances", func() {
 			})
 
 			By("scaling from 1 nodes to 3", func() {
-				manifest.Jobs[0], manifest.Properties = destiny.SetJobInstanceCount(manifest.Jobs[0], manifest.Networks[0], manifest.Properties, 3)
+				manifest.Jobs[0], manifest.Properties = helpers.SetJobInstanceCount(manifest.Jobs[0], manifest.Networks[0], manifest.Properties, 3)
 
 				members := manifest.ConsulMembers()
 				Expect(members).To(HaveLen(3))
@@ -105,7 +105,7 @@ var _ = Describe("Scaling up Instances", func() {
 			})
 
 			By("scaling from 3 nodes to 5", func() {
-				manifest.Jobs[0], manifest.Properties = destiny.SetJobInstanceCount(manifest.Jobs[0], manifest.Networks[0], manifest.Properties, 5)
+				manifest.Jobs[0], manifest.Properties = helpers.SetJobInstanceCount(manifest.Jobs[0], manifest.Networks[0], manifest.Properties, 5)
 
 				members := manifest.ConsulMembers()
 				Expect(members).To(HaveLen(5))

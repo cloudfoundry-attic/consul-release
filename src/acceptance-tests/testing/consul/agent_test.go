@@ -2,7 +2,6 @@ package consul_test
 
 import (
 	"acceptance-tests/testing/consul"
-	"acceptance-tests/testing/destiny"
 	"encoding/json"
 	"errors"
 	"io/ioutil"
@@ -11,6 +10,8 @@ import (
 	"path/filepath"
 	"strings"
 	"syscall"
+
+	"github.com/pivotal-cf-experimental/destiny"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
