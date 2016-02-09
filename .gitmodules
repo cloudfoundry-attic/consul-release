@@ -9,76 +9,76 @@
 	url = https://github.com/njbennett/consul
 [submodule "src/github.com/armon/circbuf"]
 	path = src/confab/vendor/github.com/armon/circbuf
-	url = git://github.com/armon/circbuf
+	url = https://github.com/armon/circbuf
 [submodule "src/github.com/armon/go-metrics"]
 	path = src/confab/vendor/github.com/armon/go-metrics
-	url = git://github.com/armon/go-metrics
+	url = https://github.com/armon/go-metrics
 [submodule "src/github.com/armon/go-radix"]
 	path = src/confab/vendor/github.com/armon/go-radix
-	url = git://github.com/armon/go-radix
+	url = https://github.com/armon/go-radix
 [submodule "src/github.com/hashicorp/go-checkpoint"]
 	path = src/confab/vendor/github.com/hashicorp/go-checkpoint
-	url = git://github.com/hashicorp/go-checkpoint
+	url = https://github.com/hashicorp/go-checkpoint
 [submodule "src/github.com/hashicorp/go-cleanhttp"]
 	path = src/confab/vendor/github.com/hashicorp/go-cleanhttp
-	url = git://github.com/hashicorp/go-cleanhttp
+	url = https://github.com/hashicorp/go-cleanhttp
 [submodule "src/github.com/hashicorp/go-msgpack"]
 	path = src/confab/vendor/github.com/hashicorp/go-msgpack
-	url = git://github.com/hashicorp/go-msgpack
+	url = https://github.com/hashicorp/go-msgpack
 [submodule "src/github.com/hashicorp/go-syslog"]
 	path = src/confab/vendor/github.com/hashicorp/go-syslog
-	url = git://github.com/hashicorp/go-syslog
+	url = https://github.com/hashicorp/go-syslog
 [submodule "src/github.com/hashicorp/golang-lru"]
 	path = src/confab/vendor/github.com/hashicorp/golang-lru
-	url = git://github.com/hashicorp/golang-lru
+	url = https://github.com/hashicorp/golang-lru
 [submodule "src/github.com/hashicorp/hcl"]
 	path = src/confab/vendor/github.com/hashicorp/hcl
-	url = git://github.com/hashicorp/hcl
+	url = https://github.com/hashicorp/hcl
 [submodule "src/github.com/hashicorp/go-multierror"]
 	path = src/confab/vendor/github.com/hashicorp/go-multierror
-	url = git://github.com/hashicorp/go-multierror
+	url = https://github.com/hashicorp/go-multierror
 [submodule "src/github.com/hashicorp/errwrap"]
 	path = src/confab/vendor/github.com/hashicorp/errwrap
-	url = git://github.com/hashicorp/errwrap
+	url = https://github.com/hashicorp/errwrap
 [submodule "src/github.com/hashicorp/logutils"]
 	path = src/confab/vendor/github.com/hashicorp/logutils
-	url = git://github.com/hashicorp/logutils
+	url = https://github.com/hashicorp/logutils
 [submodule "src/github.com/hashicorp/memberlist"]
 	path = src/confab/vendor/github.com/hashicorp/memberlist
-	url = git://github.com/hashicorp/memberlist
+	url = https://github.com/hashicorp/memberlist
 [submodule "src/github.com/hashicorp/raft"]
 	path = src/confab/vendor/github.com/hashicorp/raft
-	url = git://github.com/hashicorp/raft
+	url = https://github.com/hashicorp/raft
 [submodule "src/github.com/hashicorp/raft-boltdb"]
 	path = src/confab/vendor/github.com/hashicorp/raft-boltdb
-	url = git://github.com/hashicorp/raft-boltdb
+	url = https://github.com/hashicorp/raft-boltdb
 [submodule "src/github.com/boltdb/bolt"]
 	path = src/confab/vendor/github.com/boltdb/bolt
-	url = git://github.com/boltdb/bolt
+	url = https://github.com/boltdb/bolt
 [submodule "src/github.com/hashicorp/scada-client"]
 	path = src/confab/vendor/github.com/hashicorp/scada-client
-	url = git://github.com/hashicorp/scada-client
+	url = https://github.com/hashicorp/scada-client
 [submodule "src/github.com/hashicorp/net-rpc-msgpackrpc"]
 	path = src/confab/vendor/github.com/hashicorp/net-rpc-msgpackrpc
-	url = git://github.com/hashicorp/net-rpc-msgpackrpc
+	url = https://github.com/hashicorp/net-rpc-msgpackrpc
 [submodule "src/github.com/hashicorp/serf"]
 	path = src/confab/vendor/github.com/hashicorp/serf
-	url = git://github.com/hashicorp/serf
+	url = https://github.com/hashicorp/serf
 [submodule "src/github.com/hashicorp/yamux"]
 	path = src/confab/vendor/github.com/hashicorp/yamux
-	url = git://github.com/hashicorp/yamux
+	url = https://github.com/hashicorp/yamux
 [submodule "src/github.com/inconshreveable/muxado"]
 	path = src/confab/vendor/github.com/inconshreveable/muxado
-	url = git://github.com/inconshreveable/muxado
+	url = https://github.com/inconshreveable/muxado
 [submodule "src/github.com/miekg/dns"]
 	path = src/confab/vendor/github.com/miekg/dns
-	url = git://github.com/miekg/dns
+	url = https://github.com/miekg/dns
 [submodule "src/github.com/mitchellh/cli"]
 	path = src/confab/vendor/github.com/mitchellh/cli
-	url = git://github.com/mitchellh/cli
+	url = https://github.com/mitchellh/cli
 [submodule "src/github.com/mitchellh/mapstructure"]
 	path = src/confab/vendor/github.com/mitchellh/mapstructure
-	url = git://github.com/mitchellh/mapstructure
+	url = https://github.com/mitchellh/mapstructure
 [submodule "src/golang.org/x/crypto"]
 	path = src/confab/vendor/golang.org/x/crypto
 	url = https://go.googlesource.com/crypto
@@ -87,34 +87,34 @@
 	url = https://github.com/pivotal-golang/clock
 [submodule "src/github.com/hashicorp/go-immutable-radix"]
 	path = src/confab/vendor/github.com/hashicorp/go-immutable-radix
-	url = git://github.com/hashicorp/go-immutable-radix/
+	url = https://github.com/hashicorp/go-immutable-radix/
 [submodule "src/github.com/hashicorp/go-memdb"]
 	path = src/confab/vendor/github.com/hashicorp/go-memdb
-	url = git://github.com/hashicorp/go-memdb/
+	url = https://github.com/hashicorp/go-memdb/
 [submodule "src/github.com/fsouza/go-dockerclient"]
 	path = src/confab/vendor/github.com/fsouza/go-dockerclient
-	url = git://github.com/fsouza/go-dockerclient
+	url = https://github.com/fsouza/go-dockerclient
 [submodule "src/confab/vendor/github.com/pivotal-golang/lager"]
 	path = src/confab/vendor/github.com/pivotal-golang/lager
-	url = git://github.com/pivotal-golang/lager
+	url = https://github.com/pivotal-golang/lager
 [submodule "src/acceptance-tests/vendor/github.com/onsi/ginkgo"]
 	path = src/acceptance-tests/vendor/github.com/onsi/ginkgo
-	url = git://github.com/onsi/ginkgo
+	url = https://github.com/onsi/ginkgo
 [submodule "src/acceptance-tests/vendor/github.com/cloudfoundry-incubator/candiedyaml"]
 	path = src/acceptance-tests/vendor/github.com/cloudfoundry-incubator/candiedyaml
-	url = git://github.com/cloudfoundry-incubator/candiedyaml
+	url = https://github.com/cloudfoundry-incubator/candiedyaml
 [submodule "src/acceptance-tests/vendor/github.com/onsi/gomega"]
 	path = src/acceptance-tests/vendor/github.com/onsi/gomega
-	url = git://github.com/onsi/gomega
+	url = https://github.com/onsi/gomega
 [submodule "src/acceptance-tests/vendor/golang.org/x/crypto"]
 	path = src/acceptance-tests/vendor/golang.org/x/crypto
 	url = https://go.googlesource.com/crypto
 [submodule "src/acceptance-tests/vendor/github.com/pivotal-cf-experimental/bosh-test"]
 	path = src/acceptance-tests/vendor/github.com/pivotal-cf-experimental/bosh-test
-	url = git://github.com/pivotal-cf-experimental/bosh-test
+	url = https://github.com/pivotal-cf-experimental/bosh-test
 [submodule "src/acceptance-tests/vendor/github.com/pivotal-cf-experimental/gomegamatchers"]
 	path = src/acceptance-tests/vendor/github.com/pivotal-cf-experimental/gomegamatchers
-	url = git://github.com/pivotal-cf-experimental/gomegamatchers
+	url = https://github.com/pivotal-cf-experimental/gomegamatchers
 [submodule "src/confab/vendor/github.com/pivotal-cf-experimental/gomegamatchers"]
 	path = src/confab/vendor/github.com/pivotal-cf-experimental/gomegamatchers
 	url = https://github.com/pivotal-cf-experimental/gomegamatchers.git
