@@ -69,6 +69,7 @@ var _ = BeforeSuite(func() {
 				Fail("aws.subnet is required for AWS IAAS deployment")
 			}
 
+			manifestConfig.IPRange = "10.0.4.0/24"
 			manifestConfig.AWS = destiny.ConfigAWS{
 				AccessKeyID:           config.AWS.AccessKeyID,
 				SecretAccessKey:       config.AWS.SecretAccessKey,
@@ -84,6 +85,7 @@ var _ = BeforeSuite(func() {
 				Password: config.Registry.Password,
 			}
 		case "warden_cpi":
+			manifestConfig.IPRange = "10.244.4.0/24"
 			manifestConfig.IAAS = destiny.Warden
 		default:
 			Fail("unknown infrastructure type")

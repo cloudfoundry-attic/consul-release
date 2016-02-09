@@ -36,11 +36,13 @@ func DeployConsulWithInstanceCount(count int, client bosh.Client, config Config)
 		manifestConfig.IAAS = destiny.AWS
 		if config.AWS.Subnet != "" {
 			manifestConfig.AWS.Subnet = config.AWS.Subnet
+			manifestConfig.IPRange = "10.0.4.0/24"
 		} else {
 			err = errors.New("AWSSubnet is required for AWS IAAS deployment")
 			return
 		}
 	case "warden_cpi":
+		manifestConfig.IPRange = "10.244.4.0/24"
 		manifestConfig.IAAS = destiny.Warden
 	default:
 		err = errors.New("unknown infrastructure type")
