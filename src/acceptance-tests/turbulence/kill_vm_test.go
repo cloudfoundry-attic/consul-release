@@ -1,10 +1,11 @@
 package turbulence_test
 
 import (
-	"acceptance-tests/testing/bosh"
 	"acceptance-tests/testing/consul"
 	"acceptance-tests/testing/destiny"
 	"acceptance-tests/testing/helpers"
+
+	"github.com/pivotal-cf-experimental/bosh-test/bosh"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"

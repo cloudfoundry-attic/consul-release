@@ -9,9 +9,10 @@ import (
 
 	"golang.org/x/crypto/pbkdf2"
 
-	"acceptance-tests/testing/bosh"
 	"acceptance-tests/testing/consul"
 	"acceptance-tests/testing/destiny"
+
+	"github.com/pivotal-cf-experimental/bosh-test/bosh"
 )
 
 func DeployConsulWithInstanceCount(count int, client bosh.Client, config Config) (manifest destiny.Manifest, kv consul.KV, err error) {

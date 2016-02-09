@@ -1,7 +1,7 @@
 package deploy_test
 
 import (
-	"acceptance-tests/testing/bosh"
+	"github.com/pivotal-cf-experimental/bosh-test/bosh"
 	"acceptance-tests/testing/helpers"
 	"fmt"
 	"testing"
