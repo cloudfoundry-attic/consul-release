@@ -11,6 +11,7 @@ import (
 
 	"github.com/cloudfoundry-incubator/consul-release/src/confab"
 	"github.com/cloudfoundry-incubator/consul-release/src/confab/agent"
+	"github.com/cloudfoundry-incubator/consul-release/src/confab/config"
 	"github.com/hashicorp/consul/api"
 	consulagent "github.com/hashicorp/consul/command/agent"
 	"github.com/pivotal-golang/clock"
@@ -58,18 +59,18 @@ func main() {
 		os.Exit(1)
 	}
 
-	config, err := confab.ConfigFromJSON(configFileContents)
+	cfg, err := config.ConfigFromJSON(configFileContents)
 	if err != nil {
 		stderr.Printf("error reading configuration file: %s", err)
 		os.Exit(1)
 	}
 
-	path, err := exec.LookPath(config.Path.AgentPath)
+	path, err := exec.LookPath(cfg.Path.AgentPath)
 	if err != nil {
-		printUsageAndExit(fmt.Sprintf("\"agent_path\" %q cannot be found", config.Path.AgentPath), flagSet)
+		printUsageAndExit(fmt.Sprintf("\"agent_path\" %q cannot be found", cfg.Path.AgentPath), flagSet)
 	}
 
-	if len(config.Path.PIDFile) == 0 {
+	if len(cfg.Path.PIDFile) == 0 {
 		printUsageAndExit("\"pid_file\" cannot be empty", flagSet)
 	}
 
@@ -78,8 +79,8 @@ func main() {
 
 	agentRunner := &agent.Runner{
 		Path:      path,
-		PIDFile:   config.Path.PIDFile,
-		ConfigDir: config.Path.ConsulConfigDir,
+		PIDFile:   cfg.Path.PIDFile,
+		ConfigDir: cfg.Path.ConsulConfigDir,
 		Recursors: recursors,
 		Stdout:    os.Stdout,
 		Stderr:    os.Stderr,
@@ -92,7 +93,7 @@ func main() {
 	}
 
 	agentClient := &agent.Client{
-		ExpectedMembers: config.Consul.Agent.Servers.LAN,
+		ExpectedMembers: cfg.Consul.Agent.Servers.LAN,
 		ConsulAPIAgent:  consulAPIClient.Agent(),
 		ConsulRPCClient: nil,
 		Logger:          logger,
@@ -103,11 +104,11 @@ func main() {
 		AgentClient:    agentClient,
 		SyncRetryDelay: 1 * time.Second,
 		SyncRetryClock: clock.NewClock(),
-		EncryptKeys:    config.Consul.EncryptKeys,
+		EncryptKeys:    cfg.Consul.EncryptKeys,
 		Logger:         logger,
-		ServiceDefiner: confab.ServiceDefiner{logger},
-		ConfigDir:      config.Path.ConsulConfigDir,
-		Config:         config,
+		ServiceDefiner: config.ServiceDefiner{logger},
+		ConfigDir:      cfg.Path.ConsulConfigDir,
+		Config:         cfg,
 	}
 
 	switch os.Args[1] {

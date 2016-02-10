@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/cloudfoundry-incubator/consul-release/src/confab/config"
 	"github.com/pivotal-golang/lager"
 )
 
@@ -28,8 +29,8 @@ type agentClient interface {
 }
 
 type serviceDefiner interface {
-	GenerateDefinitions(Config) []ServiceDefinition
-	WriteDefinitions(string, []ServiceDefinition) error
+	GenerateDefinitions(config.Config) []config.ServiceDefinition
+	WriteDefinitions(string, []config.ServiceDefinition) error
 }
 
 type clock interface {
@@ -51,7 +52,7 @@ type Controller struct {
 	Logger         logger
 	ConfigDir      string
 	ServiceDefiner serviceDefiner
-	Config         Config
+	Config         config.Config
 }
 
 func (c Controller) BootAgent(timeout Timeout) error {
@@ -184,7 +185,7 @@ func (c Controller) WriteServiceDefinitions() error {
 
 func (c Controller) WriteConsulConfig() error {
 	c.Logger.Info("controller.write-consul-config.generate-configuration")
-	consulConfig := GenerateConfiguration(c.Config)
+	consulConfig := config.GenerateConfiguration(c.Config)
 
 	data, err := json.Marshal(&consulConfig)
 	if err != nil {

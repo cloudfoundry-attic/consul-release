@@ -1,4 +1,4 @@
-package confab
+package config
 
 import (
 	"encoding/json"
@@ -12,6 +12,11 @@ import (
 )
 
 var createFile = os.Create
+
+type logger interface {
+	Info(action string, data ...lager.Data)
+	Error(action string, err error, data ...lager.Data)
+}
 
 type ServiceDefinition struct {
 	ServiceName       string                   `json:"-"`

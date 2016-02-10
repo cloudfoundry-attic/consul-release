@@ -1,4 +1,4 @@
-package confab
+package config
 
 import "encoding/json"
 
@@ -44,7 +44,7 @@ type ConfigConsulAgentServers struct {
 	LAN []string
 }
 
-func DefaultConfig() Config {
+func Default() Config {
 	return Config{
 		Path: ConfigPath{
 			AgentPath:       "/var/vcap/packages/consul/bin/consul",
@@ -66,7 +66,7 @@ func DefaultConfig() Config {
 }
 
 func ConfigFromJSON(configData []byte) (Config, error) {
-	config := DefaultConfig()
+	config := Default()
 	if err := json.Unmarshal(configData, &config); err != nil {
 		return Config{}, err
 	}

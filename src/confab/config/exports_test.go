@@ -1,4 +1,4 @@
-package confab
+package config
 
 import "os"
 

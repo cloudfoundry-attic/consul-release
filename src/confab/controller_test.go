@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/cloudfoundry-incubator/consul-release/src/confab"
+	"github.com/cloudfoundry-incubator/consul-release/src/confab/config"
 	"github.com/cloudfoundry-incubator/consul-release/src/confab/fakes"
 	"github.com/pivotal-golang/lager"
 
@@ -22,9 +23,9 @@ var _ = Describe("Controller", func() {
 		clock          *fakes.Clock
 		agentRunner    *fakes.AgentRunner
 		agentClient    *fakes.AgentClient
-		controller     confab.Controller
 		logger         *fakes.Logger
 		serviceDefiner *fakes.ServiceDefiner
+		controller     confab.Controller
 	)
 
 	BeforeEach(func() {
@@ -40,8 +41,8 @@ var _ = Describe("Controller", func() {
 
 		serviceDefiner = &fakes.ServiceDefiner{}
 
-		confabConfig := confab.DefaultConfig()
-		confabConfig.Node = confab.ConfigNode{Name: "node", Index: 0}
+		confabConfig := config.Default()
+		confabConfig.Node = config.ConfigNode{Name: "node", Index: 0}
 
 		controller = confab.Controller{
 			AgentClient:    agentClient,
@@ -104,7 +105,7 @@ var _ = Describe("Controller", func() {
 				{
 					Action: "controller.write-consul-config.write-configuration",
 					Data: []lager.Data{{
-						"config": confab.GenerateConfiguration(controller.Config),
+						"config": config.GenerateConfiguration(controller.Config),
 					}},
 				},
 				{
@@ -128,7 +129,7 @@ var _ = Describe("Controller", func() {
 					{
 						Action: "controller.write-consul-config.write-configuration",
 						Data: []lager.Data{{
-							"config": confab.GenerateConfiguration(controller.Config),
+							"config": config.GenerateConfiguration(controller.Config),
 						}},
 					},
 					{
@@ -160,7 +161,7 @@ var _ = Describe("Controller", func() {
 
 	Describe("WriteServiceDefinitions", func() {
 		It("delegates to the service definer", func() {
-			definitions := []confab.ServiceDefinition{{
+			definitions := []config.ServiceDefinition{{
 				Name: "banana",
 			}}
 			serviceDefiner.GenerateDefinitionsCall.Returns.Definitions = definitions

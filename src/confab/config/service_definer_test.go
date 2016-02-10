@@ -1,4 +1,4 @@
-package confab_test
+package config_test
 
 import (
 	"errors"
@@ -6,7 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/cloudfoundry-incubator/consul-release/src/confab"
+	"github.com/cloudfoundry-incubator/consul-release/src/confab/config"
 	"github.com/cloudfoundry-incubator/consul-release/src/confab/fakes"
 	"github.com/pivotal-golang/lager"
 
@@ -17,31 +17,31 @@ import (
 
 var _ = Describe("ServiceDefiner", func() {
 	var (
-		definer confab.ServiceDefiner
+		definer config.ServiceDefiner
 		logger  *fakes.Logger
 	)
 
 	BeforeEach(func() {
 		logger = &fakes.Logger{}
-		definer = confab.ServiceDefiner{
+		definer = config.ServiceDefiner{
 			Logger: logger,
 		}
 	})
 
 	AfterEach(func() {
-		confab.ResetCreateFile()
+		config.ResetCreateFile()
 	})
 
 	Describe("GenerateDefinitions", func() {
 		It("logs the definitions that it generates", func() {
-			definer.GenerateDefinitions(confab.Config{
-				Node: confab.ConfigNode{
+			definer.GenerateDefinitions(config.Config{
+				Node: config.ConfigNode{
 					Name:  "some_node",
 					Index: 0,
 				},
-				Consul: confab.ConfigConsul{
-					Agent: confab.ConfigConsulAgent{
-						Services: map[string]confab.ServiceDefinition{
+				Consul: config.ConfigConsul{
+					Agent: config.ConfigConsulAgent{
+						Services: map[string]config.ServiceDefinition{
 							"router":           {},
 							"cloud_controller": {},
 							"doppler":          {},
@@ -70,24 +70,24 @@ var _ = Describe("ServiceDefiner", func() {
 		})
 
 		It("generates a definition with the default values", func() {
-			definitions := definer.GenerateDefinitions(confab.Config{
-				Node: confab.ConfigNode{
+			definitions := definer.GenerateDefinitions(config.Config{
+				Node: config.ConfigNode{
 					Name:  "some_node",
 					Index: 0,
 				},
-				Consul: confab.ConfigConsul{
-					Agent: confab.ConfigConsulAgent{
-						Services: map[string]confab.ServiceDefinition{
+				Consul: config.ConfigConsul{
+					Agent: config.ConfigConsulAgent{
+						Services: map[string]config.ServiceDefinition{
 							"router": {},
 						},
 					},
 				},
 			})
-			Expect(definitions).To(ConsistOf([]confab.ServiceDefinition{
+			Expect(definitions).To(ConsistOf([]config.ServiceDefinition{
 				{
 					ServiceName: "router",
 					Name:        "router",
-					Check: &confab.ServiceDefinitionCheck{
+					Check: &config.ServiceDefinitionCheck{
 						Name:     "dns_health_check",
 						Script:   "/var/vcap/jobs/router/bin/dns_health_check",
 						Interval: "3s",
@@ -98,24 +98,24 @@ var _ = Describe("ServiceDefiner", func() {
 		})
 
 		It("generates a definition with the service name dasherized", func() {
-			definitions := definer.GenerateDefinitions(confab.Config{
-				Node: confab.ConfigNode{
+			definitions := definer.GenerateDefinitions(config.Config{
+				Node: config.ConfigNode{
 					Name:  "some_node",
 					Index: 0,
 				},
-				Consul: confab.ConfigConsul{
-					Agent: confab.ConfigConsulAgent{
-						Services: map[string]confab.ServiceDefinition{
+				Consul: config.ConfigConsul{
+					Agent: config.ConfigConsulAgent{
+						Services: map[string]config.ServiceDefinition{
 							"cloud_controller": {},
 						},
 					},
 				},
 			})
-			Expect(definitions).To(ConsistOf([]confab.ServiceDefinition{
+			Expect(definitions).To(ConsistOf([]config.ServiceDefinition{
 				{
 					ServiceName: "cloud_controller",
 					Name:        "cloud-controller",
-					Check: &confab.ServiceDefinitionCheck{
+					Check: &config.ServiceDefinitionCheck{
 						Name:     "dns_health_check",
 						Script:   "/var/vcap/jobs/cloud_controller/bin/dns_health_check",
 						Interval: "3s",
@@ -126,16 +126,16 @@ var _ = Describe("ServiceDefiner", func() {
 		})
 
 		It("generates a definition with the check field overridden", func() {
-			definitions := definer.GenerateDefinitions(confab.Config{
-				Node: confab.ConfigNode{
+			definitions := definer.GenerateDefinitions(config.Config{
+				Node: config.ConfigNode{
 					Name:  "some_node",
 					Index: 0,
 				},
-				Consul: confab.ConfigConsul{
-					Agent: confab.ConfigConsulAgent{
-						Services: map[string]confab.ServiceDefinition{
+				Consul: config.ConfigConsul{
+					Agent: config.ConfigConsulAgent{
+						Services: map[string]config.ServiceDefinition{
 							"doppler": {
-								Check: &confab.ServiceDefinitionCheck{
+								Check: &config.ServiceDefinitionCheck{
 									Name:     "my-script",
 									Script:   "/var/vcap/jobs/doppler/bin/my-script",
 									Interval: "5m",
@@ -145,11 +145,11 @@ var _ = Describe("ServiceDefiner", func() {
 					},
 				},
 			})
-			Expect(definitions).To(ConsistOf([]confab.ServiceDefinition{
+			Expect(definitions).To(ConsistOf([]config.ServiceDefinition{
 				{
 					ServiceName: "doppler",
 					Name:        "doppler",
-					Check: &confab.ServiceDefinitionCheck{
+					Check: &config.ServiceDefinitionCheck{
 						Name:     "my-script",
 						Script:   "/var/vcap/jobs/doppler/bin/my-script",
 						Interval: "5m",
@@ -160,16 +160,16 @@ var _ = Describe("ServiceDefiner", func() {
 		})
 
 		It("generates a definition with the checks field specified", func() {
-			definitions := definer.GenerateDefinitions(confab.Config{
-				Node: confab.ConfigNode{
+			definitions := definer.GenerateDefinitions(config.Config{
+				Node: config.ConfigNode{
 					Name:  "some_node",
 					Index: 0,
 				},
-				Consul: confab.ConfigConsul{
-					Agent: confab.ConfigConsulAgent{
-						Services: map[string]confab.ServiceDefinition{
+				Consul: config.ConfigConsul{
+					Agent: config.ConfigConsulAgent{
+						Services: map[string]config.ServiceDefinition{
 							"uaa": {
-								Checks: []confab.ServiceDefinitionCheck{{
+								Checks: []config.ServiceDefinitionCheck{{
 									Name:     "check-login",
 									Script:   "/var/vcap/jobs/uaa/bin/check-login",
 									Interval: "1m",
@@ -179,16 +179,16 @@ var _ = Describe("ServiceDefiner", func() {
 					},
 				},
 			})
-			Expect(definitions).To(ConsistOf([]confab.ServiceDefinition{
+			Expect(definitions).To(ConsistOf([]config.ServiceDefinition{
 				{
 					ServiceName: "uaa",
 					Name:        "uaa",
-					Check: &confab.ServiceDefinitionCheck{
+					Check: &config.ServiceDefinitionCheck{
 						Name:     "dns_health_check",
 						Script:   "/var/vcap/jobs/uaa/bin/dns_health_check",
 						Interval: "3s",
 					},
-					Checks: []confab.ServiceDefinitionCheck{{
+					Checks: []config.ServiceDefinitionCheck{{
 						Name:     "check-login",
 						Script:   "/var/vcap/jobs/uaa/bin/check-login",
 						Interval: "1m",
@@ -199,14 +199,14 @@ var _ = Describe("ServiceDefiner", func() {
 		})
 
 		It("generates a definition with the name field overridden", func() {
-			definitions := definer.GenerateDefinitions(confab.Config{
-				Node: confab.ConfigNode{
+			definitions := definer.GenerateDefinitions(config.Config{
+				Node: config.ConfigNode{
 					Name:  "some_node",
 					Index: 0,
 				},
-				Consul: confab.ConfigConsul{
-					Agent: confab.ConfigConsulAgent{
-						Services: map[string]confab.ServiceDefinition{
+				Consul: config.ConfigConsul{
+					Agent: config.ConfigConsulAgent{
+						Services: map[string]config.ServiceDefinition{
 							"cell": {
 								Name: "cell_z1",
 							},
@@ -214,11 +214,11 @@ var _ = Describe("ServiceDefiner", func() {
 					},
 				},
 			})
-			Expect(definitions).To(ConsistOf([]confab.ServiceDefinition{
+			Expect(definitions).To(ConsistOf([]config.ServiceDefinition{
 				{
 					ServiceName: "cell",
 					Name:        "cell_z1",
-					Check: &confab.ServiceDefinitionCheck{
+					Check: &config.ServiceDefinitionCheck{
 						Name:     "dns_health_check",
 						Script:   "/var/vcap/jobs/cell/bin/dns_health_check",
 						Interval: "3s",
@@ -229,14 +229,14 @@ var _ = Describe("ServiceDefiner", func() {
 		})
 
 		It("generates a definition with the tag field overridden", func() {
-			definitions := definer.GenerateDefinitions(confab.Config{
-				Node: confab.ConfigNode{
+			definitions := definer.GenerateDefinitions(config.Config{
+				Node: config.ConfigNode{
 					Name:  "some_node",
 					Index: 0,
 				},
-				Consul: confab.ConfigConsul{
-					Agent: confab.ConfigConsulAgent{
-						Services: map[string]confab.ServiceDefinition{
+				Consul: config.ConfigConsul{
+					Agent: config.ConfigConsulAgent{
+						Services: map[string]config.ServiceDefinition{
 							"dea": {
 								Tags: []string{"runner"},
 							},
@@ -244,11 +244,11 @@ var _ = Describe("ServiceDefiner", func() {
 					},
 				},
 			})
-			Expect(definitions).To(ConsistOf([]confab.ServiceDefinition{
+			Expect(definitions).To(ConsistOf([]config.ServiceDefinition{
 				{
 					ServiceName: "dea",
 					Name:        "dea",
-					Check: &confab.ServiceDefinitionCheck{
+					Check: &config.ServiceDefinitionCheck{
 						Name:     "dns_health_check",
 						Script:   "/var/vcap/jobs/dea/bin/dns_health_check",
 						Interval: "3s",
@@ -259,14 +259,14 @@ var _ = Describe("ServiceDefiner", func() {
 		})
 
 		It("generates definitions with the address field specified", func() {
-			definitions := definer.GenerateDefinitions(confab.Config{
-				Node: confab.ConfigNode{
+			definitions := definer.GenerateDefinitions(config.Config{
+				Node: config.ConfigNode{
 					Name:  "some_node",
 					Index: 0,
 				},
-				Consul: confab.ConfigConsul{
-					Agent: confab.ConfigConsulAgent{
-						Services: map[string]confab.ServiceDefinition{
+				Consul: config.ConfigConsul{
+					Agent: config.ConfigConsulAgent{
+						Services: map[string]config.ServiceDefinition{
 							"dea": {
 								Address: "192.168.1.1",
 							},
@@ -274,12 +274,12 @@ var _ = Describe("ServiceDefiner", func() {
 					},
 				},
 			})
-			Expect(definitions).To(ConsistOf([]confab.ServiceDefinition{
+			Expect(definitions).To(ConsistOf([]config.ServiceDefinition{
 				{
 					ServiceName: "dea",
 					Name:        "dea",
 					Address:     "192.168.1.1",
-					Check: &confab.ServiceDefinitionCheck{
+					Check: &config.ServiceDefinitionCheck{
 						Name:     "dns_health_check",
 						Script:   "/var/vcap/jobs/dea/bin/dns_health_check",
 						Interval: "3s",
@@ -290,14 +290,14 @@ var _ = Describe("ServiceDefiner", func() {
 		})
 
 		It("generates definitions with the port field specified", func() {
-			definitions := definer.GenerateDefinitions(confab.Config{
-				Node: confab.ConfigNode{
+			definitions := definer.GenerateDefinitions(config.Config{
+				Node: config.ConfigNode{
 					Name:  "some_node",
 					Index: 0,
 				},
-				Consul: confab.ConfigConsul{
-					Agent: confab.ConfigConsulAgent{
-						Services: map[string]confab.ServiceDefinition{
+				Consul: config.ConfigConsul{
+					Agent: config.ConfigConsulAgent{
+						Services: map[string]config.ServiceDefinition{
 							"router": {
 								Port: 12345,
 							},
@@ -305,12 +305,12 @@ var _ = Describe("ServiceDefiner", func() {
 					},
 				},
 			})
-			Expect(definitions).To(ConsistOf([]confab.ServiceDefinition{
+			Expect(definitions).To(ConsistOf([]config.ServiceDefinition{
 				{
 					ServiceName: "router",
 					Name:        "router",
 					Port:        12345,
-					Check: &confab.ServiceDefinitionCheck{
+					Check: &config.ServiceDefinitionCheck{
 						Name:     "dns_health_check",
 						Script:   "/var/vcap/jobs/router/bin/dns_health_check",
 						Interval: "3s",
@@ -321,14 +321,14 @@ var _ = Describe("ServiceDefiner", func() {
 		})
 
 		It("generates definitions with the EnableTagOverride field specified", func() {
-			definitions := definer.GenerateDefinitions(confab.Config{
-				Node: confab.ConfigNode{
+			definitions := definer.GenerateDefinitions(config.Config{
+				Node: config.ConfigNode{
 					Name:  "some_node",
 					Index: 0,
 				},
-				Consul: confab.ConfigConsul{
-					Agent: confab.ConfigConsulAgent{
-						Services: map[string]confab.ServiceDefinition{
+				Consul: config.ConfigConsul{
+					Agent: config.ConfigConsulAgent{
+						Services: map[string]config.ServiceDefinition{
 							"router": {
 								EnableTagOverride: true,
 							},
@@ -336,12 +336,12 @@ var _ = Describe("ServiceDefiner", func() {
 					},
 				},
 			})
-			Expect(definitions).To(ConsistOf([]confab.ServiceDefinition{
+			Expect(definitions).To(ConsistOf([]config.ServiceDefinition{
 				{
 					ServiceName:       "router",
 					Name:              "router",
 					EnableTagOverride: true,
-					Check: &confab.ServiceDefinitionCheck{
+					Check: &config.ServiceDefinitionCheck{
 						Name:     "dns_health_check",
 						Script:   "/var/vcap/jobs/router/bin/dns_health_check",
 						Interval: "3s",
@@ -352,14 +352,14 @@ var _ = Describe("ServiceDefiner", func() {
 		})
 
 		It("generates definitions with the Id field specified", func() {
-			definitions := definer.GenerateDefinitions(confab.Config{
-				Node: confab.ConfigNode{
+			definitions := definer.GenerateDefinitions(config.Config{
+				Node: config.ConfigNode{
 					Name:  "some_node",
 					Index: 0,
 				},
-				Consul: confab.ConfigConsul{
-					Agent: confab.ConfigConsulAgent{
-						Services: map[string]confab.ServiceDefinition{
+				Consul: config.ConfigConsul{
+					Agent: config.ConfigConsulAgent{
+						Services: map[string]config.ServiceDefinition{
 							"router": {
 								ID: "some-id",
 							},
@@ -367,12 +367,12 @@ var _ = Describe("ServiceDefiner", func() {
 					},
 				},
 			})
-			Expect(definitions).To(ConsistOf([]confab.ServiceDefinition{
+			Expect(definitions).To(ConsistOf([]config.ServiceDefinition{
 				{
 					ServiceName: "router",
 					Name:        "router",
 					ID:          "some-id",
-					Check: &confab.ServiceDefinitionCheck{
+					Check: &config.ServiceDefinitionCheck{
 						Name:     "dns_health_check",
 						Script:   "/var/vcap/jobs/router/bin/dns_health_check",
 						Interval: "3s",
@@ -383,14 +383,14 @@ var _ = Describe("ServiceDefiner", func() {
 		})
 
 		It("generates definitions with the Token field specified", func() {
-			definitions := definer.GenerateDefinitions(confab.Config{
-				Node: confab.ConfigNode{
+			definitions := definer.GenerateDefinitions(config.Config{
+				Node: config.ConfigNode{
 					Name:  "some_node",
 					Index: 0,
 				},
-				Consul: confab.ConfigConsul{
-					Agent: confab.ConfigConsulAgent{
-						Services: map[string]confab.ServiceDefinition{
+				Consul: config.ConfigConsul{
+					Agent: config.ConfigConsulAgent{
+						Services: map[string]config.ServiceDefinition{
 							"router": {
 								Token: "some-token",
 							},
@@ -398,12 +398,12 @@ var _ = Describe("ServiceDefiner", func() {
 					},
 				},
 			})
-			Expect(definitions).To(ConsistOf([]confab.ServiceDefinition{
+			Expect(definitions).To(ConsistOf([]config.ServiceDefinition{
 				{
 					ServiceName: "router",
 					Name:        "router",
 					Token:       "some-token",
-					Check: &confab.ServiceDefinitionCheck{
+					Check: &config.ServiceDefinitionCheck{
 						Name:     "dns_health_check",
 						Script:   "/var/vcap/jobs/router/bin/dns_health_check",
 						Interval: "3s",
@@ -414,16 +414,16 @@ var _ = Describe("ServiceDefiner", func() {
 		})
 
 		It("generates definitions with a check type given the overrides", func() {
-			definitions := definer.GenerateDefinitions(confab.Config{
-				Node: confab.ConfigNode{
+			definitions := definer.GenerateDefinitions(config.Config{
+				Node: config.ConfigNode{
 					Name:  "some_node",
 					Index: 0,
 				},
-				Consul: confab.ConfigConsul{
-					Agent: confab.ConfigConsulAgent{
-						Services: map[string]confab.ServiceDefinition{
+				Consul: config.ConfigConsul{
+					Agent: config.ConfigConsulAgent{
+						Services: map[string]config.ServiceDefinition{
 							"router": {
-								Check: &confab.ServiceDefinitionCheck{
+								Check: &config.ServiceDefinitionCheck{
 									Name:              "some-check-name",
 									ID:                "some-check-id",
 									Script:            "/var/vcap/jobs/router/bin/my-script",
@@ -443,11 +443,11 @@ var _ = Describe("ServiceDefiner", func() {
 					},
 				},
 			})
-			Expect(definitions).To(ConsistOf([]confab.ServiceDefinition{
+			Expect(definitions).To(ConsistOf([]config.ServiceDefinition{
 				{
 					ServiceName: "router",
 					Name:        "router",
-					Check: &confab.ServiceDefinitionCheck{
+					Check: &config.ServiceDefinitionCheck{
 						Name:              "some-check-name",
 						ID:                "some-check-id",
 						Script:            "/var/vcap/jobs/router/bin/my-script",
@@ -477,7 +477,7 @@ var _ = Describe("ServiceDefiner", func() {
 		})
 
 		It("logs the files that it writes out", func() {
-			err := definer.WriteDefinitions(tempDir, []confab.ServiceDefinition{
+			err := definer.WriteDefinitions(tempDir, []config.ServiceDefinition{
 				{
 					ServiceName: "cloud_controller",
 					Name:        "cloud-controller",
@@ -517,7 +517,7 @@ var _ = Describe("ServiceDefiner", func() {
 		})
 
 		It("writes out a definition file per service", func() {
-			err := definer.WriteDefinitions(tempDir, []confab.ServiceDefinition{
+			err := definer.WriteDefinitions(tempDir, []config.ServiceDefinition{
 				{
 					ServiceName: "cloud_controller",
 					Name:        "cloud-controller",
@@ -525,7 +525,7 @@ var _ = Describe("ServiceDefiner", func() {
 				{
 					ServiceName: "api",
 					Name:        "api",
-					Check: &confab.ServiceDefinitionCheck{
+					Check: &config.ServiceDefinitionCheck{
 						Name:              "some-check-name",
 						ID:                "some-check-id",
 						Script:            "/var/vcap/jobs/router/bin/my-script",
@@ -540,7 +540,7 @@ var _ = Describe("ServiceDefiner", func() {
 						Status:            "some-status",
 						ServiceID:         "some-service-id",
 					},
-					Checks: []confab.ServiceDefinitionCheck{
+					Checks: []config.ServiceDefinitionCheck{
 						{
 							Name:              "some-check-name-1",
 							ID:                "some-check-id-1",
@@ -656,7 +656,7 @@ var _ = Describe("ServiceDefiner", func() {
 
 		Context("failure cases", func() {
 			It("errors when the file cannot be created", func() {
-				err := definer.WriteDefinitions("/some/random/path", []confab.ServiceDefinition{
+				err := definer.WriteDefinitions("/some/random/path", []config.ServiceDefinition{
 					{
 						ServiceName: "cloud_controller",
 					},
@@ -682,7 +682,7 @@ var _ = Describe("ServiceDefiner", func() {
 			})
 
 			It("errors when the file cannot be written to", func() {
-				confab.SetCreateFile(func(path string) (*os.File, error) {
+				config.SetCreateFile(func(path string) (*os.File, error) {
 					file, err := os.Create(path)
 					if err != nil {
 						return nil, err
@@ -697,7 +697,7 @@ var _ = Describe("ServiceDefiner", func() {
 
 				})
 
-				err := definer.WriteDefinitions(tempDir, []confab.ServiceDefinition{
+				err := definer.WriteDefinitions(tempDir, []config.ServiceDefinition{
 					{
 						ServiceName: "cloud_controller",
 					},

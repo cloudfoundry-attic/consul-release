@@ -1,34 +1,33 @@
-package confab_test
+package config_test
 
 import (
-	"github.com/cloudfoundry-incubator/consul-release/src/confab"
+	"github.com/cloudfoundry-incubator/consul-release/src/confab/config"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("Config", func() {
-	Describe("DefaultConfig", func() {
+	Describe("Default", func() {
 		It("returns a default configuration", func() {
-			config := confab.Config{
-				Consul: confab.ConfigConsul{
+			Expect(config.Default()).To(Equal(config.Config{
+				Consul: config.ConfigConsul{
 					RequireSSL: true,
-					Agent: confab.ConfigConsulAgent{
-						Servers: confab.ConfigConsulAgentServers{
+					Agent: config.ConfigConsulAgent{
+						Servers: config.ConfigConsulAgentServers{
 							LAN: []string{},
 						},
 					},
 				},
-				Path: confab.ConfigPath{
+				Path: config.ConfigPath{
 					AgentPath:       "/var/vcap/packages/consul/bin/consul",
 					ConsulConfigDir: "/var/vcap/jobs/consul_agent/config",
 					PIDFile:         "/var/vcap/sys/run/consul_agent/consul_agent.pid",
 				},
-				Confab: confab.ConfigConfab{
+				Confab: config.ConfigConfab{
 					TimeoutInSeconds: 55,
 				},
-			}
-			Expect(confab.DefaultConfig()).To(Equal(config))
+			}))
 		})
 	})
 
@@ -65,23 +64,23 @@ var _ = Describe("Config", func() {
 				}
 			}`)
 
-			config, err := confab.ConfigFromJSON(json)
+			cfg, err := config.ConfigFromJSON(json)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(config).To(Equal(confab.Config{
-				Path: confab.ConfigPath{
+			Expect(cfg).To(Equal(config.Config{
+				Path: config.ConfigPath{
 					AgentPath:       "/path/to/agent",
 					ConsulConfigDir: "/consul/config/dir",
 					PIDFile:         "/path/to/pidfile",
 				},
-				Node: confab.ConfigNode{
+				Node: config.ConfigNode{
 					Name:       "nodename",
 					Index:      1234,
 					ExternalIP: "10.0.0.1",
 				},
-				Consul: confab.ConfigConsul{
-					Agent: confab.ConfigConsulAgent{
-						Services: map[string]confab.ServiceDefinition{
-							"myservice": confab.ServiceDefinition{
+				Consul: config.ConfigConsul{
+					Agent: config.ConfigConsulAgent{
+						Services: map[string]config.ServiceDefinition{
+							"myservice": {
 								Name: "myservicename",
 							},
 						},
@@ -89,14 +88,14 @@ var _ = Describe("Config", func() {
 						Datacenter:      "dc1",
 						LogLevel:        "debug",
 						ProtocolVersion: 1,
-						Servers: confab.ConfigConsulAgentServers{
+						Servers: config.ConfigConsulAgentServers{
 							LAN: []string{},
 						},
 					},
 					RequireSSL:  true,
 					EncryptKeys: []string{"key-1", "key-2"},
 				},
-				Confab: confab.ConfigConfab{
+				Confab: config.ConfigConfab{
 					TimeoutInSeconds: 30,
 				},
 			}))
@@ -104,23 +103,23 @@ var _ = Describe("Config", func() {
 
 		It("returns a config with default values", func() {
 			json := []byte(`{}`)
-			config, err := confab.ConfigFromJSON(json)
+			cfg, err := config.ConfigFromJSON(json)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(config).To(Equal(confab.Config{
-				Path: confab.ConfigPath{
+			Expect(cfg).To(Equal(config.Config{
+				Path: config.ConfigPath{
 					AgentPath:       "/var/vcap/packages/consul/bin/consul",
 					ConsulConfigDir: "/var/vcap/jobs/consul_agent/config",
 					PIDFile:         "/var/vcap/sys/run/consul_agent/consul_agent.pid",
 				},
-				Consul: confab.ConfigConsul{
+				Consul: config.ConfigConsul{
 					RequireSSL: true,
-					Agent: confab.ConfigConsulAgent{
-						Servers: confab.ConfigConsulAgentServers{
+					Agent: config.ConfigConsulAgent{
+						Servers: config.ConfigConsulAgentServers{
 							LAN: []string{},
 						},
 					},
 				},
-				Confab: confab.ConfigConfab{
+				Confab: config.ConfigConfab{
 					TimeoutInSeconds: 55,
 				},
 			}))
@@ -128,7 +127,7 @@ var _ = Describe("Config", func() {
 
 		It("returns an error on invalid json", func() {
 			json := []byte(`{%%%{{}{}{{}{}{{}}}}}}}`)
-			_, err := confab.ConfigFromJSON(json)
+			_, err := config.ConfigFromJSON(json)
 			Expect(err).To(MatchError(ContainSubstring("invalid character")))
 		})
 	})

@@ -1,7 +1,7 @@
-package confab_test
+package config_test
 
 import (
-	"github.com/cloudfoundry-incubator/consul-release/src/confab"
+	"github.com/cloudfoundry-incubator/consul-release/src/confab/config"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -9,10 +9,10 @@ import (
 
 var _ = Describe("ConsulConfigDefiner", func() {
 	Describe("GenerateConfiguration", func() {
-		var consulConfig confab.ConsulConfig
+		var consulConfig config.ConsulConfig
 
 		BeforeEach(func() {
-			consulConfig = confab.GenerateConfiguration(confab.Config{})
+			consulConfig = config.GenerateConfiguration(config.Config{})
 		})
 
 		Describe("datacenter", func() {
@@ -22,9 +22,9 @@ var _ = Describe("ConsulConfigDefiner", func() {
 
 			Context("when the `consul.agent.datacenter` property is set", func() {
 				It("uses that value", func() {
-					consulConfig = confab.GenerateConfiguration(confab.Config{
-						Consul: confab.ConfigConsul{
-							Agent: confab.ConfigConsulAgent{
+					consulConfig = config.GenerateConfiguration(config.Config{
+						Consul: config.ConfigConsul{
+							Agent: config.ConfigConsulAgent{
 								Datacenter: "my-datacenter",
 							},
 						},
@@ -53,9 +53,9 @@ var _ = Describe("ConsulConfigDefiner", func() {
 
 			Context("when the `consul.agent.log_level` property is set", func() {
 				It("uses that value", func() {
-					consulConfig = confab.GenerateConfiguration(confab.Config{
-						Consul: confab.ConfigConsul{
-							Agent: confab.ConfigConsulAgent{
+					consulConfig = config.GenerateConfiguration(config.Config{
+						Consul: config.ConfigConsul{
+							Agent: config.ConfigConsulAgent{
 								LogLevel: "some-log-level",
 							},
 						},
@@ -67,8 +67,8 @@ var _ = Describe("ConsulConfigDefiner", func() {
 
 		Describe("node_name", func() {
 			It("uses the job name and index as the value", func() {
-				consulConfig = confab.GenerateConfiguration(confab.Config{
-					Node: confab.ConfigNode{
+				consulConfig = config.GenerateConfiguration(config.Config{
+					Node: config.ConfigNode{
 						Name:  "node_name",
 						Index: 0,
 					},
@@ -84,9 +84,9 @@ var _ = Describe("ConsulConfigDefiner", func() {
 
 			Context("when the `consul.agent.mode property` is `server`", func() {
 				It("sets the value to true", func() {
-					consulConfig = confab.GenerateConfiguration(confab.Config{
-						Consul: confab.ConfigConsul{
-							Agent: confab.ConfigConsulAgent{
+					consulConfig = config.GenerateConfiguration(config.Config{
+						Consul: config.ConfigConsul{
+							Agent: config.ConfigConsulAgent{
 								Mode: "server",
 							},
 						},
@@ -97,9 +97,9 @@ var _ = Describe("ConsulConfigDefiner", func() {
 
 			Context("when the `consul.agent.mode` property is not `server`", func() {
 				It("sets the value to false", func() {
-					consulConfig = confab.GenerateConfiguration(confab.Config{
-						Consul: confab.ConfigConsul{
-							Agent: confab.ConfigConsulAgent{
+					consulConfig = config.GenerateConfiguration(config.Config{
+						Consul: config.ConfigConsul{
+							Agent: config.ConfigConsulAgent{
 								Mode: "banana",
 							},
 						},
@@ -111,7 +111,7 @@ var _ = Describe("ConsulConfigDefiner", func() {
 
 		Describe("ports", func() {
 			It("defaults to a struct containing port 53 for DNS", func() {
-				Expect(consulConfig.Ports).To(Equal(confab.ConsulConfigPorts{
+				Expect(consulConfig.Ports).To(Equal(config.ConsulConfigPorts{
 					DNS: 53,
 				}))
 			})
@@ -130,10 +130,10 @@ var _ = Describe("ConsulConfigDefiner", func() {
 
 			Context("when `consul.agent.servers.lan` has a list of servers", func() {
 				It("uses those values", func() {
-					consulConfig = confab.GenerateConfiguration(confab.Config{
-						Consul: confab.ConfigConsul{
-							Agent: confab.ConfigConsulAgent{
-								Servers: confab.ConfigConsulAgentServers{
+					consulConfig = config.GenerateConfiguration(config.Config{
+						Consul: config.ConfigConsul{
+							Agent: config.ConfigConsulAgent{
+								Servers: config.ConfigConsulAgentServers{
 									LAN: []string{
 										"first-server",
 										"second-server",
@@ -159,8 +159,8 @@ var _ = Describe("ConsulConfigDefiner", func() {
 
 			Context("when `node.external_ip` is provided", func() {
 				It("uses those values", func() {
-					consulConfig = confab.GenerateConfiguration(confab.Config{
-						Node: confab.ConfigNode{
+					consulConfig = config.GenerateConfiguration(config.Config{
+						Node: config.ConfigNode{
 							ExternalIP: "0.0.0.0",
 						},
 					})
@@ -188,9 +188,9 @@ var _ = Describe("ConsulConfigDefiner", func() {
 
 			Context("when `consul.agent.protocol_version` is specified", func() {
 				It("uses that value", func() {
-					consulConfig = confab.GenerateConfiguration(confab.Config{
-						Consul: confab.ConfigConsul{
-							Agent: confab.ConfigConsulAgent{
+					consulConfig = config.GenerateConfiguration(config.Config{
+						Consul: config.ConfigConsul{
+							Agent: config.ConfigConsulAgent{
 								ProtocolVersion: 21,
 							},
 						},
@@ -209,8 +209,8 @@ var _ = Describe("ConsulConfigDefiner", func() {
 
 			Context("when `consul.require_ssl` is true", func() {
 				It("is true", func() {
-					consulConfig = confab.GenerateConfiguration(confab.Config{
-						Consul: confab.ConfigConsul{
+					consulConfig = config.GenerateConfiguration(config.Config{
+						Consul: config.ConfigConsul{
 							RequireSSL: true,
 						},
 					})
@@ -229,8 +229,8 @@ var _ = Describe("ConsulConfigDefiner", func() {
 
 			Context("when `consul.require_ssl` is true", func() {
 				It("is true", func() {
-					consulConfig = confab.GenerateConfiguration(confab.Config{
-						Consul: confab.ConfigConsul{
+					consulConfig = config.GenerateConfiguration(config.Config{
+						Consul: config.ConfigConsul{
 							RequireSSL: true,
 						},
 					})
@@ -249,8 +249,8 @@ var _ = Describe("ConsulConfigDefiner", func() {
 
 			Context("when `consul.require_ssl` is true", func() {
 				It("is true", func() {
-					consulConfig = confab.GenerateConfiguration(confab.Config{
-						Consul: confab.ConfigConsul{
+					consulConfig = config.GenerateConfiguration(config.Config{
+						Consul: config.ConfigConsul{
 							RequireSSL: true,
 						},
 					})
@@ -269,8 +269,8 @@ var _ = Describe("ConsulConfigDefiner", func() {
 
 			Context("when `consul.require_ssl` is true", func() {
 				It("is the location of the ca file", func() {
-					consulConfig = confab.GenerateConfiguration(confab.Config{
-						Consul: confab.ConfigConsul{
+					consulConfig = config.GenerateConfiguration(config.Config{
+						Consul: config.ConfigConsul{
 							RequireSSL: true,
 						},
 					})
@@ -290,10 +290,10 @@ var _ = Describe("ConsulConfigDefiner", func() {
 			Context("when `consul.require_ssl` is true", func() {
 				Context("when `consul.agent.mode` is `server`", func() {
 					It("is the location of the server.key file", func() {
-						consulConfig = confab.GenerateConfiguration(confab.Config{
-							Consul: confab.ConfigConsul{
+						consulConfig = config.GenerateConfiguration(config.Config{
+							Consul: config.ConfigConsul{
 								RequireSSL: true,
-								Agent: confab.ConfigConsulAgent{
+								Agent: config.ConfigConsulAgent{
 									Mode: "server",
 								},
 							},
@@ -305,8 +305,8 @@ var _ = Describe("ConsulConfigDefiner", func() {
 
 				Context("when `consul.agent.mode` is not `server`", func() {
 					It("is the location of the agent.key file", func() {
-						consulConfig = confab.GenerateConfiguration(confab.Config{
-							Consul: confab.ConfigConsul{
+						consulConfig = config.GenerateConfiguration(config.Config{
+							Consul: config.ConfigConsul{
 								RequireSSL: true,
 							},
 						})
@@ -327,10 +327,10 @@ var _ = Describe("ConsulConfigDefiner", func() {
 			Context("when `consul.require_ssl` is true", func() {
 				Context("when `consul.agent.mode` is `server`", func() {
 					It("is the location of the server.crt file", func() {
-						consulConfig = confab.GenerateConfiguration(confab.Config{
-							Consul: confab.ConfigConsul{
+						consulConfig = config.GenerateConfiguration(config.Config{
+							Consul: config.ConfigConsul{
 								RequireSSL: true,
-								Agent: confab.ConfigConsulAgent{
+								Agent: config.ConfigConsulAgent{
 									Mode: "server",
 								},
 							},
@@ -342,8 +342,8 @@ var _ = Describe("ConsulConfigDefiner", func() {
 
 				Context("when `consul.agent.mode` is not `server`", func() {
 					It("is the location of the agent.key file", func() {
-						consulConfig = confab.GenerateConfiguration(confab.Config{
-							Consul: confab.ConfigConsul{
+						consulConfig = config.GenerateConfiguration(config.Config{
+							Consul: config.ConfigConsul{
 								RequireSSL: true,
 							},
 						})
@@ -364,8 +364,8 @@ var _ = Describe("ConsulConfigDefiner", func() {
 			Context("when `consul.require_ssl` is true", func() {
 				Context("when `consul.encrypt_keys` is empty", func() {
 					It("is nil", func() {
-						consulConfig = confab.GenerateConfiguration(confab.Config{
-							Consul: confab.ConfigConsul{
+						consulConfig = config.GenerateConfiguration(config.Config{
+							Consul: config.ConfigConsul{
 								RequireSSL: true,
 							},
 						})
@@ -375,9 +375,9 @@ var _ = Describe("ConsulConfigDefiner", func() {
 
 				Context("when `consul.encrypt_keys` is provided with keys", func() {
 					It("base 64 encodes the key if it is not already encoded", func() {
-						consulConfig = confab.GenerateConfiguration(
-							confab.Config{
-								Consul: confab.ConfigConsul{
+						consulConfig = config.GenerateConfiguration(
+							config.Config{
+								Consul: config.ConfigConsul{
 									RequireSSL:  true,
 									EncryptKeys: []string{"banana"},
 								},
@@ -387,9 +387,9 @@ var _ = Describe("ConsulConfigDefiner", func() {
 					})
 
 					It("leaves the key alone if it is already base 64 encoded", func() {
-						consulConfig = confab.GenerateConfiguration(
-							confab.Config{
-								Consul: confab.ConfigConsul{
+						consulConfig = config.GenerateConfiguration(
+							config.Config{
+								Consul: config.ConfigConsul{
 									RequireSSL:  true,
 									EncryptKeys: []string{"enqzXBmgKOy13WIGsmUk+g=="},
 								},
@@ -410,11 +410,11 @@ var _ = Describe("ConsulConfigDefiner", func() {
 
 			Context("when `consul.agent.mode` is `server`", func() {
 				It("sets it to the number of servers in the cluster", func() {
-					consulConfig = confab.GenerateConfiguration(confab.Config{
-						Consul: confab.ConfigConsul{
-							Agent: confab.ConfigConsulAgent{
+					consulConfig = config.GenerateConfiguration(config.Config{
+						Consul: config.ConfigConsul{
+							Agent: config.ConfigConsulAgent{
 								Mode: "server",
-								Servers: confab.ConfigConsulAgentServers{
+								Servers: config.ConfigConsulAgentServers{
 									LAN: []string{
 										"first-server",
 										"second-server",
