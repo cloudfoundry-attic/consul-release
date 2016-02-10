@@ -1,13 +1,14 @@
 package consul_test
 
 import (
-	"acceptance-tests/testing/consul"
 	"errors"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+
+	"github.com/cloudfoundry-incubator/consul-release/src/acceptance-tests/testing/consul"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"

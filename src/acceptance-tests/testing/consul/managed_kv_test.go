@@ -1,9 +1,10 @@
 package consul_test
 
 import (
-	"acceptance-tests/testing/consul"
 	"errors"
 	"time"
+
+	"github.com/cloudfoundry-incubator/consul-release/src/acceptance-tests/testing/consul"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"

@@ -6,6 +6,10 @@ turbulence_version="0.4"
 
 function check_dependencies() {
   test -n "${CONSATS_CONFIG?"CONSATS_CONFIG is a required environment variable"}"
+  if [[ ! -f "${CONSATS_CONFIG}" ]]; then
+	  echo "Could not locate CONSATS_CONFIG file at ${CONSATS_CONFIG}"
+	  exit 1
+  fi
 
   require jq
   require bosh

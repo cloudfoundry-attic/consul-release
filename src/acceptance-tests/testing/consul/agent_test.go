@@ -1,7 +1,6 @@
 package consul_test
 
 import (
-	"acceptance-tests/testing/consul"
 	"encoding/json"
 	"errors"
 	"io/ioutil"
@@ -11,6 +10,7 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/cloudfoundry-incubator/consul-release/src/acceptance-tests/testing/consul"
 	"github.com/pivotal-cf-experimental/destiny"
 
 	. "github.com/onsi/ginkgo"

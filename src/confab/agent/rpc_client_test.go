@@ -1,9 +1,9 @@
 package agent_test
 
 import (
-	"confab/agent"
-
+	"github.com/cloudfoundry-incubator/consul-release/src/confab/agent"
 	consulagent "github.com/hashicorp/consul/command/agent"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )

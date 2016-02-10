@@ -1,17 +1,16 @@
 package agent_test
 
 import (
-	"confab/agent"
-	"confab/fakes"
 	"errors"
 
+	"github.com/cloudfoundry-incubator/consul-release/src/confab/agent"
+	"github.com/cloudfoundry-incubator/consul-release/src/confab/fakes"
 	"github.com/hashicorp/consul/api"
 	"github.com/pivotal-golang/lager"
 
-	. "github.com/pivotal-cf-experimental/gomegamatchers"
-
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	. "github.com/pivotal-cf-experimental/gomegamatchers"
 )
 
 var _ = Describe("Client", func() {

@@ -1,6 +1,6 @@
 package fakes
 
-import "confab"
+import "github.com/cloudfoundry-incubator/consul-release/src/confab"
 
 type ServiceDefiner struct {
 	GenerateDefinitionsCall struct {

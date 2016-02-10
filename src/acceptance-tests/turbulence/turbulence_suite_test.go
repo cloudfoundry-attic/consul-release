@@ -1,9 +1,9 @@
 package turbulence_test
 
 import (
-	"acceptance-tests/testing/helpers"
 	"time"
 
+	"github.com/cloudfoundry-incubator/consul-release/src/acceptance-tests/testing/helpers"
 	"github.com/pivotal-cf-experimental/bosh-test/bosh"
 	"github.com/pivotal-cf-experimental/bosh-test/turbulence"
 	"github.com/pivotal-cf-experimental/destiny"

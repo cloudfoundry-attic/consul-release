@@ -1,10 +1,11 @@
 package deploy_test
 
 import (
-	"github.com/pivotal-cf-experimental/bosh-test/bosh"
-	"acceptance-tests/testing/helpers"
 	"fmt"
 	"testing"
+
+	"github.com/cloudfoundry-incubator/consul-release/src/acceptance-tests/testing/helpers"
+	"github.com/pivotal-cf-experimental/bosh-test/bosh"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"

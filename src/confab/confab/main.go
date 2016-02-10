@@ -1,8 +1,6 @@
 package main
 
 import (
-	"confab"
-	"confab/agent"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -11,11 +9,12 @@ import (
 	"os/exec"
 	"time"
 
-	"github.com/pivotal-golang/lager"
-
+	"github.com/cloudfoundry-incubator/consul-release/src/confab"
+	"github.com/cloudfoundry-incubator/consul-release/src/confab/agent"
 	"github.com/hashicorp/consul/api"
 	consulagent "github.com/hashicorp/consul/command/agent"
 	"github.com/pivotal-golang/clock"
+	"github.com/pivotal-golang/lager"
 )
 
 type stringSlice []string

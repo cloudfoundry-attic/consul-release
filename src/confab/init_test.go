@@ -1,11 +1,11 @@
 package confab_test
 
 import (
+	"testing"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
-
-	"testing"
 )
 
 func TestConfab(t *testing.T) {
@@ -19,7 +19,7 @@ var (
 
 var _ = BeforeSuite(func() {
 	var err error
-	pathToFakeProcess, err = gexec.Build("confab/fakes/process")
+	pathToFakeProcess, err = gexec.Build("github.com/cloudfoundry-incubator/consul-release/src/confab/fakes/process")
 	Expect(err).NotTo(HaveOccurred())
 })
 

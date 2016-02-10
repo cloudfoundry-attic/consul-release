@@ -2,8 +2,6 @@ package agent_test
 
 import (
 	"bytes"
-	"confab/agent"
-	"confab/fakes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -14,12 +12,13 @@ import (
 	"strconv"
 	"syscall"
 
+	"github.com/cloudfoundry-incubator/consul-release/src/confab/agent"
+	"github.com/cloudfoundry-incubator/consul-release/src/confab/fakes"
 	"github.com/pivotal-golang/lager"
-
-	. "github.com/pivotal-cf-experimental/gomegamatchers"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	. "github.com/pivotal-cf-experimental/gomegamatchers"
 )
 
 var _ = Describe("Runner", func() {

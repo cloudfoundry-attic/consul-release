@@ -19,7 +19,7 @@ var (
 
 var _ = BeforeSuite(func() {
 	var err error
-	pathToFakeProcess, err = gexec.Build("confab/fakes/process")
+	pathToFakeProcess, err = gexec.Build("github.com/cloudfoundry-incubator/consul-release/src/confab/fakes/process")
 	Expect(err).NotTo(HaveOccurred())
 })
 

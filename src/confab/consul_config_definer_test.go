@@ -1,7 +1,7 @@
 package confab_test
 
 import (
-	"confab"
+	"github.com/cloudfoundry-incubator/consul-release/src/confab"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"

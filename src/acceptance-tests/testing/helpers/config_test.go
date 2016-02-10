@@ -1,10 +1,11 @@
 package helpers_test
 
 import (
-	"acceptance-tests/testing/helpers"
 	"errors"
 	"io/ioutil"
 	"os"
+
+	"github.com/cloudfoundry-incubator/consul-release/src/acceptance-tests/testing/helpers"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"

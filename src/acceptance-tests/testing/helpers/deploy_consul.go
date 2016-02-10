@@ -7,12 +7,10 @@ import (
 	"fmt"
 	"io/ioutil"
 
-	"golang.org/x/crypto/pbkdf2"
-
-	"acceptance-tests/testing/consul"
-
+	"github.com/cloudfoundry-incubator/consul-release/src/acceptance-tests/testing/consul"
 	"github.com/pivotal-cf-experimental/bosh-test/bosh"
 	"github.com/pivotal-cf-experimental/destiny"
+	"golang.org/x/crypto/pbkdf2"
 )
 
 func DeployConsulWithInstanceCount(count int, client bosh.Client, config Config) (manifest destiny.Manifest, kv consul.KV, err error) {

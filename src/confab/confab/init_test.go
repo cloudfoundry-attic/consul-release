@@ -20,10 +20,10 @@ var (
 
 var _ = BeforeSuite(func() {
 	var err error
-	pathToFakeAgent, err = gexec.Build("confab/fakes/agent")
+	pathToFakeAgent, err = gexec.Build("github.com/cloudfoundry-incubator/consul-release/src/confab/fakes/agent")
 	Expect(err).NotTo(HaveOccurred())
 
-	pathToConfab, err = gexec.Build("confab/confab")
+	pathToConfab, err = gexec.Build("github.com/cloudfoundry-incubator/consul-release/src/confab/confab")
 	Expect(err).NotTo(HaveOccurred())
 })
 
