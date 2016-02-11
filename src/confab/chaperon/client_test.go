@@ -1,0 +1,121 @@
+package chaperon_test
+
+import (
+	"errors"
+
+	"github.com/cloudfoundry-incubator/consul-release/src/confab/chaperon"
+	"github.com/cloudfoundry-incubator/consul-release/src/confab/fakes"
+	consulagent "github.com/hashicorp/consul/command/agent"
+
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+)
+
+var _ = Describe("Client", func() {
+	var (
+		client      chaperon.Client
+		timeout     *fakes.Timeout
+		controller  *fakes.Controller
+		rpcClient   *consulagent.RPCClient
+		rpcEndpoint string
+	)
+
+	BeforeEach(func() {
+		controller = &fakes.Controller{}
+		timeout = &fakes.Timeout{}
+		rpcClient = &consulagent.RPCClient{}
+		rpcClientConstructor := func(endpoint string) (*consulagent.RPCClient, error) {
+			rpcEndpoint = endpoint
+			return rpcClient, nil
+		}
+
+		client = chaperon.NewClient(controller, rpcClientConstructor)
+	})
+
+	It("writes the consul configuration file", func() {
+		err := client.Start(timeout)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(controller.WriteConsulConfigCall.CallCount).To(Equal(1))
+	})
+
+	It("writes the service definitions", func() {
+		err := client.Start(timeout)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(controller.WriteServiceDefinitionsCall.CallCount).To(Equal(1))
+	})
+
+	It("boots the agent process", func() {
+		err := client.Start(timeout)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(controller.BootAgentCall.CallCount).To(Equal(1))
+		Expect(controller.BootAgentCall.Receives.Timeout).To(Equal(timeout))
+	})
+
+	It("configures the client", func() {
+		err := client.Start(timeout)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(controller.ConfigureClientCall.CallCount).To(Equal(1))
+	})
+
+	Context("failure cases", func() {
+		Context("when writing the consul config file fails", func() {
+			It("returns an error", func() {
+				controller.WriteConsulConfigCall.Returns.Error = errors.New("failed to write consul config")
+
+				err := client.Start(timeout)
+				Expect(err).To(MatchError(errors.New("failed to write consul config")))
+			})
+		})
+
+		Context("when writing the service definitions fails", func() {
+			It("returns an error", func() {
+				controller.WriteServiceDefinitionsCall.Returns.Error = errors.New("failed to write service definitions")
+
+				err := client.Start(timeout)
+				Expect(err).To(MatchError(errors.New("failed to write service definitions")))
+			})
+		})
+
+		Context("when booting the agent fails", func() {
+			It("returns an error", func() {
+				controller.BootAgentCall.Returns.Error = errors.New("failed to boot agent")
+
+				err := client.Start(timeout)
+				Expect(err).To(MatchError(errors.New("failed to boot agent")))
+			})
+		})
+
+		Context("when configuring the client fails", func() {
+			It("returns an error", func() {
+				controller.ConfigureClientCall.Returns.Error = errors.New("failed to configure client")
+
+				err := client.Start(timeout)
+				Expect(err).To(MatchError(errors.New("failed to configure client")))
+			})
+		})
+	})
+
+	Describe("Stop", func() {
+		It("sets up an RPC client", func() {
+			err := client.Stop()
+			Expect(err).NotTo(HaveOccurred())
+			Expect(controller.StopAgentCall.CallCount).To(Equal(1))
+			Expect(controller.StopAgentCall.Receives.RPCClient).To(Equal(rpcClient))
+			Expect(rpcEndpoint).To(Equal("localhost:8400"))
+		})
+
+		Context("failure cases", func() {
+			Context("when constructing an RPC client fails", func() {
+				It("returns an error", func() {
+					client = chaperon.NewClient(controller, func(string) (*consulagent.RPCClient, error) {
+						return nil, errors.New("failed to create rpc client")
+					})
+
+					err := client.Stop()
+					Expect(err).To(MatchError(errors.New("failed to create rpc client")))
+					Expect(controller.StopAgentCall.CallCount).To(Equal(1))
+				})
+			})
+		})
+	})
+})

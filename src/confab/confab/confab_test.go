@@ -700,7 +700,7 @@ var _ = Describe("confab", func() {
 				cmd.Stderr = stderr
 
 				Eventually(cmd.Run, COMMAND_TIMEOUT, COMMAND_TIMEOUT).ShouldNot(Succeed())
-				Expect(stderr).To(ContainSubstring("error booting consul agent"))
+				Expect(stderr).To(ContainSubstring("error during start"))
 				Expect(stderr).To(ContainSubstring("already running"))
 				Expect(stdout).To(ContainSubstring("controller.stop-agent.success"))
 			})
@@ -741,7 +741,8 @@ var _ = Describe("confab", func() {
 				buffer := bytes.NewBuffer([]byte{})
 				cmd.Stderr = buffer
 				Eventually(cmd.Run, COMMAND_TIMEOUT, COMMAND_TIMEOUT).ShouldNot(Succeed())
-				Expect(buffer).To(ContainSubstring("error connecting to RPC server"))
+				Expect(buffer).To(ContainSubstring("error during start"))
+				Expect(buffer).To(ContainSubstring("connection refused"))
 			})
 		})
 
@@ -828,7 +829,7 @@ var _ = Describe("confab", func() {
 				buffer := bytes.NewBuffer([]byte{})
 				cmd.Stderr = buffer
 				Eventually(cmd.Run, COMMAND_TIMEOUT, COMMAND_TIMEOUT).ShouldNot(Succeed())
-				Expect(buffer).To(ContainSubstring(fmt.Sprintf("error writing consul config file: open %s: permission denied", filepath.Join(consulConfigDir, "config.json"))))
+				Expect(buffer).To(ContainSubstring(fmt.Sprintf("error during start: open %s: permission denied", filepath.Join(consulConfigDir, "config.json"))))
 			})
 		})
 	})

@@ -790,4 +790,15 @@ var _ = Describe("Client", func() {
 			})
 		})
 	})
+
+	Describe("SetConsulRPCClient", func() {
+		It("assigns the ConsulRPCClient field", func() {
+			client.ConsulRPCClient = nil
+			Expect(client.ConsulRPCClient).To(BeNil())
+
+			rpcClient := &fakes.FakeconsulRPCClient{}
+			client.SetConsulRPCClient(rpcClient)
+			Expect(client.ConsulRPCClient).To(Equal(rpcClient))
+		})
+	})
 })

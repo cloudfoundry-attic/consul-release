@@ -1,4 +1,4 @@
-package confab_test
+package chaperon_test
 
 import (
 	"errors"
@@ -9,8 +9,11 @@ import (
 	"time"
 
 	"github.com/cloudfoundry-incubator/consul-release/src/confab"
+	"github.com/cloudfoundry-incubator/consul-release/src/confab/agent"
+	"github.com/cloudfoundry-incubator/consul-release/src/confab/chaperon"
 	"github.com/cloudfoundry-incubator/consul-release/src/confab/config"
 	"github.com/cloudfoundry-incubator/consul-release/src/confab/fakes"
+	consulagent "github.com/hashicorp/consul/command/agent"
 	"github.com/pivotal-golang/lager"
 
 	. "github.com/onsi/ginkgo"
@@ -25,7 +28,7 @@ var _ = Describe("Controller", func() {
 		agentClient    *fakes.AgentClient
 		logger         *fakes.Logger
 		serviceDefiner *fakes.ServiceDefiner
-		controller     confab.Controller
+		controller     chaperon.Controller
 	)
 
 	BeforeEach(func() {
@@ -44,7 +47,7 @@ var _ = Describe("Controller", func() {
 		confabConfig := config.Default()
 		confabConfig.Node = config.ConfigNode{Name: "node", Index: 0}
 
-		controller = confab.Controller{
+		controller = chaperon.Controller{
 			AgentClient:    agentClient,
 			AgentRunner:    agentRunner,
 			SyncRetryDelay: 10 * time.Millisecond,
@@ -303,9 +306,17 @@ var _ = Describe("Controller", func() {
 	})
 
 	Describe("StopAgent", func() {
+		var rpcClient *consulagent.RPCClient
+
+		BeforeEach(func() {
+			rpcClient = &consulagent.RPCClient{}
+		})
+
 		It("tells client to leave the cluster and waits for the agent to stop", func() {
-			controller.StopAgent()
+			controller.StopAgent(rpcClient)
 			Expect(agentClient.LeaveCall.CallCount).To(Equal(1))
+			Expect(agentClient.SetConsulRPCClientCall.CallCount).To(Equal(1))
+			Expect(agentClient.SetConsulRPCClientCall.Receives.ConsulRPCClient).To(Equal(&agent.RPCClient{*rpcClient}))
 			Expect(agentRunner.WaitCall.CallCount).To(Equal(1))
 			Expect(agentRunner.CleanupCall.CallCount).To(Equal(1))
 			Expect(logger.Messages).To(ContainSequence([]fakes.LoggerMessage{
@@ -330,7 +341,7 @@ var _ = Describe("Controller", func() {
 			})
 
 			It("tells the runner to stop the agent", func() {
-				controller.StopAgent()
+				controller.StopAgent(rpcClient)
 				Expect(agentRunner.StopCall.CallCount).To(Equal(1))
 				Expect(agentRunner.WaitCall.CallCount).To(Equal(1))
 				Expect(agentRunner.CleanupCall.CallCount).To(Equal(1))
@@ -363,7 +374,7 @@ var _ = Describe("Controller", func() {
 				})
 
 				It("logs the error", func() {
-					controller.StopAgent()
+					controller.StopAgent(rpcClient)
 					Expect(logger.Messages).To(ContainSequence([]fakes.LoggerMessage{
 						{
 							Action: "controller.stop-agent.leave",
@@ -399,7 +410,7 @@ var _ = Describe("Controller", func() {
 			})
 
 			It("logs the error", func() {
-				controller.StopAgent()
+				controller.StopAgent(rpcClient)
 				Expect(logger.Messages).To(ContainSequence([]fakes.LoggerMessage{
 					{
 						Action: "controller.stop-agent.leave",
@@ -427,7 +438,7 @@ var _ = Describe("Controller", func() {
 			})
 
 			It("logs the error", func() {
-				controller.StopAgent()
+				controller.StopAgent(rpcClient)
 				Expect(logger.Messages).To(ContainSequence([]fakes.LoggerMessage{
 					{
 						Action: "controller.stop-agent.leave",
@@ -451,10 +462,23 @@ var _ = Describe("Controller", func() {
 	})
 
 	Describe("ConfigureServer", func() {
+		var (
+			timeout   confab.Timeout
+			rpcClient *consulagent.RPCClient
+		)
+
+		BeforeEach(func() {
+			timeout = confab.NewTimeout(make(chan time.Time))
+			rpcClient = &consulagent.RPCClient{}
+		})
+
 		Context("when it is not the last node in the cluster", func() {
 			It("does not check that it is synced", func() {
-				Expect(controller.ConfigureServer(confab.NewTimeout(make(chan time.Time)))).To(Succeed())
+				Expect(controller.ConfigureServer(timeout, rpcClient)).To(Succeed())
+
 				Expect(agentClient.VerifySyncedCalls.CallCount).To(Equal(0))
+				Expect(agentClient.SetConsulRPCClientCall.CallCount).To(Equal(1))
+				Expect(agentClient.SetConsulRPCClientCall.Receives.ConsulRPCClient).To(Equal(&agent.RPCClient{*rpcClient}))
 				Expect(agentRunner.WritePIDCall.CallCount).To(Equal(1))
 				Expect(logger.Messages).To(ContainSequence([]fakes.LoggerMessage{
 					{
@@ -475,7 +499,7 @@ var _ = Describe("Controller", func() {
 
 		Context("setting keys", func() {
 			It("sets the encryption keys used by the agent", func() {
-				Expect(controller.ConfigureServer(confab.NewTimeout(make(chan time.Time)))).To(Succeed())
+				Expect(controller.ConfigureServer(timeout, rpcClient)).To(Succeed())
 				Expect(agentClient.SetKeysCall.Receives.Keys).To(Equal([]string{
 					"key 1",
 					"key 2",
@@ -500,7 +524,8 @@ var _ = Describe("Controller", func() {
 			Context("when setting keys errors", func() {
 				It("returns the error", func() {
 					agentClient.SetKeysCall.Returns.Error = errors.New("oh noes")
-					Expect(controller.ConfigureServer(confab.NewTimeout(make(chan time.Time)))).To(MatchError("oh noes"))
+
+					Expect(controller.ConfigureServer(timeout, rpcClient)).To(MatchError("oh noes"))
 					Expect(agentClient.SetKeysCall.Receives.Keys).To(Equal([]string{
 						"key 1",
 						"key 2",
@@ -534,7 +559,7 @@ var _ = Describe("Controller", func() {
 				})
 
 				It("does not set keys", func() {
-					Expect(controller.ConfigureServer(confab.NewTimeout(make(chan time.Time)))).To(Succeed())
+					Expect(controller.ConfigureServer(timeout, rpcClient)).To(Succeed())
 					Expect(agentClient.SetKeysCall.Receives.Keys).To(BeNil())
 					Expect(logger.Messages).To(ContainSequence([]fakes.LoggerMessage{
 						{
@@ -553,7 +578,7 @@ var _ = Describe("Controller", func() {
 				})
 
 				It("returns an error", func() {
-					Expect(controller.ConfigureServer(confab.NewTimeout(make(chan time.Time)))).To(MatchError("encrypt keys cannot be empty if ssl is enabled"))
+					Expect(controller.ConfigureServer(timeout, rpcClient)).To(MatchError("encrypt keys cannot be empty if ssl is enabled"))
 					Expect(agentClient.SetKeysCall.Receives.Keys).To(BeNil())
 					Expect(agentRunner.WritePIDCall.CallCount).To(Equal(0))
 
@@ -576,7 +601,7 @@ var _ = Describe("Controller", func() {
 			})
 
 			It("checks that it is synced", func() {
-				Expect(controller.ConfigureServer(confab.NewTimeout(make(chan time.Time)))).To(Succeed())
+				Expect(controller.ConfigureServer(timeout, rpcClient)).To(Succeed())
 				Expect(agentClient.VerifySyncedCalls.CallCount).To(Equal(1))
 				Expect(agentRunner.WritePIDCall.CallCount).To(Equal(1))
 
@@ -606,7 +631,7 @@ var _ = Describe("Controller", func() {
 						agentClient.VerifySyncedCalls.Returns.Errors[i] = errors.New("some error")
 					}
 
-					Expect(controller.ConfigureServer(confab.NewTimeout(make(chan time.Time)))).To(Succeed())
+					Expect(controller.ConfigureServer(timeout, rpcClient)).To(Succeed())
 					Expect(agentClient.VerifySyncedCalls.CallCount).To(Equal(10))
 					Expect(clock.SleepCall.CallCount).To(Equal(9))
 					Expect(clock.SleepCall.Receives.Duration).To(Equal(10 * time.Millisecond))
@@ -640,10 +665,10 @@ var _ = Describe("Controller", func() {
 					}
 
 					timer := make(chan time.Time)
-					timeout := confab.NewTimeout(timer)
+					timeout = confab.NewTimeout(timer)
 					timer <- time.Now()
 
-					err := controller.ConfigureServer(timeout)
+					err := controller.ConfigureServer(timeout, rpcClient)
 					Expect(err).To(MatchError("timeout exceeded"))
 					Expect(agentClient.VerifySyncedCalls.CallCount).To(Equal(0))
 					Expect(agentClient.SetKeysCall.Receives.Keys).To(BeNil())
@@ -667,7 +692,8 @@ var _ = Describe("Controller", func() {
 			Context("error while checking if it is the last node", func() {
 				It("immediately returns the error", func() {
 					agentClient.IsLastNodeCall.Returns.Error = errors.New("some error")
-					Expect(controller.ConfigureServer(confab.NewTimeout(make(chan time.Time)))).To(MatchError("some error"))
+
+					Expect(controller.ConfigureServer(timeout, rpcClient)).To(MatchError("some error"))
 					Expect(agentClient.VerifySyncedCalls.CallCount).To(Equal(0))
 					Expect(agentClient.SetKeysCall.Receives.Keys).To(BeNil())
 					Expect(agentRunner.WritePIDCall.CallCount).To(Equal(0))
@@ -687,9 +713,9 @@ var _ = Describe("Controller", func() {
 		Context("when writing the PID file fails", func() {
 			It("returns the error", func() {
 				agentRunner.WritePIDCall.Returns.Error = errors.New("failed to write PIDFILE")
-
 				controller.Config.Consul.RequireSSL = false
-				err := controller.ConfigureServer(confab.NewTimeout(make(chan time.Time)))
+
+				err := controller.ConfigureServer(timeout, rpcClient)
 				Expect(err).To(MatchError("failed to write PIDFILE"))
 
 				Expect(agentRunner.WritePIDCall.CallCount).To(Equal(1))

@@ -1,4 +1,4 @@
-package confab
+package chaperon
 
 import (
 	"encoding/json"
@@ -8,9 +8,16 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/cloudfoundry-incubator/consul-release/src/confab"
+	"github.com/cloudfoundry-incubator/consul-release/src/confab/agent"
 	"github.com/cloudfoundry-incubator/consul-release/src/confab/config"
+	consulagent "github.com/hashicorp/consul/command/agent"
 	"github.com/pivotal-golang/lager"
 )
+
+type stopper interface {
+	Stop() error
+}
 
 type agentRunner interface {
 	Run() error
@@ -26,6 +33,7 @@ type agentClient interface {
 	IsLastNode() (bool, error)
 	SetKeys([]string) error
 	Leave() error
+	SetConsulRPCClient(agent.ConsulRPCClient)
 }
 
 type serviceDefiner interface {
@@ -55,7 +63,7 @@ type Controller struct {
 	Config         config.Config
 }
 
-func (c Controller) BootAgent(timeout Timeout) error {
+func (c Controller) BootAgent(timeout confab.Timeout) error {
 	c.Logger.Info("controller.boot-agent.run")
 	err := c.AgentRunner.Run()
 	if err != nil {
@@ -74,7 +82,7 @@ func (c Controller) BootAgent(timeout Timeout) error {
 	return nil
 }
 
-func (c Controller) callWithTimeout(timeout Timeout, f func() error) error {
+func (c Controller) callWithTimeout(timeout confab.Timeout, f func() error) error {
 	for {
 		select {
 		case <-timeout.Done():
@@ -91,7 +99,11 @@ func (c Controller) callWithTimeout(timeout Timeout, f func() error) error {
 	}
 }
 
-func (c Controller) ConfigureServer(timeout Timeout) error {
+func (c Controller) ConfigureServer(timeout confab.Timeout, rpcClient *consulagent.RPCClient) error {
+	if rpcClient != nil {
+		c.AgentClient.SetConsulRPCClient(&agent.RPCClient{*rpcClient})
+	}
+
 	c.Logger.Info("controller.configure-server.is-last-node")
 	lastNode, err := c.AgentClient.IsLastNode()
 	if err != nil {
@@ -145,7 +157,11 @@ func (c Controller) ConfigureClient() error {
 	return nil
 }
 
-func (c Controller) StopAgent() {
+func (c Controller) StopAgent(rpcClient *consulagent.RPCClient) {
+	if rpcClient != nil {
+		c.AgentClient.SetConsulRPCClient(&agent.RPCClient{*rpcClient})
+	}
+
 	c.Logger.Info("controller.stop-agent.leave")
 	if err := c.AgentClient.Leave(); err != nil {
 		c.Logger.Error("controller.stop-agent.leave.failed", err)

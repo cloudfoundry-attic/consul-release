@@ -20,7 +20,7 @@ type consulAPIAgent interface {
 	Members(wan bool) ([]*api.AgentMember, error)
 }
 
-type consulRPCClient interface {
+type ConsulRPCClient interface {
 	Stats() (map[string]map[string]string, error)
 	ListKeys() ([]string, error)
 	InstallKey(key string) error
@@ -32,7 +32,7 @@ type consulRPCClient interface {
 type Client struct {
 	ExpectedMembers []string
 	ConsulAPIAgent  consulAPIAgent
-	ConsulRPCClient consulRPCClient
+	ConsulRPCClient ConsulRPCClient
 	Logger          logger
 }
 
@@ -258,6 +258,10 @@ func (c Client) Leave() error {
 	c.Logger.Info("agent-client.leave.leave.response")
 
 	return nil
+}
+
+func (c *Client) SetConsulRPCClient(rpcClient ConsulRPCClient) {
+	c.ConsulRPCClient = rpcClient
 }
 
 func containsString(elems []string, elem string) bool {
