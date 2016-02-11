@@ -13,15 +13,17 @@ import (
 
 var _ = Describe("Client", func() {
 	var (
-		client      chaperon.Client
-		timeout     *fakes.Timeout
-		controller  *fakes.Controller
-		rpcClient   *consulagent.RPCClient
-		rpcEndpoint string
+		client         chaperon.Client
+		timeout        *fakes.Timeout
+		controller     *fakes.Controller
+		keyringRemover *fakes.KeyringRemover
+		rpcClient      *consulagent.RPCClient
+		rpcEndpoint    string
 	)
 
 	BeforeEach(func() {
 		controller = &fakes.Controller{}
+		keyringRemover = &fakes.KeyringRemover{}
 		timeout = &fakes.Timeout{}
 		rpcClient = &consulagent.RPCClient{}
 		rpcClientConstructor := func(endpoint string) (*consulagent.RPCClient, error) {
@@ -29,7 +31,7 @@ var _ = Describe("Client", func() {
 			return rpcClient, nil
 		}
 
-		client = chaperon.NewClient(controller, rpcClientConstructor)
+		client = chaperon.NewClient(controller, rpcClientConstructor, keyringRemover)
 	})
 
 	It("writes the consul configuration file", func() {
@@ -42,6 +44,12 @@ var _ = Describe("Client", func() {
 		err := client.Start(timeout)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(controller.WriteServiceDefinitionsCall.CallCount).To(Equal(1))
+	})
+
+	It("removes the keyring file", func() {
+		err := client.Start(timeout)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(keyringRemover.ExecuteCall.CallCount).To(Equal(1))
 	})
 
 	It("boots the agent process", func() {
@@ -73,6 +81,15 @@ var _ = Describe("Client", func() {
 
 				err := client.Start(timeout)
 				Expect(err).To(MatchError(errors.New("failed to write service definitions")))
+			})
+		})
+
+		Context("when removing the keyring fails", func() {
+			It("returns an error", func() {
+				keyringRemover.ExecuteCall.Returns.Error = errors.New("failed to remove keyring")
+
+				err := client.Start(timeout)
+				Expect(err).To(MatchError(errors.New("failed to remove keyring")))
 			})
 		})
 
@@ -109,7 +126,7 @@ var _ = Describe("Client", func() {
 				It("returns an error", func() {
 					client = chaperon.NewClient(controller, func(string) (*consulagent.RPCClient, error) {
 						return nil, errors.New("failed to create rpc client")
-					})
+					}, keyringRemover)
 
 					err := client.Stop()
 					Expect(err).To(MatchError(errors.New("failed to create rpc client")))

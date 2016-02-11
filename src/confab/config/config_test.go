@@ -23,6 +23,7 @@ var _ = Describe("Config", func() {
 					AgentPath:       "/var/vcap/packages/consul/bin/consul",
 					ConsulConfigDir: "/var/vcap/jobs/consul_agent/config",
 					PIDFile:         "/var/vcap/sys/run/consul_agent/consul_agent.pid",
+					KeyringFile:     "/var/vcap/store/consul_agent/serf/local.keyring",
 				},
 				Confab: config.ConfigConfab{
 					TimeoutInSeconds: 55,
@@ -42,7 +43,8 @@ var _ = Describe("Config", func() {
 				"path": {
 					"agent_path": "/path/to/agent",
 					"consul_config_dir": "/consul/config/dir",
-					"pid_file": "/path/to/pidfile"
+					"pid_file": "/path/to/pidfile",
+					"keyring_file": "/path/to/keyring"
 				},
 				"consul": {
 					"agent": {
@@ -71,6 +73,7 @@ var _ = Describe("Config", func() {
 					AgentPath:       "/path/to/agent",
 					ConsulConfigDir: "/consul/config/dir",
 					PIDFile:         "/path/to/pidfile",
+					KeyringFile:     "/path/to/keyring",
 				},
 				Node: config.ConfigNode{
 					Name:       "nodename",
@@ -110,6 +113,7 @@ var _ = Describe("Config", func() {
 					AgentPath:       "/var/vcap/packages/consul/bin/consul",
 					ConsulConfigDir: "/var/vcap/jobs/consul_agent/config",
 					PIDFile:         "/var/vcap/sys/run/consul_agent/consul_agent.pid",
+					KeyringFile:     "/var/vcap/store/consul_agent/serf/local.keyring",
 				},
 				Consul: config.ConfigConsul{
 					RequireSSL: true,

@@ -115,7 +115,9 @@ func main() {
 		Config:         cfg,
 	}
 
-	var r runner = chaperon.NewClient(controller, consulagent.NewRPCClient)
+	keyringRemover := chaperon.NewKeyringRemover(cfg.Path.KeyringFile, logger)
+
+	var r runner = chaperon.NewClient(controller, consulagent.NewRPCClient, keyringRemover)
 	if controller.Config.Consul.Agent.Mode == "server" {
 		r = chaperon.NewServer(controller, consulagent.NewRPCClient)
 	}
