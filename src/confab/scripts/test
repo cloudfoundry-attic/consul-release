@@ -2,7 +2,7 @@
 
 function main() {
   if [[ -n "$@" ]]; then
-    ginkgo -skipPackage=vendor "$@"
+    ginkgo "$@"
   else
     local dir
     dir="$(cd "$(dirname "${0}")/.." && pwd)"
@@ -10,7 +10,6 @@ function main() {
 		-r \
 		-randomizeAllSpecs \
 		-randomizeSuites \
-		-skipPackage=vendor \
 		"${dir}"
   fi
 }

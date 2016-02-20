@@ -1,27 +1,32 @@
 package chaperon
 
-import "github.com/cloudfoundry-incubator/consul-release/src/confab"
+import (
+	"github.com/cloudfoundry-incubator/consul-release/src/confab"
+	"github.com/cloudfoundry-incubator/consul-release/src/confab/config"
+)
 
 type Client struct {
 	controller     controller
 	newRPCClient   consulRPCClientConstructor
 	keyringRemover keyringRemover
+	configWriter   configWriter
 }
 
 type keyringRemover interface {
 	Execute() error
 }
 
-func NewClient(c controller, newRPCClient consulRPCClientConstructor, kr keyringRemover) Client {
+func NewClient(controller controller, newRPCClient consulRPCClientConstructor, keyringRemover keyringRemover, configWriter configWriter) Client {
 	return Client{
-		controller:     c,
+		controller:     controller,
 		newRPCClient:   newRPCClient,
-		keyringRemover: kr,
+		keyringRemover: keyringRemover,
+		configWriter:   configWriter,
 	}
 }
 
-func (c Client) Start(timeout confab.Timeout) error {
-	if err := c.controller.WriteConsulConfig(); err != nil {
+func (c Client) Start(cfg config.Config, timeout confab.Timeout) error {
+	if err := c.configWriter.Write(cfg); err != nil {
 		return err
 	}
 

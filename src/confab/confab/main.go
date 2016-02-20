@@ -20,7 +20,7 @@ import (
 )
 
 type runner interface {
-	Start(confab.Timeout) error
+	Start(config.Config, confab.Timeout) error
 	Stop() error
 }
 
@@ -116,10 +116,11 @@ func main() {
 	}
 
 	keyringRemover := chaperon.NewKeyringRemover(cfg.Path.KeyringFile, logger)
+	configWriter := chaperon.NewConfigWriter(cfg.Path.ConsulConfigDir, logger)
 
-	var r runner = chaperon.NewClient(controller, consulagent.NewRPCClient, keyringRemover)
+	var r runner = chaperon.NewClient(controller, consulagent.NewRPCClient, keyringRemover, configWriter)
 	if controller.Config.Consul.Agent.Mode == "server" {
-		r = chaperon.NewServer(controller, consulagent.NewRPCClient)
+		r = chaperon.NewServer(controller, configWriter, consulagent.NewRPCClient)
 	}
 
 	switch os.Args[1] {
@@ -135,7 +136,7 @@ func main() {
 		}
 		timeout := confab.NewTimeout(time.After(time.Duration(controller.Config.Confab.TimeoutInSeconds) * time.Second))
 
-		if err := r.Start(timeout); err != nil {
+		if err := r.Start(cfg, timeout); err != nil {
 			stderr.Printf("error during start: %s", err)
 			r.Stop()
 			os.Exit(1)

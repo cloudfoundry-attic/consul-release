@@ -1,11 +1,7 @@
 package chaperon
 
 import (
-	"encoding/json"
 	"errors"
-	"io/ioutil"
-	"os"
-	"path/filepath"
 	"time"
 
 	"github.com/cloudfoundry-incubator/consul-release/src/confab"
@@ -196,27 +192,5 @@ func (c Controller) WriteServiceDefinitions() error {
 	}
 
 	c.Logger.Info("controller.write-service-definitions.success")
-	return nil
-}
-
-func (c Controller) WriteConsulConfig() error {
-	c.Logger.Info("controller.write-consul-config.generate-configuration")
-	consulConfig := config.GenerateConfiguration(c.Config)
-
-	data, err := json.Marshal(&consulConfig)
-	if err != nil {
-		return err
-	}
-
-	c.Logger.Info("controller.write-consul-config.write-configuration", lager.Data{
-		"config": consulConfig,
-	})
-	err = ioutil.WriteFile(filepath.Join(c.Config.Path.ConsulConfigDir, "config.json"), data, os.ModePerm)
-	if err != nil {
-		c.Logger.Error("controller.write-consul-config.write-configuration.failed", errors.New(err.Error()))
-		return err
-	}
-
-	c.Logger.Info("controller.write-consul-config.success")
 	return nil
 }

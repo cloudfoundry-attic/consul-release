@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	"github.com/cloudfoundry-incubator/consul-release/src/confab/chaperon"
+	"github.com/cloudfoundry-incubator/consul-release/src/confab/config"
 	"github.com/cloudfoundry-incubator/consul-release/src/confab/fakes"
 	consulagent "github.com/hashicorp/consul/command/agent"
 
@@ -17,50 +18,61 @@ var _ = Describe("Client", func() {
 		timeout        *fakes.Timeout
 		controller     *fakes.Controller
 		keyringRemover *fakes.KeyringRemover
-		rpcClient      *consulagent.RPCClient
-		rpcEndpoint    string
+		configWriter   *fakes.ConfigWriter
+		cfg            config.Config
+
+		rpcClient   *consulagent.RPCClient
+		rpcEndpoint string
 	)
 
 	BeforeEach(func() {
 		controller = &fakes.Controller{}
 		keyringRemover = &fakes.KeyringRemover{}
+		configWriter = &fakes.ConfigWriter{}
 		timeout = &fakes.Timeout{}
+
+		cfg = config.Config{
+			Node: config.ConfigNode{
+				Name: "some-name",
+			},
+		}
+
 		rpcClient = &consulagent.RPCClient{}
 		rpcClientConstructor := func(endpoint string) (*consulagent.RPCClient, error) {
 			rpcEndpoint = endpoint
 			return rpcClient, nil
 		}
 
-		client = chaperon.NewClient(controller, rpcClientConstructor, keyringRemover)
+		client = chaperon.NewClient(controller, rpcClientConstructor, keyringRemover, configWriter)
 	})
 
 	It("writes the consul configuration file", func() {
-		err := client.Start(timeout)
+		err := client.Start(cfg, timeout)
 		Expect(err).NotTo(HaveOccurred())
-		Expect(controller.WriteConsulConfigCall.CallCount).To(Equal(1))
+		Expect(configWriter.WriteCall.Receives.Config).To(Equal(cfg))
 	})
 
 	It("writes the service definitions", func() {
-		err := client.Start(timeout)
+		err := client.Start(cfg, timeout)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(controller.WriteServiceDefinitionsCall.CallCount).To(Equal(1))
 	})
 
 	It("removes the keyring file", func() {
-		err := client.Start(timeout)
+		err := client.Start(cfg, timeout)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(keyringRemover.ExecuteCall.CallCount).To(Equal(1))
 	})
 
 	It("boots the agent process", func() {
-		err := client.Start(timeout)
+		err := client.Start(cfg, timeout)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(controller.BootAgentCall.CallCount).To(Equal(1))
 		Expect(controller.BootAgentCall.Receives.Timeout).To(Equal(timeout))
 	})
 
 	It("configures the client", func() {
-		err := client.Start(timeout)
+		err := client.Start(cfg, timeout)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(controller.ConfigureClientCall.CallCount).To(Equal(1))
 	})
@@ -68,10 +80,10 @@ var _ = Describe("Client", func() {
 	Context("failure cases", func() {
 		Context("when writing the consul config file fails", func() {
 			It("returns an error", func() {
-				controller.WriteConsulConfigCall.Returns.Error = errors.New("failed to write consul config")
+				configWriter.WriteCall.Returns.Error = errors.New("failed to write config")
 
-				err := client.Start(timeout)
-				Expect(err).To(MatchError(errors.New("failed to write consul config")))
+				err := client.Start(cfg, timeout)
+				Expect(err).To(MatchError(errors.New("failed to write config")))
 			})
 		})
 
@@ -79,7 +91,7 @@ var _ = Describe("Client", func() {
 			It("returns an error", func() {
 				controller.WriteServiceDefinitionsCall.Returns.Error = errors.New("failed to write service definitions")
 
-				err := client.Start(timeout)
+				err := client.Start(cfg, timeout)
 				Expect(err).To(MatchError(errors.New("failed to write service definitions")))
 			})
 		})
@@ -88,7 +100,7 @@ var _ = Describe("Client", func() {
 			It("returns an error", func() {
 				keyringRemover.ExecuteCall.Returns.Error = errors.New("failed to remove keyring")
 
-				err := client.Start(timeout)
+				err := client.Start(cfg, timeout)
 				Expect(err).To(MatchError(errors.New("failed to remove keyring")))
 			})
 		})
@@ -97,7 +109,7 @@ var _ = Describe("Client", func() {
 			It("returns an error", func() {
 				controller.BootAgentCall.Returns.Error = errors.New("failed to boot agent")
 
-				err := client.Start(timeout)
+				err := client.Start(cfg, timeout)
 				Expect(err).To(MatchError(errors.New("failed to boot agent")))
 			})
 		})
@@ -106,7 +118,7 @@ var _ = Describe("Client", func() {
 			It("returns an error", func() {
 				controller.ConfigureClientCall.Returns.Error = errors.New("failed to configure client")
 
-				err := client.Start(timeout)
+				err := client.Start(cfg, timeout)
 				Expect(err).To(MatchError(errors.New("failed to configure client")))
 			})
 		})
@@ -126,7 +138,7 @@ var _ = Describe("Client", func() {
 				It("returns an error", func() {
 					client = chaperon.NewClient(controller, func(string) (*consulagent.RPCClient, error) {
 						return nil, errors.New("failed to create rpc client")
-					}, keyringRemover)
+					}, keyringRemover, configWriter)
 
 					err := client.Stop()
 					Expect(err).To(MatchError(errors.New("failed to create rpc client")))
