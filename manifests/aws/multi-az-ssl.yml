@@ -18,14 +18,12 @@ compilation:
   workers: 3
 
 jobs:
-- instances: 3
+- instances: 1
   name: consul_z1
   networks:
   - name: consul1
     static_ips:
     - 10.0.20.4
-    - 10.0.20.5
-    - 10.0.20.6
   resource_pool: consul_z1
   templates:
   - name: consul_agent
@@ -35,14 +33,13 @@ jobs:
     consul:
       agent:
         mode: server
-- instances: 3
+- instances: 2
   name: consul_z2
   networks:
   - name: consul2
     static_ips:
     - 10.0.21.4
     - 10.0.21.5
-    - 10.0.21.6
   resource_pool: consul_z2
   templates:
   - name: consul_agent
@@ -66,10 +63,6 @@ networks:
     - 10.0.20.12-10.0.20.254
     static:
     - 10.0.20.4
-    - 10.0.20.5
-    - 10.0.20.6
-    - 10.0.20.7
-    - 10.0.20.8
   type: manual
 - name: consul2
   subnets:
@@ -84,9 +77,6 @@ networks:
     static:
     - 10.0.21.4
     - 10.0.21.5
-    - 10.0.21.6
-    - 10.0.21.7
-    - 10.0.21.8
   type: manual
 
 resource_pools:
@@ -126,11 +116,8 @@ properties:
       servers:
         lan:
         - 10.0.20.4
-        - 10.0.20.5
-        - 10.0.20.6
         - 10.0.21.4
         - 10.0.21.5
-        - 10.0.21.6
     ca_cert: |+
       -----BEGIN CERTIFICATE-----
       MIIFAzCCAu2gAwIBAgIBATALBgkqhkiG9w0BAQswEzERMA8GA1UEAxMIY29uc3Vs
