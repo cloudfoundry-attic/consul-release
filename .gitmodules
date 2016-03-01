@@ -123,4 +123,4 @@
 	url = https://github.com/cloudfoundry-incubator/candiedyaml.git
 [submodule "src/acceptance-tests/vendor/github.com/pivotal-cf-experimental/destiny"]
 	path = src/acceptance-tests/vendor/github.com/pivotal-cf-experimental/destiny
-	url = git://github.com/pivotal-cf-experimental/destiny
+	url = https://github.com/pivotal-cf-experimental/destiny
