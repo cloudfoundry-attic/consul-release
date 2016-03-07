@@ -1,7 +1,7 @@
 ---
 name: consats
 
-director_uuid: BOSH_DIRECTOR_UUID
+director_uuid: BOSH_DIRECTOR_UUID # REPLACE ME
 
 releases:
 - name: consul
@@ -23,7 +23,7 @@ compilation:
   network: consats
   reuse_compilation_vms: true
   cloud_properties:
-    availability_zone: AWS_AVAILABILITY_ZONE
+    availability_zone: AWS_AVAILABILITY_ZONE # REPLACE ME
     ephemeral_disk:
       size: 1024
       type: gp2
@@ -34,7 +34,7 @@ networks:
   type: manual
   subnets:
   - cloud_properties:
-      subnet: AWS_SUBNET_ID
+      subnet: AWS_SUBNET_ID # REPLACE ME
     gateway: 10.0.4.1
     range: 10.0.4.0/24
     reserved:
@@ -45,21 +45,21 @@ properties:
   consul:
     acceptance_tests:
       aws:
-        access_key_id: AWS_ACCESS_KEY_ID
-        secret_access_key: AWS_SECRET_ACCESS_KEY
-        region: AWS_REGION
+        access_key_id: AWS_ACCESS_KEY_ID # REPLACE ME
+        secret_access_key: AWS_SECRET_ACCESS_KEY # REPLACE ME
+        region: AWS_REGION # REPLACE ME
         default_key_name: bosh
         default_security_groups:
-        - AWS_SECURITY_GROUP_NAME
-        subnet: AWS_SUBNET_ID
+        - AWS_SECURITY_GROUP_NAME # REPLACE ME
+        subnet: AWS_SUBNET_ID # REPLACE ME
       bosh:
-        target: BOSH_TARGET
-        username: BOSH_USERNAME
-        password: BOSH_PASSWORD
-        director_ca_cert: BOSH_DIRECTOR_CA_CERT
+        target: BOSH_TARGET # REPLACE ME
+        username: BOSH_USERNAME # REPLACE ME
+        password: BOSH_PASSWORD # REPLACE ME
+        director_ca_cert: BOSH_DIRECTOR_CA_CERT # REPLACE ME
       registry:
-        username: REGISTRY_USERNAME
-        password: REGISTRY_PASSWORD
+        username: REGISTRY_USERNAME # REPLACE ME
+        password: REGISTRY_PASSWORD # REPLACE ME
         host: 10.0.0.6
         port: 25777
 
@@ -70,7 +70,7 @@ resource_pools:
     name: bosh-aws-xen-hvm-ubuntu-trusty-go_agent
     version: latest
   cloud_properties:
-    availability_zone: AWS_AVAILABILITY_ZONE
+    availability_zone: AWS_AVAILABILITY_ZONE # REPLACE ME
     ephemeral_disk:
       size: 1024
       type: gp2

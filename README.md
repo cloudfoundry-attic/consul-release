@@ -219,16 +219,12 @@ For AWS:
 
 ##### Generating a consats deployment manifest
 
-We provide a set of scripts and templates to generate a simple deployment manifest.
-This manifest is designed to work on a local BOSH-lite or AWS provisioned BOSH.
-
-In order to automatically generate a manifest you must have installed [spiff](https://github.com/cloudfoundry-incubator/spiff).
-Once installed, manifests can be generated using `./scripts/generate-consats-manifest {bosh-lite|aws}` with the provided stubs.
+We provide an example deployment manifest for running the errand on AWS.
+The manifest can be used by replacing all of the placeholder values in the file `manifests/aws/consats.yml`.
 
 ##### Deploying the errand
 
-NOTE: the manifest generation script will set the deployment for the BOSH CLI.
-
+Run `bosh deployment manifests/aws/consats.yml`.
 Run `bosh deploy`.
 
 ##### Running the errand
