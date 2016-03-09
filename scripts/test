@@ -1,7 +1,7 @@
 #!/bin/bash -exu
 
 consul_release_version="99999+dev.$(date +%s)"
-warden_cpi_version="28"
+warden_cpi_version="29"
 turbulence_version="0.4"
 
 function check_dependencies() {
@@ -59,15 +59,15 @@ function upload_releases() {
   releases_dir="/tmp/consats/releases"
   mkdir -p "${releases_dir}"
 
-  if [[ ! -e "${releases_dir}/bosh-warden-cpi-release.tgz" ]]; then
-    wget -O "${releases_dir}/bosh-warden-cpi-release.tgz" "http://bosh.io/d/github.com/cppforlife/bosh-warden-cpi-release?v=${warden_cpi_version}"
+  if [[ ! -e "${releases_dir}/bosh-warden-cpi-release-${warden_cpi_version}.tgz" ]]; then
+    wget -O "${releases_dir}/bosh-warden-cpi-release-${warden_cpi_version}.tgz" "http://bosh.io/d/github.com/cppforlife/bosh-warden-cpi-release?v=${warden_cpi_version}"
   fi
-  bosh -t ${BOSH_DIRECTOR} upload release "${releases_dir}/bosh-warden-cpi-release.tgz" --skip-if-exists
+  bosh -t ${BOSH_DIRECTOR} upload release "${releases_dir}/bosh-warden-cpi-release-${warden_cpi_version}.tgz" --skip-if-exists
 
-  if [[ ! -e "${releases_dir}/turbulence-release.tgz" ]]; then
-    wget -O "${releases_dir}/turbulence-release.tgz" "http://bosh.io/d/github.com/cppforlife/turbulence-release?v=${turbulence_version}"
+  if [[ ! -e "${releases_dir}/turbulence-release-${turbulence_version}.tgz" ]]; then
+    wget -O "${releases_dir}/turbulence-release-${turbulence_version}.tgz" "http://bosh.io/d/github.com/cppforlife/turbulence-release?v=${turbulence_version}"
   fi
-  bosh -t "${BOSH_DIRECTOR}" upload release "${releases_dir}/turbulence-release.tgz" --skip-if-exists
+  bosh -t "${BOSH_DIRECTOR}" upload release "${releases_dir}/turbulence-release-${turbulence_version}.tgz" --skip-if-exists
 }
 
 function cleanup_releases() {
