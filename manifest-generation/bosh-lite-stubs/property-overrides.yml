@@ -1,6 +1,0 @@
----
-property_overrides:
-  consul:
-    require_ssl: false
-    encrypt_keys:
-      - Atzo3VBv+YVDzQAzlQRPRA==
