@@ -48,7 +48,7 @@ var _ = Describe("ConfigWriter", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(buf).To(MatchJSON(`{
 				"server": false,
-				"domain": "cf.internal",
+				"domain": "",
 				"datacenter": "",
 				"data_dir": "/var/vcap/store/consul_agent",
 				"log_level": "",

@@ -36,6 +36,7 @@ type ConfigConsulAgent struct {
 	Servers         ConfigConsulAgentServers
 	Services        map[string]ServiceDefinition
 	Mode            string
+	Domain          string `json:"domain"`
 	Datacenter      string `json:"datacenter"`
 	LogLevel        string `json:"log_level"`
 	ProtocolVersion int    `json:"protocol_version"`

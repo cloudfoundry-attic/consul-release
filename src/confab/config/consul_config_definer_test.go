@@ -35,8 +35,16 @@ var _ = Describe("ConsulConfigDefiner", func() {
 		})
 
 		Describe("domain", func() {
-			It("defaults to `cf.internal`", func() {
-				Expect(consulConfig.Domain).To(Equal("cf.internal"))
+			It("it gets the domain suffix from the config", func() {
+				config := config.GenerateConfiguration(config.Config{
+					Consul: config.ConfigConsul{
+						Agent: config.ConfigConsulAgent{
+							Domain: "some-domain",
+						},
+					},
+				})
+
+				Expect(config.Domain).To(Equal("some-domain"))
 			})
 		})
 

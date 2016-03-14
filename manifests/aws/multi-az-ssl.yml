@@ -113,6 +113,7 @@ update:
 properties:
   consul:
     agent:
+      domain: cf.internal
       servers:
         lan:
         - 10.0.20.4

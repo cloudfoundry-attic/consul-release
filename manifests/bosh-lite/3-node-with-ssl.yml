@@ -67,6 +67,7 @@ update:
 properties:
   consul:
     agent:
+      domain: cf.internal
       servers:
         lan:
           - 10.244.4.4

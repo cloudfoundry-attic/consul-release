@@ -51,7 +51,7 @@ func GenerateConfiguration(config Config) ConsulConfig {
 
 	consulConfig := ConsulConfig{
 		Server:     isServer,
-		Domain:     "cf.internal",
+		Domain:     config.Consul.Agent.Domain,
 		Datacenter: config.Consul.Agent.Datacenter,
 		DataDir:    "/var/vcap/store/consul_agent",
 		LogLevel:   config.Consul.Agent.LogLevel,

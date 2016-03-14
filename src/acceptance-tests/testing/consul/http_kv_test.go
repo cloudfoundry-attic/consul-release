@@ -170,7 +170,9 @@ var _ = Describe("HTTPKV", func() {
 					kv := consul.NewHTTPKV("banana://%%%%%")
 
 					err := kv.Set("some-key", "some-value")
-					Expect(err).To(MatchError(ContainSubstring("percent-encoded characters")))
+
+					Expect(err).To(BeAssignableToTypeOf(&url.Error{}))
+					Expect(err.(*url.Error).Op).To(Equal("parse"))
 				})
 			})
 		})

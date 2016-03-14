@@ -45,6 +45,9 @@ properties:
     description: "The Consul protocol to use."
     default: 2
 
+  consul.agent.domain:
+    description: "Domain suffix for DNS"
+
   consul.require_ssl:
     description: "enable ssl for all communication with consul"
     default: true

@@ -82,6 +82,7 @@ var _ = Describe("confab", func() {
 				"consul": map[string]interface{}{
 					"encrypt_keys": []string{"banana"},
 					"agent": map[string]interface{}{
+						"domain":     "some-domain",
 						"datacenter": "dc1",
 						"log_level":  "debug",
 						"servers": map[string]interface{}{
@@ -183,7 +184,7 @@ var _ = Describe("confab", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(string(consulConfig)).To(MatchJSON(`{
 				"server": false,
-				"domain": "cf.internal",
+				"domain": "some-domain",
 				"datacenter": "dc1",
 				"data_dir": "/var/vcap/store/consul_agent",
 				"log_level": "debug",
@@ -227,6 +228,7 @@ var _ = Describe("confab", func() {
 					"consul": map[string]interface{}{
 						"require_ssl": false,
 						"agent": map[string]interface{}{
+							"domain":     "some-domain",
 							"datacenter": "dc2",
 							"log_level":  "info",
 							"mode":       "server",
@@ -273,7 +275,7 @@ var _ = Describe("confab", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(string(consulConfig)).To(MatchJSON(`{
 					"server": true,
-					"domain": "cf.internal",
+					"domain": "some-domain",
 					"datacenter": "dc2",
 					"data_dir": "/var/vcap/store/consul_agent",
 					"log_level": "info",
