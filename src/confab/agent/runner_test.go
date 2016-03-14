@@ -184,7 +184,7 @@ var _ = Describe("Runner", func() {
 
 		Context("when the PID file has the wrong PID", func() {
 			It("returns an error", func() {
-				Expect(ioutil.WriteFile(runner.PIDFile, []byte("-10"), 0644)).To(Succeed())
+				Expect(ioutil.WriteFile(runner.PIDFile, []byte("-1"), 0644)).To(Succeed())
 				Expect(runner.Stop()).To(HaveOccurred())
 			})
 		})
