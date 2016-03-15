@@ -72,15 +72,14 @@ func DeployConsulWithInstanceCount(count int, client bosh.Client, config Config)
 	}
 
 	kv, err = NewKV(manifest, count)
-
 	return
 }
 
-func NewKV(manifest destiny.Manifest, count int) (kv consul.KV, err error) {
+func NewConsulAgent(manifest destiny.Manifest, count int) (*consul.Agent, error) {
 	members := manifest.ConsulMembers()
+
 	if len(members) != count {
-		err = fmt.Errorf("expected %d consul members, found %d", count, len(members))
-		return
+		return &consul.Agent{}, fmt.Errorf("expected %d consul members, found %d", count, len(members))
 	}
 
 	consulMemberAddresses := []string{}
@@ -90,12 +89,12 @@ func NewKV(manifest destiny.Manifest, count int) (kv consul.KV, err error) {
 
 	dataDir, err := ioutil.TempDir("", "consul")
 	if err != nil {
-		return
+		return &consul.Agent{}, err
 	}
 
 	configDir, err := ioutil.TempDir("", "consul-config")
 	if err != nil {
-		return
+		return &consul.Agent{}, err
 	}
 
 	var encryptKey string
@@ -104,7 +103,7 @@ func NewKV(manifest destiny.Manifest, count int) (kv consul.KV, err error) {
 		encryptKey = base64.StdEncoding.EncodeToString(pbkdf2.Key([]byte(key), []byte(""), 20000, 16, sha1.New))
 	}
 
-	agent := consul.NewAgent(consul.AgentOptions{
+	return consul.NewAgent(consul.AgentOptions{
 		DataDir:    dataDir,
 		RetryJoin:  consulMemberAddresses,
 		ConfigDir:  configDir,
@@ -114,17 +113,24 @@ func NewKV(manifest destiny.Manifest, count int) (kv consul.KV, err error) {
 		CACert:     manifest.Properties.Consul.CACert,
 		Encrypt:    encryptKey,
 		ServerName: "consul agent",
-	})
+	}), nil
+}
+
+func NewKV(manifest destiny.Manifest, count int) (consul.KV, error) {
+	agent, err := NewConsulAgent(manifest, count)
+	if err != nil {
+		return nil, err
+	}
 
 	agentLocation := "http://127.0.0.1:8500"
 
-	kv = consul.NewManagedKV(consul.ManagedKVConfig{
+	kv := consul.NewManagedKV(consul.ManagedKVConfig{
 		Agent:   agent,
 		KV:      consul.NewHTTPKV(agentLocation),
 		Catalog: consul.NewHTTPCatalog(agentLocation),
 	})
 
-	return
+	return kv, nil
 }
 
 func SetJobInstanceCount(job destiny.Job, network destiny.Network, properties destiny.Properties, count int) (destiny.Job, destiny.Properties) {
