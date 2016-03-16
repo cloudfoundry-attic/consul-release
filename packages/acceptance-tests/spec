@@ -1,5 +1,8 @@
 ---
 name: acceptance-tests
 
+dependencies:
+  - golang1.5
+
 files:
  - acceptance-tests/**/*

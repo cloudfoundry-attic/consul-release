@@ -42,6 +42,7 @@ var _ = Describe("Scaling down instances", func() {
 				{"running"},
 				{"running"},
 				{"running"},
+				{"running"},
 			}))
 		})
 
@@ -55,7 +56,7 @@ var _ = Describe("Scaling down instances", func() {
 				manifest.Jobs[0], manifest.Properties = helpers.SetJobInstanceCount(manifest.Jobs[0], manifest.Networks[0], manifest.Properties, 1)
 
 				members := manifest.ConsulMembers()
-				Expect(members).To(HaveLen(1))
+				Expect(members).To(HaveLen(2))
 
 				yaml, err := manifest.ToYAML()
 				Expect(err).NotTo(HaveOccurred())
@@ -66,6 +67,7 @@ var _ = Describe("Scaling down instances", func() {
 				Eventually(func() ([]bosh.VM, error) {
 					return client.DeploymentVMs(manifest.Name)
 				}, "1m", "10s").Should(ConsistOf([]bosh.VM{
+					{"running"},
 					{"running"},
 				}))
 			})
@@ -96,6 +98,7 @@ var _ = Describe("Scaling down instances", func() {
 				{"running"},
 				{"running"},
 				{"running"},
+				{"running"},
 			}))
 		})
 
@@ -109,7 +112,7 @@ var _ = Describe("Scaling down instances", func() {
 				manifest.Jobs[0], manifest.Properties = helpers.SetJobInstanceCount(manifest.Jobs[0], manifest.Networks[0], manifest.Properties, 3)
 
 				members := manifest.ConsulMembers()
-				Expect(members).To(HaveLen(3))
+				Expect(members).To(HaveLen(4))
 
 				yaml, err := manifest.ToYAML()
 				Expect(err).NotTo(HaveOccurred())
@@ -120,6 +123,7 @@ var _ = Describe("Scaling down instances", func() {
 				Eventually(func() ([]bosh.VM, error) {
 					return client.DeploymentVMs(manifest.Name)
 				}, "1m", "10s").Should(ConsistOf([]bosh.VM{
+					{"running"},
 					{"running"},
 					{"running"},
 					{"running"},

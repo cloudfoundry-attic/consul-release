@@ -35,6 +35,7 @@ var _ = Describe("KillVm", func() {
 			{"running"},
 			{"running"},
 			{"running"},
+			{"running"},
 		}))
 	})
 
@@ -49,6 +50,7 @@ var _ = Describe("KillVm", func() {
 			Eventually(func() ([]bosh.VM, error) {
 				return client.DeploymentVMs(consulManifest.Name)
 			}, "1m", "10s").Should(ConsistOf([]bosh.VM{
+				{"running"},
 				{"running"},
 				{"running"},
 				{"running"},

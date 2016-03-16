@@ -1,0 +1,9 @@
+---
+name: consul-test-consumer
+templates:
+  run.sh.erb: bin/run
+
+packages:
+  - acceptance-tests
+
+properties: {}

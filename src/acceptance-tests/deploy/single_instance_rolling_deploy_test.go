@@ -32,6 +32,7 @@ var _ = Describe("Single instance rolling deploys", func() {
 			return client.DeploymentVMs(manifest.Name)
 		}, "1m", "10s").Should(ConsistOf([]bosh.VM{
 			{"running"},
+			{"running"},
 		}))
 	})
 
@@ -63,6 +64,7 @@ var _ = Describe("Single instance rolling deploys", func() {
 			Eventually(func() ([]bosh.VM, error) {
 				return client.DeploymentVMs(manifest.Name)
 			}, "1m", "10s").Should(ConsistOf([]bosh.VM{
+				{"running"},
 				{"running"},
 			}))
 		})

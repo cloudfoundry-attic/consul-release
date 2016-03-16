@@ -34,6 +34,7 @@ var _ = Describe("Encryption key rotation", func() {
 			{"running"},
 			{"running"},
 			{"running"},
+			{"running"},
 		}))
 	})
 
@@ -88,10 +89,8 @@ var _ = Describe("Encryption key rotation", func() {
 				{"running"},
 				{"running"},
 				{"running"},
+				{"running"},
 			}))
-
-			kv, err = helpers.NewKV(manifest, 4)
-			Expect(err).NotTo(HaveOccurred())
 		})
 
 		By("adding a new primary encryption key", func() {
@@ -115,10 +114,8 @@ var _ = Describe("Encryption key rotation", func() {
 				{"running"},
 				{"running"},
 				{"running"},
+				{"running"},
 			}))
-
-			kv, err = helpers.NewKV(manifest, 4)
-			Expect(err).NotTo(HaveOccurred())
 		})
 
 		By("setting a persistent value", func() {
@@ -153,10 +150,8 @@ var _ = Describe("Encryption key rotation", func() {
 				{"running"},
 				{"running"},
 				{"running"},
+				{"running"},
 			}))
-
-			kv, err = helpers.NewKV(manifest, 4)
-			Expect(err).NotTo(HaveOccurred())
 		})
 
 		By("setting a persistent value", func() {

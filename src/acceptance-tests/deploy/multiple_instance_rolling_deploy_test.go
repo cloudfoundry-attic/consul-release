@@ -34,6 +34,7 @@ var _ = Describe("Multiple instance rolling deploys", func() {
 			{"running"},
 			{"running"},
 			{"running"},
+			{"running"},
 		}))
 	})
 
@@ -62,6 +63,7 @@ var _ = Describe("Multiple instance rolling deploys", func() {
 			Eventually(func() ([]bosh.VM, error) {
 				return client.DeploymentVMs(manifest.Name)
 			}, "1m", "10s").Should(ConsistOf([]bosh.VM{
+				{"running"},
 				{"running"},
 				{"running"},
 				{"running"},

@@ -1,16 +1,12 @@
 package helpers
 
 import (
-	"crypto/sha1"
-	"encoding/base64"
 	"errors"
 	"fmt"
-	"io/ioutil"
 
 	"github.com/cloudfoundry-incubator/consul-release/src/acceptance-tests/testing/consul"
 	"github.com/pivotal-cf-experimental/bosh-test/bosh"
 	"github.com/pivotal-cf-experimental/destiny"
-	"golang.org/x/crypto/pbkdf2"
 )
 
 func DeployConsulWithInstanceCount(count int, client bosh.Client, config Config) (manifest destiny.Manifest, kv consul.KV, err error) {
@@ -71,66 +67,8 @@ func DeployConsulWithInstanceCount(count int, client bosh.Client, config Config)
 		return
 	}
 
-	kv, err = NewKV(manifest, count)
+	kv = consul.NewConsulClient(fmt.Sprintf("http://%s:6769", manifest.Jobs[1].Networks[0].StaticIPs[0]))
 	return
-}
-
-func NewConsulAgent(manifest destiny.Manifest, count int) (*consul.Agent, error) {
-	members := manifest.ConsulMembers()
-
-	if len(members) != count {
-		return &consul.Agent{}, fmt.Errorf("expected %d consul members, found %d", count, len(members))
-	}
-
-	consulMemberAddresses := []string{}
-	for _, member := range members {
-		consulMemberAddresses = append(consulMemberAddresses, member.Address)
-	}
-
-	dataDir, err := ioutil.TempDir("", "consul")
-	if err != nil {
-		return &consul.Agent{}, err
-	}
-
-	configDir, err := ioutil.TempDir("", "consul-config")
-	if err != nil {
-		return &consul.Agent{}, err
-	}
-
-	var encryptKey string
-	if len(manifest.Properties.Consul.EncryptKeys) > 0 {
-		key := manifest.Properties.Consul.EncryptKeys[0]
-		encryptKey = base64.StdEncoding.EncodeToString(pbkdf2.Key([]byte(key), []byte(""), 20000, 16, sha1.New))
-	}
-
-	return consul.NewAgent(consul.AgentOptions{
-		DataDir:    dataDir,
-		RetryJoin:  consulMemberAddresses,
-		ConfigDir:  configDir,
-		Domain:     "cf.internal",
-		Key:        manifest.Properties.Consul.AgentKey,
-		Cert:       manifest.Properties.Consul.AgentCert,
-		CACert:     manifest.Properties.Consul.CACert,
-		Encrypt:    encryptKey,
-		ServerName: "consul agent",
-	}), nil
-}
-
-func NewKV(manifest destiny.Manifest, count int) (consul.KV, error) {
-	agent, err := NewConsulAgent(manifest, count)
-	if err != nil {
-		return nil, err
-	}
-
-	agentLocation := "http://127.0.0.1:8500"
-
-	kv := consul.NewManagedKV(consul.ManagedKVConfig{
-		Agent:   agent,
-		KV:      consul.NewHTTPKV(agentLocation),
-		Catalog: consul.NewHTTPCatalog(agentLocation),
-	})
-
-	return kv, nil
 }
 
 func SetJobInstanceCount(job destiny.Job, network destiny.Network, properties destiny.Properties, count int) (destiny.Job, destiny.Properties) {

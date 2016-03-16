@@ -2,3 +2,12 @@
 
 mkdir -p "${BOSH_INSTALL_TARGET}/src/github.com/cloudfoundry-incubator/consul-release/src/acceptance-tests/"
 cp -R ${PWD}/acceptance-tests/* "${BOSH_INSTALL_TARGET}/src/github.com/cloudfoundry-incubator/consul-release/src/acceptance-tests/"
+
+export GOROOT="$(readlink -nf /var/vcap/packages/golang1.5)"
+export GOPATH="${BOSH_INSTALL_TARGET}"
+export PATH="${GOROOT}/bin:${PATH}"
+export GO15VENDOREXPERIMENT=1
+
+go install "github.com/cloudfoundry-incubator/consul-release/src/acceptance-tests/testing/testconsumer"
+
+chown vcap:vcap "${BOSH_INSTALL_TARGET}/bin/testconsumer"
