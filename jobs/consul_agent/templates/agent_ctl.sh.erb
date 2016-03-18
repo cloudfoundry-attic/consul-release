@@ -8,7 +8,6 @@ CERT_DIR=$CONF_DIR/certs
 PKG=/var/vcap/packages/consul
 JOB_DIR=/var/vcap/jobs/consul_agent
 PIDFILE=$RUN_DIR/consul_agent.pid
-NODE_NAME='<%="#{name.gsub('_', '-')}-#{spec.index}"%>'
 
 function main() {
   local confab_package
