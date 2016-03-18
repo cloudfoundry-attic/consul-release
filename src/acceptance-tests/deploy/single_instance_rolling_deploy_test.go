@@ -13,7 +13,7 @@ import (
 var _ = Describe("Single instance rolling deploys", func() {
 	var (
 		manifest  destiny.Manifest
-		kv        consul.KV
+		kv        consul.HTTPKV
 		testKey   string
 		testValue string
 	)

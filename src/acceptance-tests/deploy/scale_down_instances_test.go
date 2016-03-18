@@ -1,6 +1,8 @@
 package deploy_test
 
 import (
+	"sync"
+
 	"github.com/cloudfoundry-incubator/consul-release/src/acceptance-tests/testing/consul"
 	"github.com/cloudfoundry-incubator/consul-release/src/acceptance-tests/testing/helpers"
 	"github.com/pivotal-cf-experimental/bosh-test/bosh"
@@ -13,9 +15,10 @@ import (
 var _ = Describe("Scaling down instances", func() {
 	var (
 		manifest  destiny.Manifest
-		kv        consul.KV
+		kv        consul.HTTPKV
 		testKey   string
 		testValue string
+		keyVals   map[string]string
 	)
 
 	AfterEach(func() {
@@ -117,6 +120,12 @@ var _ = Describe("Scaling down instances", func() {
 				yaml, err := manifest.ToYAML()
 				Expect(err).NotTo(HaveOccurred())
 
+				var wg sync.WaitGroup
+				done := make(chan struct{})
+				keyVals = make(map[string]string)
+
+				keysChan := helpers.SpamConsul(done, &wg, kv)
+
 				err = client.Deploy(yaml)
 				Expect(err).NotTo(HaveOccurred())
 
@@ -128,12 +137,27 @@ var _ = Describe("Scaling down instances", func() {
 					{"running"},
 					{"running"},
 				}))
+
+				close(done)
+
+				wg.Wait()
+				keyVals = <-keysChan
+
+				if err, ok := keyVals["error"]; ok {
+					Fail(err)
+				}
 			})
 
 			By("reading the value from consul", func() {
 				value, err := kv.Get(testKey)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(value).To(Equal(testValue))
+
+				for key, value := range keyVals {
+					v, err := kv.Get(key)
+					Expect(err).ToNot(HaveOccurred())
+					Expect(v).To(Equal(value))
+				}
 			})
 		})
 	})

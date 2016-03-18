@@ -16,60 +16,105 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("Setting/Getting keys", func() {
+var _ = Describe("Proxying consul requests", func() {
 	var (
 		session *gexec.Session
 		port    string
 	)
 
 	BeforeEach(func() {
-		consulServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-			if req.URL.Path == "/v1/kv/some-key" {
-				if req.Method == "GET" {
-					w.WriteHeader(http.StatusOK)
-					w.Write([]byte("some-value"))
-				}
-
-				if req.Method == "PUT" {
-					w.WriteHeader(http.StatusOK)
-					w.Write([]byte("true"))
-				}
-			}
-		}))
-
 		var err error
 		port, err = openPort()
 		Expect(err).NotTo(HaveOccurred())
-		command := exec.Command(pathToConsumer, "--port", port, "--consul-url", consulServer.URL)
-
-		session, err = gexec.Start(command, GinkgoWriter, GinkgoWriter)
-		Expect(err).NotTo(HaveOccurred())
-
-		waitForServerToStart(port)
 	})
 
 	AfterEach(func() {
 		session.Terminate().Wait()
 	})
 
-	It("can set/get a key", func() {
-		status, responseBody, err := makeRequest("PUT", fmt.Sprintf("http://localhost:%s/v1/kv/some-key", port), "some-value")
-		Expect(err).NotTo(HaveOccurred())
-		Expect(status).To(Equal(http.StatusOK))
+	Context("main", func() {
+		It("returns 1 when the consul url is malformed", func() {
+			command := exec.Command(pathToConsumer, "--port", port, "--consul-url", "%%%%%%%%%%")
 
-		status, responseBody, err = makeRequest("GET", fmt.Sprintf("http://localhost:%s/v1/kv/some-key", port), "")
-		Expect(err).NotTo(HaveOccurred())
-		Expect(responseBody).To(Equal("some-value"))
+			var err error
+			session, err = gexec.Start(command, GinkgoWriter, GinkgoWriter)
+			Expect(err).NotTo(HaveOccurred())
+
+			Eventually(session).Should(gexec.Exit(1))
+			Expect(session.Err.Contents()).To(ContainSubstring("invalid URL escape"))
+		})
 	})
 
-	It("returns 404 for endpoints that are not supported", func() {
-		status, _, err := makeRequest("OPTIONS", fmt.Sprintf("http://localhost:%s/v1/kv/some-key", port), "")
-		Expect(err).NotTo(HaveOccurred())
-		Expect(status).To(Equal(http.StatusNotFound))
+	Context("with a functioning consul", func() {
+		BeforeEach(func() {
+			consulServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+				if req.URL.Path == "/v1/kv/some-key" {
+					if req.Method == "GET" {
+						w.Write([]byte("some-value"))
+						return
+					}
 
-		status, _, err = makeRequest("GET", fmt.Sprintf("http://localhost:%s/some/missing/path", port), "")
-		Expect(err).NotTo(HaveOccurred())
-		Expect(status).To(Equal(http.StatusNotFound))
+					if req.Method == "PUT" {
+						w.Write([]byte("true"))
+						return
+					}
+				}
+
+				if req.Method == "GET" && req.URL.Path == "/v1/status/leader" {
+					w.Write([]byte("some-leader"))
+					return
+				}
+
+				w.WriteHeader(http.StatusTeapot)
+			}))
+
+			command := exec.Command(pathToConsumer, "--port", port, "--consul-url", consulServer.URL)
+
+			var err error
+			session, err = gexec.Start(command, GinkgoWriter, GinkgoWriter)
+			Expect(err).NotTo(HaveOccurred())
+
+			waitForServerToStart(port)
+		})
+
+		It("can set/get a key", func() {
+			status, responseBody, err := makeRequest("PUT", fmt.Sprintf("http://localhost:%s/consul/v1/kv/some-key", port), "some-value")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(status).To(Equal(http.StatusOK))
+			Expect(responseBody).To(Equal("true"))
+
+			status, responseBody, err = makeRequest("GET", fmt.Sprintf("http://localhost:%s/consul/v1/kv/some-key?raw", port), "")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(status).To(Equal(http.StatusOK))
+			Expect(responseBody).To(Equal("some-value"))
+		})
+
+		It("returns 418 for endpoints that are not supported", func() {
+			status, _, err := makeRequest("OPTIONS", fmt.Sprintf("http://localhost:%s/consul/v1/kv/some-key", port), "")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(status).To(Equal(http.StatusTeapot))
+
+			status, _, err = makeRequest("GET", fmt.Sprintf("http://localhost:%s/consul/some/missing/path", port), "")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(status).To(Equal(http.StatusTeapot))
+		})
+	})
+
+	Context("proxy errors", func() {
+		It("returns the underlying proxy error message", func() {
+			var err error
+			command := exec.Command(pathToConsumer, "--port", port, "--consul-url", "http://localhost:999999")
+
+			session, err = gexec.Start(command, GinkgoWriter, GinkgoWriter)
+			Expect(err).NotTo(HaveOccurred())
+
+			waitForServerToStart(port)
+
+			status, responseBody, err := makeRequest("GET", fmt.Sprintf("http://localhost:%s/consul/v1/kv/some-key?raw", port), "")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(status).To(Equal(http.StatusInternalServerError))
+			Expect(responseBody).To(ContainSubstring("http: proxy error: dial tcp: invalid port 999999"))
+		})
 	})
 })
 
@@ -116,7 +161,7 @@ func waitForServerToStart(port string) {
 		case <-timeout:
 			panic("Failed to boot!")
 		case <-timer:
-			_, err := http.Get("http://localhost:" + port + "/v1/kv/banana")
+			_, err := http.Get("http://localhost:" + port + "/consul/v1/kv/banana")
 			if err == nil {
 				return
 			}

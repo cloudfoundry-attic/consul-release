@@ -16,7 +16,7 @@ type HTTPKV struct {
 
 func NewHTTPKV(consulAddress string) HTTPKV {
 	return HTTPKV{
-		ConsulAddress: consulAddress,
+		ConsulAddress: fmt.Sprintf("%s/consul", consulAddress),
 	}
 }
 
@@ -31,15 +31,18 @@ func (kv HTTPKV) Set(key, value string) error {
 		return err
 	}
 
+	defer response.Body.Close()
 	body, err := bodyReader(response.Body)
 	if err != nil {
 		return err
 	}
 
-	defer response.Body.Close()
+	if response.StatusCode != http.StatusOK {
+		return fmt.Errorf("unexpected status: %d %s %s", response.StatusCode, http.StatusText(response.StatusCode), string(body))
+	}
 
 	if string(body) != "true" {
-		return errors.New("failed to save to kv store")
+		return errors.New(string(body))
 	}
 
 	return nil

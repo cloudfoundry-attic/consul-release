@@ -1,6 +1,8 @@
 package deploy_test
 
 import (
+	"sync"
+
 	"github.com/cloudfoundry-incubator/consul-release/src/acceptance-tests/testing/consul"
 	"github.com/cloudfoundry-incubator/consul-release/src/acceptance-tests/testing/helpers"
 	"github.com/pivotal-cf-experimental/bosh-test/bosh"
@@ -13,7 +15,7 @@ import (
 var _ = Describe("Encryption key rotation", func() {
 	var (
 		manifest  destiny.Manifest
-		kv        consul.KV
+		kv        consul.HTTPKV
 		testKey   string
 		testValue string
 	)
@@ -46,31 +48,12 @@ var _ = Describe("Encryption key rotation", func() {
 	})
 
 	It("successfully rolls with a new encryption key", func() {
-		By("adding a consul client job", func() {
-			consulClient := destiny.Job{
-				Name:      "consul_client",
-				Instances: 1,
-				Networks: []destiny.JobNetwork{
-					{
-						Name:      manifest.Jobs[0].Networks[0].Name,
-						StaticIPs: []string{manifest.Networks[0].Subnets[0].Static[3]},
-					},
-				},
-				PersistentDisk: 1024,
-				Properties: &destiny.JobProperties{
-					Consul: destiny.JobPropertiesConsul{
-						Agent: destiny.JobPropertiesConsulAgent{
-							Mode: "client",
-						},
-					},
-				},
-				ResourcePool: manifest.Jobs[0].ResourcePool,
-				Templates:    manifest.Jobs[0].Templates,
-				Update:       manifest.Jobs[0].Update,
-			}
-
-			manifest.Jobs = append(manifest.Jobs, consulClient)
-		})
+		var (
+			wg       sync.WaitGroup
+			done     = make(chan struct{})
+			keyVals  = make(map[string]string)
+			keysChan chan map[string]string
+		)
 
 		By("deploying with the original key", func() {
 			yaml, err := manifest.ToYAML()
@@ -89,7 +72,6 @@ var _ = Describe("Encryption key rotation", func() {
 				{"running"},
 				{"running"},
 				{"running"},
-				{"running"},
 			}))
 		})
 
@@ -104,13 +86,14 @@ var _ = Describe("Encryption key rotation", func() {
 			yaml, err = client.ResolveManifestVersions(yaml)
 			Expect(err).NotTo(HaveOccurred())
 
+			keysChan = helpers.SpamConsul(done, &wg, kv)
+
 			err = client.Deploy(yaml)
 			Expect(err).NotTo(HaveOccurred())
 
 			Eventually(func() ([]bosh.VM, error) {
 				return client.DeploymentVMs(manifest.Name)
 			}, "1m", "10s").Should(ConsistOf([]bosh.VM{
-				{"running"},
 				{"running"},
 				{"running"},
 				{"running"},
@@ -150,8 +133,16 @@ var _ = Describe("Encryption key rotation", func() {
 				{"running"},
 				{"running"},
 				{"running"},
-				{"running"},
 			}))
+
+			close(done)
+
+			wg.Wait()
+			keyVals = <-keysChan
+
+			if err, ok := keyVals["error"]; ok {
+				Fail(err)
+			}
 		})
 
 		By("setting a persistent value", func() {
@@ -163,6 +154,12 @@ var _ = Describe("Encryption key rotation", func() {
 			value, err := kv.Get(testKey)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(value).To(Equal(testValue))
+
+			for key, value := range keyVals {
+				v, err := kv.Get(key)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(v).To(Equal(value))
+			}
 		})
 	})
 })

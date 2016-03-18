@@ -22,7 +22,7 @@ var _ = Describe("HTTPKV", func() {
 
 		It("gets the key-value based on the key", func() {
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-				Expect(req.URL.Path).To(Equal("/v1/kv/some-key"))
+				Expect(req.URL.Path).To(Equal("/consul/v1/kv/some-key"))
 
 				Expect(req.Method).To(Equal("GET"))
 
@@ -109,7 +109,7 @@ var _ = Describe("HTTPKV", func() {
 				defer req.Body.Close()
 				wasCalled = true
 
-				Expect(req.URL.Path).To(Equal("/v1/kv/some-key"))
+				Expect(req.URL.Path).To(Equal("/consul/v1/kv/some-key"))
 
 				body, err := ioutil.ReadAll(req.Body)
 				Expect(err).NotTo(HaveOccurred())
@@ -131,13 +131,13 @@ var _ = Describe("HTTPKV", func() {
 			Context("when consul fails to save the value", func() {
 				It("returns an error", func() {
 					server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-						w.Write([]byte("false"))
+						w.Write([]byte("rpc error"))
 					}))
 
 					kv := consul.NewHTTPKV(server.URL)
 
 					err := kv.Set("some-key", "some-value")
-					Expect(err).To(MatchError(errors.New("failed to save to kv store")))
+					Expect(err).To(MatchError(errors.New("rpc error")))
 				})
 			})
 
@@ -155,6 +155,20 @@ var _ = Describe("HTTPKV", func() {
 
 					err := kv.Set("some-key", "some-value")
 					Expect(err).To(MatchError(errors.New("bad things happened")))
+				})
+			})
+
+			Context("when consul returns an unexpected status code", func() {
+				It("returns an error", func() {
+					server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+						w.WriteHeader(http.StatusTeapot)
+						w.Write([]byte("something bad happened"))
+					}))
+
+					kv := consul.NewHTTPKV(server.URL)
+
+					err := kv.Set("some-key", "some-value")
+					Expect(err).To(MatchError(errors.New("unexpected status: 418 I'm a teapot something bad happened")))
 				})
 			})
 

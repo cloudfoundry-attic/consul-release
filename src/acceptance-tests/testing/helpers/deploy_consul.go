@@ -9,7 +9,7 @@ import (
 	"github.com/pivotal-cf-experimental/destiny"
 )
 
-func DeployConsulWithInstanceCount(count int, client bosh.Client, config Config) (manifest destiny.Manifest, kv consul.KV, err error) {
+func DeployConsulWithInstanceCount(count int, client bosh.Client, config Config) (manifest destiny.Manifest, kv consul.HTTPKV, err error) {
 	guid, err := NewGUID()
 	if err != nil {
 		return
@@ -67,7 +67,7 @@ func DeployConsulWithInstanceCount(count int, client bosh.Client, config Config)
 		return
 	}
 
-	kv = consul.NewConsulClient(fmt.Sprintf("http://%s:6769", manifest.Jobs[1].Networks[0].StaticIPs[0]))
+	kv = consul.NewHTTPKV(fmt.Sprintf("http://%s:6769", manifest.Jobs[1].Networks[0].StaticIPs[0]))
 	return
 }
 

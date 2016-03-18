@@ -1,6 +1,9 @@
 package turbulence_test
 
 import (
+	"math/rand"
+	"sync"
+
 	"github.com/cloudfoundry-incubator/consul-release/src/acceptance-tests/testing/consul"
 	"github.com/cloudfoundry-incubator/consul-release/src/acceptance-tests/testing/helpers"
 	"github.com/pivotal-cf-experimental/bosh-test/bosh"
@@ -13,8 +16,9 @@ import (
 var _ = Describe("KillVm", func() {
 	var (
 		consulManifest destiny.Manifest
-		kv             consul.KV
+		kv             consul.HTTPKV
 
+		keyVals   map[string]string
 		testKey   string
 		testValue string
 	)
@@ -73,14 +77,50 @@ var _ = Describe("KillVm", func() {
 			})
 
 			By("killing indices", func() {
-				err := turbulenceClient.KillIndices(consulManifest.Name, "consul_z1", []int{0})
+				var wg sync.WaitGroup
+				done := make(chan struct{})
+				keyVals = make(map[string]string)
+
+				keysChan := helpers.SpamConsul(done, &wg, kv)
+
+				err := turbulenceClient.KillIndices(consulManifest.Name, "consul_z1", []int{rand.Intn(3)})
 				Expect(err).ToNot(HaveOccurred())
+
+				yaml, err := consulManifest.ToYAML()
+				Expect(err).NotTo(HaveOccurred())
+
+				err = client.ScanAndFix(yaml)
+				Expect(err).NotTo(HaveOccurred())
+
+				Eventually(func() ([]bosh.VM, error) {
+					return client.DeploymentVMs(consulManifest.Name)
+				}, "1m", "10s").Should(ConsistOf([]bosh.VM{
+					{"running"},
+					{"running"},
+					{"running"},
+					{"running"},
+				}))
+
+				close(done)
+
+				wg.Wait()
+				keyVals = <-keysChan
+
+				if err, ok := keyVals["error"]; ok {
+					Fail(err)
+				}
 			})
 
 			By("reading the value from consul", func() {
 				value, err := kv.Get(testKey)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(value).To(Equal(testValue))
+
+				for key, value := range keyVals {
+					v, err := kv.Get(key)
+					Expect(err).ToNot(HaveOccurred())
+					Expect(v).To(Equal(value))
+				}
 			})
 		})
 	})
