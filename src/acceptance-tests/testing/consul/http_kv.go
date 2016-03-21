@@ -20,6 +20,10 @@ func NewHTTPKV(consulAddress string) HTTPKV {
 	}
 }
 
+func (kv HTTPKV) Address() string {
+	return kv.ConsulAddress
+}
+
 func (kv HTTPKV) Set(key, value string) error {
 	request, err := http.NewRequest("PUT", fmt.Sprintf("%s/v1/kv/%s", kv.ConsulAddress, key), strings.NewReader(value))
 	if err != nil {

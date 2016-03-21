@@ -2,7 +2,7 @@ package turbulence_test
 
 import (
 	"math/rand"
-	"sync"
+	"time"
 
 	"github.com/cloudfoundry-incubator/consul-release/src/acceptance-tests/testing/consul"
 	"github.com/cloudfoundry-incubator/consul-release/src/acceptance-tests/testing/helpers"
@@ -18,7 +18,7 @@ var _ = Describe("KillVm", func() {
 		consulManifest destiny.Manifest
 		kv             consul.HTTPKV
 
-		keyVals   map[string]string
+		spammer   *helpers.Spammer
 		testKey   string
 		testValue string
 	)
@@ -41,6 +41,8 @@ var _ = Describe("KillVm", func() {
 			{"running"},
 			{"running"},
 		}))
+
+		spammer = helpers.NewSpammer(kv, 1*time.Second)
 	})
 
 	AfterEach(func() {
@@ -77,11 +79,7 @@ var _ = Describe("KillVm", func() {
 			})
 
 			By("killing indices", func() {
-				var wg sync.WaitGroup
-				done := make(chan struct{})
-				keyVals = make(map[string]string)
-
-				keysChan := helpers.SpamConsul(done, &wg, kv)
+				spammer.Spam()
 
 				err := turbulenceClient.KillIndices(consulManifest.Name, "consul_z1", []int{rand.Intn(3)})
 				Expect(err).ToNot(HaveOccurred())
@@ -101,14 +99,7 @@ var _ = Describe("KillVm", func() {
 					{"running"},
 				}))
 
-				close(done)
-
-				wg.Wait()
-				keyVals = <-keysChan
-
-				if err, ok := keyVals["error"]; ok {
-					Fail(err)
-				}
+				spammer.Stop()
 			})
 
 			By("reading the value from consul", func() {
@@ -116,11 +107,8 @@ var _ = Describe("KillVm", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(value).To(Equal(testValue))
 
-				for key, value := range keyVals {
-					v, err := kv.Get(key)
-					Expect(err).ToNot(HaveOccurred())
-					Expect(v).To(Equal(value))
-				}
+				err = spammer.Check()
+				Expect(err).NotTo(HaveOccurred())
 			})
 		})
 	})

@@ -1,7 +1,7 @@
 package deploy_test
 
 import (
-	"sync"
+	"time"
 
 	"github.com/cloudfoundry-incubator/consul-release/src/acceptance-tests/testing/consul"
 	"github.com/cloudfoundry-incubator/consul-release/src/acceptance-tests/testing/helpers"
@@ -18,7 +18,7 @@ var _ = Describe("Scaling up Instances", func() {
 		kv        consul.HTTPKV
 		testKey   string
 		testValue string
-		keyVals   map[string]string
+		spammer   *helpers.Spammer
 	)
 
 	AfterEach(func() {
@@ -101,6 +101,8 @@ var _ = Describe("Scaling up Instances", func() {
 				{"running"},
 				{"running"},
 			}))
+
+			spammer = helpers.NewSpammer(kv, 1*time.Second)
 		})
 
 		It("persists data throughout the scale up", func() {
@@ -118,12 +120,7 @@ var _ = Describe("Scaling up Instances", func() {
 				yaml, err := manifest.ToYAML()
 				Expect(err).NotTo(HaveOccurred())
 
-				var wg sync.WaitGroup
-				done := make(chan struct{})
-				keyVals = make(map[string]string)
-
-				keysChan := helpers.SpamConsul(done, &wg, kv)
-
+				spammer.Spam()
 				err = client.Deploy(yaml)
 				Expect(err).NotTo(HaveOccurred())
 
@@ -138,14 +135,7 @@ var _ = Describe("Scaling up Instances", func() {
 					{"running"},
 				}))
 
-				close(done)
-
-				wg.Wait()
-				keyVals = <-keysChan
-
-				if err, ok := keyVals["error"]; ok {
-					Fail(err)
-				}
+				spammer.Stop()
 			})
 
 			By("reading the value from consul", func() {
@@ -153,11 +143,8 @@ var _ = Describe("Scaling up Instances", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(value).To(Equal(testValue))
 
-				for key, value := range keyVals {
-					v, err := kv.Get(key)
-					Expect(err).ToNot(HaveOccurred())
-					Expect(v).To(Equal(value))
-				}
+				err = spammer.Check()
+				Expect(err).NotTo(HaveOccurred())
 			})
 		})
 	})

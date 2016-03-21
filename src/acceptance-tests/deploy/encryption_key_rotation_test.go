@@ -1,7 +1,7 @@
 package deploy_test
 
 import (
-	"sync"
+	"time"
 
 	"github.com/cloudfoundry-incubator/consul-release/src/acceptance-tests/testing/consul"
 	"github.com/cloudfoundry-incubator/consul-release/src/acceptance-tests/testing/helpers"
@@ -18,6 +18,7 @@ var _ = Describe("Encryption key rotation", func() {
 		kv        consul.HTTPKV
 		testKey   string
 		testValue string
+		spammer   *helpers.Spammer
 	)
 
 	BeforeEach(func() {
@@ -38,6 +39,8 @@ var _ = Describe("Encryption key rotation", func() {
 			{"running"},
 			{"running"},
 		}))
+
+		spammer = helpers.NewSpammer(kv, 1*time.Second)
 	})
 
 	AfterEach(func() {
@@ -48,12 +51,6 @@ var _ = Describe("Encryption key rotation", func() {
 	})
 
 	It("successfully rolls with a new encryption key", func() {
-		var (
-			wg       sync.WaitGroup
-			done     = make(chan struct{})
-			keyVals  = make(map[string]string)
-			keysChan chan map[string]string
-		)
 
 		By("deploying with the original key", func() {
 			yaml, err := manifest.ToYAML()
@@ -86,7 +83,7 @@ var _ = Describe("Encryption key rotation", func() {
 			yaml, err = client.ResolveManifestVersions(yaml)
 			Expect(err).NotTo(HaveOccurred())
 
-			keysChan = helpers.SpamConsul(done, &wg, kv)
+			spammer.Spam()
 
 			err = client.Deploy(yaml)
 			Expect(err).NotTo(HaveOccurred())
@@ -135,14 +132,7 @@ var _ = Describe("Encryption key rotation", func() {
 				{"running"},
 			}))
 
-			close(done)
-
-			wg.Wait()
-			keyVals = <-keysChan
-
-			if err, ok := keyVals["error"]; ok {
-				Fail(err)
-			}
+			spammer.Stop()
 		})
 
 		By("setting a persistent value", func() {
@@ -155,11 +145,8 @@ var _ = Describe("Encryption key rotation", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(value).To(Equal(testValue))
 
-			for key, value := range keyVals {
-				v, err := kv.Get(key)
-				Expect(err).ToNot(HaveOccurred())
-				Expect(v).To(Equal(value))
-			}
+			err = spammer.Check()
+			Expect(err).NotTo(HaveOccurred())
 		})
 	})
 })
