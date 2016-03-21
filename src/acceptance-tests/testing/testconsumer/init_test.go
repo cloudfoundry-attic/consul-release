@@ -11,7 +11,7 @@ import (
 
 func TestConsumer(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "testconsumer")
+	RunSpecs(t, "testing/testconsumer")
 }
 
 var pathToConsumer string

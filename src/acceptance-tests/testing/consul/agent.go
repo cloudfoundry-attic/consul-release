@@ -10,6 +10,11 @@ import (
 
 var createFile = os.Create
 
+type AgentStartStopper interface {
+	Start() error
+	Stop() error
+}
+
 type Agent struct {
 	options AgentOptions
 	*exec.Cmd

@@ -9,5 +9,5 @@ import (
 
 func TestBuffered(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "buffered")
+	RunSpecs(t, "testing/testconsumer/buffered")
 }
