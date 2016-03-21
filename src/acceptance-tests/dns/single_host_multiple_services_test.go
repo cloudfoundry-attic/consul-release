@@ -27,9 +27,10 @@ var _ = Describe("Single host multiple services", func() {
 			return client.DeploymentVMs(manifest.Name)
 		}, "1m", "10s").Should(ConsistOf([]bosh.VM{
 			{"running"},
+			{"running"},
 		}))
 
-		agent, err = helpers.NewConsulAgent(manifest, 1)
+		agent, err = helpers.NewConsulAgent(manifest, 2)
 		Expect(err).NotTo(HaveOccurred())
 
 		agent.Start()
@@ -80,6 +81,7 @@ var _ = Describe("Single host multiple services", func() {
 			Eventually(func() ([]bosh.VM, error) {
 				return client.DeploymentVMs(manifest.Name)
 			}, "1m", "10s").Should(ConsistOf([]bosh.VM{
+				{"running"},
 				{"running"},
 			}))
 		})
