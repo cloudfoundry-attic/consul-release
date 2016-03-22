@@ -1,6 +1,10 @@
 package fakes
 
-import "github.com/pivotal-golang/lager"
+import (
+	"sync"
+
+	"github.com/pivotal-golang/lager"
+)
 
 type LoggerMessage struct {
 	Action string
@@ -9,10 +13,14 @@ type LoggerMessage struct {
 }
 
 type Logger struct {
+	sync.Mutex
 	Messages []LoggerMessage
 }
 
 func (l *Logger) Info(action string, data ...lager.Data) {
+	l.Lock()
+	defer l.Unlock()
+
 	l.Messages = append(l.Messages, LoggerMessage{
 		Action: action,
 		Data:   data,
@@ -20,6 +28,9 @@ func (l *Logger) Info(action string, data ...lager.Data) {
 }
 
 func (l *Logger) Error(action string, err error, data ...lager.Data) {
+	l.Lock()
+	defer l.Unlock()
+
 	l.Messages = append(l.Messages, LoggerMessage{
 		Action: action,
 		Error:  err,

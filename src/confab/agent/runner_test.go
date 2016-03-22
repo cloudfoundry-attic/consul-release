@@ -1,16 +1,12 @@
 package agent_test
 
 import (
-	"bytes"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
 	"math/rand"
 	"os"
 	"path/filepath"
-	"strconv"
-	"syscall"
 
 	"github.com/cloudfoundry-incubator/consul-release/src/confab/agent"
 	"github.com/cloudfoundry-incubator/consul-release/src/confab/fakes"
@@ -387,8 +383,8 @@ var _ = Describe("Runner", func() {
 		})
 
 		It("wires up the stdout and stderr pipes", func() {
-			stdoutBytes := &bytes.Buffer{}
-			stderrBytes := &bytes.Buffer{}
+			stdoutBytes := newConcurrentSafeBuffer()
+			stderrBytes := newConcurrentSafeBuffer()
 			runner.Stdout = stdoutBytes
 			runner.Stderr = stderrBytes
 
@@ -477,46 +473,3 @@ var _ = Describe("Runner", func() {
 		})
 	})
 })
-
-type FakeAgentOutput struct {
-	Args []string
-	PID  int
-}
-
-func getFakeAgentOutput(runner agent.Runner) FakeAgentOutput {
-	bytes, err := ioutil.ReadFile(filepath.Join(runner.ConfigDir, "fake-output.json"))
-	if err != nil {
-		return FakeAgentOutput{}
-	}
-	var output FakeAgentOutput
-	if err = json.Unmarshal(bytes, &output); err != nil {
-		return FakeAgentOutput{}
-	}
-	return output
-}
-
-func getPID(runner agent.Runner) (int, error) {
-	pidFileContents, err := ioutil.ReadFile(runner.PIDFile)
-	if err != nil {
-		return 0, err
-	}
-
-	pid, err := strconv.Atoi(string(pidFileContents))
-	if err != nil {
-		return 0, err
-	}
-
-	return pid, nil
-}
-
-func processIsRunning(runner agent.Runner) bool {
-	pid, err := getPID(runner)
-	Expect(err).NotTo(HaveOccurred())
-
-	process, err := os.FindProcess(pid)
-	Expect(err).NotTo(HaveOccurred())
-
-	errorSendingSignal := process.Signal(syscall.Signal(0))
-
-	return (errorSendingSignal == nil)
-}
