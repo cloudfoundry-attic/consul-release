@@ -10,7 +10,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = FDescribe("Multiple hosts multiple services", func() {
+var _ = Describe("Multiple hosts multiple services", func() {
 	var (
 		manifest destiny.Manifest
 		agent    consul.AgentStartStopper
