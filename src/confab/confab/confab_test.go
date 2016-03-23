@@ -2,16 +2,12 @@ package main_test
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net"
 	"os"
 	"os/exec"
 	"path/filepath"
-	"strconv"
-	"strings"
-	"syscall"
 	"time"
 
 	. "github.com/onsi/ginkgo"
@@ -131,18 +127,15 @@ var _ = Describe("confab", func() {
 			_, err = isPIDRunning(pid)
 			Expect(err).To(MatchError(ContainSubstring("process already finished")))
 
-			Expect(fakeAgentOutput(consulConfigDir)).To(Equal(map[string]interface{}{
-				"PID": float64(pid),
-				"Args": []interface{}{
+			Expect(fakeAgentOutput(consulConfigDir)).To(Equal(FakeAgentOutputData{
+				PID: pid,
+				Args: []string{
 					"agent",
 					fmt.Sprintf("-config-dir=%s", consulConfigDir),
 					"-recursor=8.8.8.8",
 					"-recursor=10.0.2.3",
 				},
-				"LeaveCallCount":      float64(1),
-				"UseKeyCallCount":     float64(0),
-				"InstallKeyCallCount": float64(0),
-				"StatsCallCount":      float64(0),
+				LeaveCallCount: 1,
 			}))
 
 			serviceConfig, err := ioutil.ReadFile(filepath.Join(consulConfigDir, "service-cloud_controller.json"))
@@ -250,6 +243,17 @@ var _ = Describe("confab", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(isPIDRunning(pid)).To(BeTrue())
 
+				Eventually(func() (FakeAgentOutputData, error) {
+					return fakeAgentOutput(consulConfigDir)
+				}, COMMAND_TIMEOUT).Should(Equal(FakeAgentOutputData{
+					PID: pid,
+					Args: []string{
+						"agent",
+						fmt.Sprintf("-config-dir=%s", consulConfigDir),
+					},
+					StatsCallCount: 1,
+				}))
+
 				stop := exec.Command(pathToConfab,
 					"stop",
 					"--config-file", configFile.Name(),
@@ -258,18 +262,6 @@ var _ = Describe("confab", func() {
 
 				_, err = isPIDRunning(pid)
 				Expect(err).To(MatchError(ContainSubstring("process already finished")))
-
-				Expect(fakeAgentOutput(consulConfigDir)).To(Equal(map[string]interface{}{
-					"PID": float64(pid),
-					"Args": []interface{}{
-						"agent",
-						fmt.Sprintf("-config-dir=%s", consulConfigDir),
-					},
-					"LeaveCallCount":      float64(1),
-					"UseKeyCallCount":     float64(0),
-					"InstallKeyCallCount": float64(0),
-					"StatsCallCount":      float64(1),
-				}))
 
 				consulConfig, err := ioutil.ReadFile(filepath.Join(consulConfigDir, "config.json"))
 				Expect(err).NotTo(HaveOccurred())
@@ -336,16 +328,12 @@ var _ = Describe("confab", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(isPIDRunning(pid)).To(BeTrue())
 
-				Expect(fakeAgentOutput(consulConfigDir)).To(Equal(map[string]interface{}{
-					"PID": float64(pid),
-					"Args": []interface{}{
+				Expect(fakeAgentOutput(consulConfigDir)).To(Equal(FakeAgentOutputData{
+					PID: pid,
+					Args: []string{
 						"agent",
 						fmt.Sprintf("-config-dir=%s", consulConfigDir),
 					},
-					"LeaveCallCount":      float64(0),
-					"UseKeyCallCount":     float64(0),
-					"InstallKeyCallCount": float64(0),
-					"StatsCallCount":      float64(0),
 				}))
 			})
 		})
@@ -388,18 +376,17 @@ var _ = Describe("confab", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(isPIDRunning(pid)).To(BeTrue())
 
-				Eventually(func() (map[string]interface{}, error) {
+				Eventually(func() (FakeAgentOutputData, error) {
 					return fakeAgentOutput(consulConfigDir)
-				}, "2s").Should(Equal(map[string]interface{}{
-					"PID": float64(pid),
-					"Args": []interface{}{
+				}, "2s").Should(Equal(FakeAgentOutputData{
+					PID: pid,
+					Args: []string{
 						"agent",
 						fmt.Sprintf("-config-dir=%s", consulConfigDir),
 					},
-					"LeaveCallCount":      float64(0),
-					"InstallKeyCallCount": float64(2),
-					"UseKeyCallCount":     float64(1),
-					"StatsCallCount":      float64(1),
+					InstallKeyCallCount: 2,
+					UseKeyCallCount:     1,
+					StatsCallCount:      1,
 				}))
 			})
 
@@ -439,8 +426,8 @@ var _ = Describe("confab", func() {
 
 				output, err := fakeAgentOutput(consulConfigDir)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(output["StatsCallCount"]).To(BeNumerically(">", 0))
-				Expect(output["StatsCallCount"]).To(BeNumerically("<", 4))
+				Expect(output.StatsCallCount).To(BeNumerically(">", 0))
+				Expect(output.StatsCallCount).To(BeNumerically("<", 4))
 			})
 		})
 	})
@@ -496,16 +483,16 @@ var _ = Describe("confab", func() {
 				return pidIsForRunningProcess(pidFile.Name())
 			}, "5s").Should(BeFalse())
 
-			Expect(fakeAgentOutput(consulConfigDir)).To(Equal(map[string]interface{}{
-				"PID": float64(pid),
-				"Args": []interface{}{
+			Expect(fakeAgentOutput(consulConfigDir)).To(Equal(FakeAgentOutputData{
+				PID: pid,
+				Args: []string{
 					"agent",
 					fmt.Sprintf("-config-dir=%s", consulConfigDir),
 				},
-				"LeaveCallCount":      float64(1),
-				"InstallKeyCallCount": float64(2),
-				"UseKeyCallCount":     float64(1),
-				"StatsCallCount":      float64(1),
+				LeaveCallCount:      1,
+				InstallKeyCallCount: 2,
+				UseKeyCallCount:     1,
+				StatsCallCount:      1,
 			}))
 		})
 	})
@@ -836,96 +823,3 @@ var _ = Describe("confab", func() {
 		})
 	})
 })
-
-func killProcessWithPIDFile(pidFilePath string) {
-	pidFileContents, err := ioutil.ReadFile(pidFilePath)
-	if err != nil {
-		return
-	}
-
-	pid, err := strconv.Atoi(string(pidFileContents))
-	Expect(err).NotTo(HaveOccurred())
-
-	killPID(pid)
-}
-
-func killPID(pid int) {
-	process, err := os.FindProcess(pid)
-	Expect(err).NotTo(HaveOccurred())
-
-	process.Signal(syscall.SIGKILL)
-}
-
-func pidIsForRunningProcess(pidFilePath string) bool {
-	pid, err := getPID(pidFilePath)
-	if err != nil {
-		return false
-	}
-
-	running, err := isPIDRunning(pid)
-	if err != nil {
-		return false
-	}
-
-	return running
-}
-
-func getPID(pidFilePath string) (int, error) {
-	pidFileContents, err := ioutil.ReadFile(pidFilePath)
-	if err != nil {
-		return 0, err
-	}
-
-	return strconv.Atoi(string(pidFileContents))
-}
-
-func isPIDRunning(pid int) (bool, error) {
-	process, err := os.FindProcess(pid)
-	if err != nil {
-		return false, err
-	}
-
-	if err := process.Signal(syscall.Signal(0)); err != nil {
-		return false, err
-	}
-
-	return true, nil
-}
-
-func fakeAgentOutput(configDir string) (map[string]interface{}, error) {
-	fakeOutput, err := ioutil.ReadFile(filepath.Join(configDir, "fake-output.json"))
-	if err != nil {
-		return nil, err
-	}
-
-	var decodedFakeOutput map[string]interface{}
-	err = json.Unmarshal(fakeOutput, &decodedFakeOutput)
-	if err != nil {
-		return nil, err
-	}
-
-	return decodedFakeOutput, nil
-}
-
-func killProcessAttachedToPort(port int) {
-	cmdLine := fmt.Sprintf("lsof -i :%d | tail -1 | cut -d' ' -f4", port)
-	cmd := exec.Command("bash", "-c", cmdLine)
-	buffer := bytes.NewBuffer([]byte{})
-	cmd.Stdout = buffer
-	Expect(cmd.Run()).To(Succeed())
-
-	pidStr := strings.TrimSpace(buffer.String())
-	if pidStr != "" {
-		pid, err := strconv.Atoi(pidStr)
-		Expect(err).NotTo(HaveOccurred())
-		killPID(pid)
-	}
-}
-
-func writeConfigurationFile(filename string, configuration map[string]interface{}) {
-	configData, err := json.Marshal(configuration)
-	Expect(err).NotTo(HaveOccurred())
-
-	err = ioutil.WriteFile(filename, configData, os.ModePerm)
-	Expect(err).NotTo(HaveOccurred())
-}
