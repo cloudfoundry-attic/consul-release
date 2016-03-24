@@ -45,6 +45,39 @@ var _ = Describe("Proxying consul requests", func() {
 		})
 	})
 
+	Context("health_check", func() {
+		BeforeEach(func() {
+			consulServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+				w.WriteHeader(http.StatusTeapot)
+			}))
+
+			command := exec.Command(pathToConsumer, "--port", port, "--consul-url", consulServer.URL)
+
+			var err error
+			session, err = gexec.Start(command, GinkgoWriter, GinkgoWriter)
+			Expect(err).NotTo(HaveOccurred())
+
+			waitForServerToStart(port)
+		})
+
+		It("returns a 200 when the health check is alive", func() {
+			status, _, err := makeRequest("GET", fmt.Sprintf("http://localhost:%s/health_check", port), "")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(status).To(Equal(http.StatusOK))
+		})
+
+		It("returns a 503 when the health_check has been marked dead", func() {
+			status, _, err := makeRequest("POST", fmt.Sprintf("http://localhost:%s/health_check", port), "false")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(status).To(Equal(http.StatusOK))
+
+			status, _, err = makeRequest("GET", fmt.Sprintf("http://localhost:%s/health_check", port), "")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(status).To(Equal(http.StatusServiceUnavailable))
+		})
+
+	})
+
 	Context("with a functioning consul", func() {
 		BeforeEach(func() {
 			consulServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
@@ -58,11 +91,6 @@ var _ = Describe("Proxying consul requests", func() {
 						w.Write([]byte("true"))
 						return
 					}
-				}
-
-				if req.Method == "GET" && req.URL.Path == "/v1/status/leader" {
-					w.Write([]byte("some-leader"))
-					return
 				}
 
 				w.WriteHeader(http.StatusTeapot)

@@ -2,10 +2,11 @@ package dns_test
 
 import (
 	"fmt"
+	"net/http"
+	"strings"
 
 	"github.com/cloudfoundry-incubator/consul-release/src/acceptance-tests/testing/consul"
 	"github.com/cloudfoundry-incubator/consul-release/src/acceptance-tests/testing/helpers"
-	"github.com/miekg/dns"
 	"github.com/pivotal-cf-experimental/bosh-test/bosh"
 	"github.com/pivotal-cf-experimental/destiny"
 
@@ -13,10 +14,11 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("Single host multiple services", func() {
+var _ = Describe("Health Check", func() {
 	var (
-		manifest destiny.Manifest
-		agent    consul.AgentStartStopper
+		manifest       destiny.Manifest
+		agent          consul.AgentStartStopper
+		healthCheckURL string
 	)
 
 	BeforeEach(func() {
@@ -36,6 +38,7 @@ var _ = Describe("Single host multiple services", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		agent.Start()
+		healthCheckURL = fmt.Sprintf("http://%s:6769/health_check", manifest.Jobs[1].Networks[0].StaticIPs[0])
 	})
 
 	AfterEach(func() {
@@ -46,26 +49,17 @@ var _ = Describe("Single host multiple services", func() {
 		agent.Stop()
 	})
 
-	It("discovers multiples services on a single host", func() {
-		By("registering services", func() {
+	It("deregisters a service if the health check fails", func() {
+		By("registering a service", func() {
 			manifest.Jobs[0].Properties.Consul.Agent.Services = destiny.JobPropertiesConsulAgentServices{
 				"some-service": destiny.JobPropertiesConsulAgentService{
 					Name: "some-service-name",
 					Check: &destiny.JobPropertiesConsulAgentServiceCheck{
 						Name:     "some-service-check",
-						Script:   fmt.Sprintf("curl http://%s:6769/health_check", manifest.Jobs[1].Networks[0].StaticIPs[0]),
-						Interval: "1m",
+						Script:   fmt.Sprintf("curl -f %s", healthCheckURL),
+						Interval: "10s",
 					},
 					Tags: []string{"some-service-tag"},
-				},
-				"some-other-service": destiny.JobPropertiesConsulAgentService{
-					Name: "some-other-service-name",
-					Check: &destiny.JobPropertiesConsulAgentServiceCheck{
-						Name:     "some-other-service-check",
-						Script:   fmt.Sprintf("curl http://%s:6769/health_check", manifest.Jobs[1].Networks[0].StaticIPs[0]),
-						Interval: "1m",
-					},
-					Tags: []string{"some-other-service-tag"},
 				},
 			}
 		})
@@ -88,34 +82,34 @@ var _ = Describe("Single host multiple services", func() {
 			}))
 		})
 
-		By("resolving service addresses", func() {
+		By("resolving the service address", func() {
 			Eventually(func() ([]string, error) {
 				return checkService("some-service-name.service.cf.internal")
 			}, "1m", "10s").Should(ConsistOf(manifest.Jobs[0].Networks[0].StaticIPs))
+		})
 
+		By("causing the health check to fail", func() {
+			response, err := http.Post(healthCheckURL, "", strings.NewReader("false"))
+			Expect(err).NotTo(HaveOccurred())
+			Expect(response.StatusCode).To(Equal(http.StatusOK))
+		})
+
+		By("the service should be deregistered", func() {
 			Eventually(func() ([]string, error) {
-				return checkService("some-other-service-name.service.cf.internal")
+				return checkService("some-service-name.service.cf.internal")
+			}, "1m", "10s").Should(BeEmpty())
+		})
+
+		By("causing the health check to succeed", func() {
+			response, err := http.Post(healthCheckURL, "", strings.NewReader("true"))
+			Expect(err).NotTo(HaveOccurred())
+			Expect(response.StatusCode).To(Equal(http.StatusOK))
+		})
+
+		By("the service should be alive", func() {
+			Eventually(func() ([]string, error) {
+				return checkService("some-service-name.service.cf.internal")
 			}, "1m", "10s").Should(ConsistOf(manifest.Jobs[0].Networks[0].StaticIPs))
 		})
 	})
 })
-
-func checkService(service string) ([]string, error) {
-	c := dns.Client{}
-	m := dns.Msg{}
-
-	m.SetQuestion(service+".", dns.TypeA)
-
-	r, _, err := c.Exchange(&m, "127.0.0.1:8600")
-	if err != nil {
-		return []string{}, err
-	}
-
-	var ips []string
-	for _, ans := range r.Answer {
-		Arecord := ans.(*dns.A)
-		ips = append(ips, Arecord.A.String())
-	}
-
-	return ips, nil
-}

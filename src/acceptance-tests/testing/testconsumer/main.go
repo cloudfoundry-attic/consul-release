@@ -11,19 +11,20 @@ import (
 	"strings"
 
 	"github.com/cloudfoundry-incubator/consul-release/src/acceptance-tests/testing/testconsumer/buffered"
+	"github.com/cloudfoundry-incubator/consul-release/src/acceptance-tests/testing/testconsumer/handlers"
 )
 
 func main() {
 	port, consulURL := parseCommandLineFlags()
-
-	mux := http.NewServeMux()
-
 	proxyURL, err := url.Parse(consulURL)
 	if err != nil {
 		log.Fatal(err)
 	}
 
+	mux := http.NewServeMux()
 	logBuffer := bytes.NewBuffer([]byte{})
+	healthCheckHandler := handlers.NewHealthCheckHandler()
+
 	proxy := httputil.NewSingleHostReverseProxy(proxyURL)
 	director := proxy.Director
 	proxy.Director = func(request *http.Request) {
@@ -37,6 +38,10 @@ func main() {
 		bufferedRW := buffered.NewResponseWriter(w, logBuffer)
 		proxy.ServeHTTP(bufferedRW, req)
 		bufferedRW.Copy()
+	})
+
+	mux.HandleFunc("/health_check", func(w http.ResponseWriter, req *http.Request) {
+		healthCheckHandler.ServeHTTP(w, req)
 	})
 
 	log.Fatal(http.ListenAndServe(fmt.Sprintf("0.0.0.0:%s", port), mux))
