@@ -49,7 +49,7 @@ specifying that a distributed computer system cannot provide all three of the
 guarantees outlined in the theorem (consistency, availability,
 and partition tolerance). In the default configuration, Consul has a preference
 to guarantee consistency and partition tolerance over availability. This means
-that under network partioning, the cluster can become unavailable. The
+that under network partitioning, the cluster can become unavailable. The
 unavailability of the cluster can result in the inability to write to the
 key-value store, maintain or acquire distributed locks, or discover other
 services. Consul makes this tradeoff with a preference for consistency of the
@@ -97,7 +97,7 @@ service definition. A service definition can be given to consul by providing
 some configuration information in the manifest properties for the given job.
 
 Below is an example manifest snippet that provides a service for a hypothetical
-service:
+database:
 
 ```
 1 jobs:
@@ -132,7 +132,7 @@ addition on lines 10-11. Once this template has been added, we can include
 the service definition (lines 15-23). We define a service called "big_database"
 that defines its service health check. The health check is used to determine
 the health of a service and will automatically register/deregister that
-service with the discovery system depending upon status of that check. The
+service with the discovery system depending upon the status of that check. The
 structure of a service definition follows the same structure as they would be
 defined in JSON, but translated into YAML to fit into a manifest. More
 information about service registration can be found
@@ -143,10 +143,11 @@ information about service registration can be found
 Health checks provide another level of functionality to the service discovery
 mechanism of Consul. When a service is defined with a health check, it can be
 registered/deregistered from the service discovery system. This means that were
-a service like a hypothetical "database" experience some loss in availability,
-Consul would notice and update the service discovery entries to route traffic
-around or away from that service. Defining health checks can be done in several
-ways. The [documentation](https://www.consul.io/docs/agent/checks.html) provides
+a service like a hypothetical "database" to experience some loss in
+availability, Consul would notice and update the service discovery entries to
+route traffic around or away from that service. Defining health checks can be
+done in several ways. The
+[documentation](https://www.consul.io/docs/agent/checks.html) provides
 several examples of health check definitions, including script, HTTP, TCP, TTL,
 and Docker-based examples.
 
@@ -249,7 +250,7 @@ manually mark the Pull Request as having a CLA on-file.
 
 Make sure that you are working against the `develop` branch. PRs submitted
 against other branches will need to be resubmitted with the correct branch
-targetted.
+targeted.
 
 Before submitting a PR, make sure to run the test suites. Information about
 how to run the suites can be seen in the [Confab Tests](#confab-tests) and
