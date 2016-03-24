@@ -10,6 +10,7 @@ This is a [BOSH](http://bosh.io) release for [consul](https://github.com/hashico
 
 * [Using Consul](#using-consul)
 * [Deploying](#deploying)
+* [Configuring](#configuring)
 * [Known Issues](#known-issues)
 * [Disaster Recovery](#disaster-recovery)
 * [Contributing](#contributing)
@@ -85,6 +86,57 @@ We provide a set of sample deployment manifests that can be used as a starting p
 ### 5. Deploy.
 
 Run `bosh -d OUTPUT_MANIFEST_PATH deploy`.
+
+## Configuring
+
+### Defining a Service
+
+This Consul release allows consumers to declare services provided by jobs that
+should be discoverable over DNS. Consul achieves this behavior by consuming a
+service definition. A service definition can be given to consul by providing
+some configuration information in the manifest properties for the given job.
+
+Below is an example manifest snippet that provides a service for a hypothetical
+service:
+
+```
+1 jobs:
+2 - name: database
+3   instances: 3
+4   networks:
+5   - name: default
+6   resource_pool: default
+7   templates:
+8   - name: database
+9     release: database
+10   - name: consul_agent
+11     release: consul
+12   properties:
+13     consul:
+14       agent:
+15         services:
+16           big_database:
+17             name: big_database
+18             tags:
+19             - db
+20             - persistence
+21             check:
+22               script: /bin/check_db
+23               interval: 10s
+```
+
+In this example we are defining a "database" service that we want to make
+available through Consul's service discovery mechanism. The first step is
+to include the `consul_agent` template on the "database" job. We can see this
+addition on lines 10-11. Once this template has been added, we can include
+the service definition (lines 15-23). We define a service called "big_database"
+that defines its service health check. The health check is used to determine
+the health of a service and will automatically register/deregister that
+service with the discovery system depending upon status of that check. The
+structure of a service definition follows the same structure as they would be
+defined in JSON, but translated into YAML to fit into a manifest. More
+information about service registration can be found
+[here](https://www.consul.io/docs/agent/services.html).
 
 ## Known Issues
 
