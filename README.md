@@ -8,11 +8,56 @@ This is a [BOSH](http://bosh.io) release for [consul](https://github.com/hashico
 
 ###Contents
 
+* [Using Consul](#using-consul)
 * [Deploying](#deploying)
 * [Confab Tests](#confab-tests)
 * [Acceptance Tests](#acceptance-tests)
 * [Known Issues](#known-issues)
 * [Disaster Recovery](#disaster-recovery)
+
+## Using Consul
+
+Consul is a distributed key-value store that provides a host of applications.
+It can be used to provide service discovery, key-value configuration,
+and distributed locks within cloud infrastructure environments.
+
+### Within CloudFoundry
+
+Principally, Consul is used to provide service discovery for many of
+the components. Components can register services with Consul, making these
+services available to other CloudFoundry components. A component looking to
+discover other services would run a Consul agent locally, and lookup services
+using DNS names. Consul transparently updates the DNS records across the cluster
+as services start and stop, or pass/fail their health checks.
+
+Additionally, Consul is able to store key-value data across its distributed
+cluster. CloudFoundry makes use of this feature by storing some simple
+configuration data, making it reachable across all nodes in the cluster.
+
+CloudFoundry also makes some use of Consul's distributed locks.
+This feature is used to ensure that one, and only one, component is able to
+perform some critical action at a time.
+
+### Fault Tolerance and Data Durability
+
+Consul is a distributed data-store and as such, conforms to some form of fault
+tolerance under disadvantageous conditions. Broadly, these tolerances are
+described by the [CAP Theorem](https://en.wikipedia.org/wiki/CAP_theorem),
+specifying that a distributed computer system cannot provide all three of the
+guarantees outlined in the theorem (consistency, availability,
+and partition tolerance). In the default configuration, Consul has a preference
+to guarantee consistency and partition tolerance over availability. This means
+that under network partioning, the cluster can become unavailable. The
+unavailability of the cluster can result in the inability to write to the
+key-value store, maintain or acquire distributed locks, or discover other
+services. Consul makes this tradeoff with a preference for consistency of the
+stored data in the case of network partitions. The Consul team has published
+some [results](https://www.consul.io/docs/internals/jepsen.html) from their
+testing of Consul's fault tolerance.
+
+This behavior means that Consul may not be the best choice for persisting
+critically important data. Not having explicitly supported backup-and-restore
+workflows also makes guaranteeing data durability difficult.
 
 ## Deploying
 
