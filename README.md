@@ -138,6 +138,50 @@ defined in JSON, but translated into YAML to fit into a manifest. More
 information about service registration can be found
 [here](https://www.consul.io/docs/agent/services.html).
 
+### Health Checks
+
+Health checks provide another level of functionality to the service discovery
+mechanism of Consul. When a service is defined with a health check, it can be
+registered/deregistered from the service discovery system. This means that were
+a service like a hypothetical "database" experience some loss in availability,
+Consul would notice and update the service discovery entries to route traffic
+around or away from that service. Defining health checks can be done in several
+ways. The [documentation](https://www.consul.io/docs/agent/checks.html) provides
+several examples of health check definitions, including script, HTTP, TCP, TTL,
+and Docker-based examples.
+
+When a service is defined without an explicit health check, the consul_agent job
+will provide a default check. That check is the equivalent of the following:
+
+```
+jobs:
+- name: database
+  instances: 3
+  networks:
+  - name: default
+  resource_pool: default
+  templates:
+  - name: database
+    release: database
+   - name: consul_agent
+     release: consul
+   properties:
+     consul:
+       agent:
+         services:
+           database:
+             check:
+               name: dns_health_check
+               script: /var/vcap/jobs/database/bin/dns_health_check
+               interval: 3s
+```
+
+In the `check` section of that definition, we can see that it assumes a script
+called `dns_health_check` is located in the `/var/vcap/jobs/SERVICE_NAME/bin`
+directory. Not providing this script, and not explicitly defining some other
+check in your service definition will result in a failing health check for the
+service.
+
 ## Known Issues
 
 ### 1-node clusters
