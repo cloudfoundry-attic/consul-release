@@ -12,6 +12,7 @@ This is a [BOSH](http://bosh.io) release for [consul](https://github.com/hashico
 * [Confab Tests](#confab-tests)
 * [Acceptance Tests](#acceptance-tests)
 * [Known Issues](#known-issues)
+* [Disaster Recovery](#disaster-recovery)
 
 ## Deploying
 
@@ -178,3 +179,20 @@ It is not recommended to run a 1-node cluster in any "production" environment.
 Having a 1-node cluster does not ensure any amount of data persistence.
 
 WARNING: Scaling your cluster to or from a 1-node configuration may result in data loss.
+
+## Disaster Recovery
+
+In the event that the consul cluster ends up in a bad state that is difficult
+to debug, you have the option of stopping the consul agent on each server node,
+removing its data store, and then restarting the process:
+
+```
+monit stop consul_agent (on all server nodes in consul cluster)
+rm -rf /var/vcap/store/consul_agent/* (on all server nodes in consul cluster)
+monit start consul_agent (one-by-one on each server node in consul cluster)
+```
+
+There are often more graceful ways to solve specific issues, but it is hard
+to document all of the possible failure modes and recovery steps. As long as
+your consul cluster does not contain critical data that cannot be repopulated,
+this option is safe and will probably get you unstuck.
