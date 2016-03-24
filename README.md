@@ -196,3 +196,6 @@ There are often more graceful ways to solve specific issues, but it is hard
 to document all of the possible failure modes and recovery steps. As long as
 your consul cluster does not contain critical data that cannot be repopulated,
 this option is safe and will probably get you unstuck.
+
+Additional information about outage recovery can be found on the consul
+[documentation page](https://www.consul.io/docs/guides/outage.html).
