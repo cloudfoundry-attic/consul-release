@@ -12,7 +12,6 @@ var _ = Describe("Config", func() {
 		It("returns a default configuration", func() {
 			Expect(config.Default()).To(Equal(config.Config{
 				Consul: config.ConfigConsul{
-					RequireSSL: true,
 					Agent: config.ConfigConsulAgent{
 						Servers: config.ConfigConsulAgentServers{
 							LAN: []string{},
@@ -58,7 +57,6 @@ var _ = Describe("Config", func() {
 						"log_level": "debug",
 						"protocol_version": 1
 					},
-					"require_ssl": true,
 					"encrypt_keys": ["key-1", "key-2"]
 				},
 				"confab": {
@@ -95,7 +93,6 @@ var _ = Describe("Config", func() {
 							LAN: []string{},
 						},
 					},
-					RequireSSL:  true,
 					EncryptKeys: []string{"key-1", "key-2"},
 				},
 				Confab: config.ConfigConfab{
@@ -116,7 +113,6 @@ var _ = Describe("Config", func() {
 					KeyringFile:     "/var/vcap/store/consul_agent/serf/local.keyring",
 				},
 				Consul: config.ConfigConsul{
-					RequireSSL: true,
 					Agent: config.ConfigConsulAgent{
 						Servers: config.ConfigConsulAgentServers{
 							LAN: []string{},

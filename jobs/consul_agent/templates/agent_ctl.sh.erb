@@ -67,10 +67,8 @@ function start() {
   mkdir -p "${CONF_DIR}"
   chown -R vcap:vcap "${CONF_DIR}"
 
-  <% if p("consul.require_ssl") %>
-    chown vcap:vcap ${CERT_DIR}/*.{crt,key}
-    chmod 640 ${CERT_DIR}/*.{crt,key}
-  <% end %>
+  chown vcap:vcap ${CERT_DIR}/*.{crt,key}
+  chmod 640 ${CERT_DIR}/*.{crt,key}
 
   # "Consul uses a significant amount of virtual memory, since LMDB uses
   # mmap() underneath. It uses about 700MB of a 32bit system and 40GB on a

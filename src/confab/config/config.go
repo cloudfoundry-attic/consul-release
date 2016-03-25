@@ -15,7 +15,6 @@ type ConfigConfab struct {
 
 type ConfigConsul struct {
 	Agent       ConfigConsulAgent
-	RequireSSL  bool     `json:"require_ssl"`
 	EncryptKeys []string `json:"encrypt_keys"`
 }
 
@@ -55,7 +54,6 @@ func Default() Config {
 			KeyringFile:     "/var/vcap/store/consul_agent/serf/local.keyring",
 		},
 		Consul: ConfigConsul{
-			RequireSSL: true,
 			Agent: ConfigConsulAgent{
 				Servers: ConfigConsulAgentServers{
 					LAN: []string{},

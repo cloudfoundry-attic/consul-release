@@ -259,4 +259,3 @@ properties:
       -----END RSA PRIVATE KEY-----
     encrypt_keys:
     - Atzo3VBv+YVDzQAzlQRPRA==
-    require_ssl: true

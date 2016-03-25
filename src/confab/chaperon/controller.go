@@ -115,24 +115,22 @@ func (c Controller) ConfigureServer(timeout confab.Timeout, rpcClient *consulage
 		}
 	}
 
-	if c.Config.Consul.RequireSSL {
-		if len(c.EncryptKeys) == 0 {
-			err := errors.New("encrypt keys cannot be empty if ssl is enabled")
-			c.Logger.Error("controller.configure-server.no-encrypt-keys", err)
-			return err
-		}
+	if len(c.EncryptKeys) == 0 {
+		err := errors.New("encrypt keys cannot be empty if ssl is enabled")
+		c.Logger.Error("controller.configure-server.no-encrypt-keys", err)
+		return err
+	}
 
-		c.Logger.Info("controller.configure-server.set-keys", lager.Data{
+	c.Logger.Info("controller.configure-server.set-keys", lager.Data{
+		"keys": c.EncryptKeys,
+	})
+
+	err = c.AgentClient.SetKeys(c.EncryptKeys)
+	if err != nil {
+		c.Logger.Error("controller.configure-server.set-keys.failed", err, lager.Data{
 			"keys": c.EncryptKeys,
 		})
-
-		err = c.AgentClient.SetKeys(c.EncryptKeys)
-		if err != nil {
-			c.Logger.Error("controller.configure-server.set-keys.failed", err, lager.Data{
-				"keys": c.EncryptKeys,
-			})
-			return err
-		}
+		return err
 	}
 
 	if err := c.AgentRunner.WritePID(); err != nil {

@@ -465,25 +465,6 @@ var _ = Describe("Controller", func() {
 				})
 			})
 
-			Context("when the server does not have ssl enabled", func() {
-				BeforeEach(func() {
-					controller.Config.Consul.RequireSSL = false
-				})
-
-				It("does not set keys", func() {
-					Expect(controller.ConfigureServer(timeout, rpcClient)).To(Succeed())
-					Expect(agentClient.SetKeysCall.Receives.Keys).To(BeNil())
-					Expect(logger.Messages).To(ContainSequence([]fakes.LoggerMessage{
-						{
-							Action: "controller.configure-server.is-last-node",
-						},
-						{
-							Action: "controller.configure-server.success",
-						},
-					}))
-				})
-			})
-
 			Context("when ssl is enabled but no keys are provided", func() {
 				BeforeEach(func() {
 					controller.EncryptKeys = []string{}
@@ -625,7 +606,6 @@ var _ = Describe("Controller", func() {
 		Context("when writing the PID file fails", func() {
 			It("returns the error", func() {
 				agentRunner.WritePIDCall.Returns.Error = errors.New("failed to write PIDFILE")
-				controller.Config.Consul.RequireSSL = false
 
 				err := controller.ConfigureServer(timeout, rpcClient)
 				Expect(err).To(MatchError("failed to write PIDFILE"))
@@ -634,6 +614,15 @@ var _ = Describe("Controller", func() {
 				Expect(logger.Messages).To(ContainSequence([]fakes.LoggerMessage{
 					{
 						Action: "controller.configure-server.is-last-node",
+					},
+					{
+						Action: "controller.configure-server.set-keys",
+						Error:  nil,
+						Data: []lager.Data{
+							{
+								"keys": []string{"key 1", "key 2", "key 3"},
+							},
+						},
 					},
 					{
 						Action: "controller.configure-server.write-pid.failed",

@@ -48,10 +48,6 @@ properties:
   consul.agent.domain:
     description: "Domain suffix for DNS"
 
-  consul.require_ssl:
-    description: "enable ssl for all communication with consul"
-    default: true
-
   consul.ca_cert:
     description: "PEM-encoded CA certificate"
 

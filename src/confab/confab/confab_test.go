@@ -204,91 +204,6 @@ var _ = Describe("confab", func() {
 				"encrypt": "enqzXBmgKOy13WIGsmUk+g=="
 			}`))
 		})
-
-		Context("when require_ssl is set to false", func() {
-			It("does not set encryption keys", func() {
-				writeConfigurationFile(configFile.Name(), map[string]interface{}{
-					"node": map[string]interface{}{
-						"name":        "some-node",
-						"index":       1,
-						"external_ip": "192.168.1.2",
-					},
-					"path": map[string]interface{}{
-						"agent_path":        pathToFakeAgent,
-						"consul_config_dir": consulConfigDir,
-						"pid_file":          pidFile.Name(),
-					},
-					"consul": map[string]interface{}{
-						"require_ssl": false,
-						"agent": map[string]interface{}{
-							"domain":     "some-domain",
-							"datacenter": "dc2",
-							"log_level":  "info",
-							"mode":       "server",
-							"servers": map[string]interface{}{
-								"lan": []string{"member-1", "member-2", "member-3"},
-							},
-						},
-						"encrypt_keys": []string{"key-1", "key-2"},
-					},
-				})
-
-				start := exec.Command(pathToConfab,
-					"start",
-					"--config-file", configFile.Name(),
-				)
-				Eventually(start.Run, COMMAND_TIMEOUT, COMMAND_TIMEOUT).Should(Succeed())
-
-				pid, err := getPID(pidFile.Name())
-				Expect(err).NotTo(HaveOccurred())
-				Expect(isPIDRunning(pid)).To(BeTrue())
-
-				Eventually(func() (FakeAgentOutputData, error) {
-					return fakeAgentOutput(consulConfigDir)
-				}, COMMAND_TIMEOUT).Should(Equal(FakeAgentOutputData{
-					PID: pid,
-					Args: []string{
-						"agent",
-						fmt.Sprintf("-config-dir=%s", consulConfigDir),
-					},
-					StatsCallCount: 1,
-				}))
-
-				stop := exec.Command(pathToConfab,
-					"stop",
-					"--config-file", configFile.Name(),
-				)
-				Eventually(stop.Run, COMMAND_TIMEOUT, COMMAND_TIMEOUT).Should(Succeed())
-
-				_, err = isPIDRunning(pid)
-				Expect(err).To(MatchError(ContainSubstring("process already finished")))
-
-				consulConfig, err := ioutil.ReadFile(filepath.Join(consulConfigDir, "config.json"))
-				Expect(err).NotTo(HaveOccurred())
-				Expect(string(consulConfig)).To(MatchJSON(`{
-					"server": true,
-					"domain": "some-domain",
-					"datacenter": "dc2",
-					"data_dir": "/var/vcap/store/consul_agent",
-					"log_level": "info",
-					"node_name": "some-node-1",
-					"ports": {
-						"dns": 53
-					},
-					"rejoin_after_leave": true,
-					"retry_join": [
-						"member-1",
-						"member-2",
-						"member-3"
-					],
-					"bind_addr": "192.168.1.2",
-					"disable_remote_exec": true,
-					"disable_update_check": true,
-					"protocol": 0,
-					"bootstrap_expect": 3
-				}`))
-			})
-		})
 	})
 
 	Context("when starting", func() {
@@ -349,7 +264,6 @@ var _ = Describe("confab", func() {
 						"pid_file":          pidFile.Name(),
 					},
 					"consul": map[string]interface{}{
-						"require_ssl": true,
 						"agent": map[string]interface{}{
 							"mode": "server",
 							"servers": map[string]interface{}{
@@ -398,7 +312,6 @@ var _ = Describe("confab", func() {
 						"pid_file":          pidFile.Name(),
 					},
 					"consul": map[string]interface{}{
-						"require_ssl": true,
 						"agent": map[string]interface{}{
 							"mode": "server",
 							"servers": map[string]interface{}{
@@ -444,7 +357,6 @@ var _ = Describe("confab", func() {
 					"pid_file":          pidFile.Name(),
 				},
 				"consul": map[string]interface{}{
-					"require_ssl": true,
 					"agent": map[string]interface{}{
 						"mode": "server",
 						"servers": map[string]interface{}{

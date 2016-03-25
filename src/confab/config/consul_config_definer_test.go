@@ -209,202 +209,114 @@ var _ = Describe("ConsulConfigDefiner", func() {
 		})
 
 		Describe("verify_outgoing", func() {
-			Context("when `consul.require_ssl` is false", func() {
-				It("is nil", func() {
-					Expect(consulConfig.VerifyOutgoing).To(BeNil())
-				})
-			})
-
-			Context("when `consul.require_ssl` is true", func() {
-				It("is true", func() {
-					consulConfig = config.GenerateConfiguration(config.Config{
-						Consul: config.ConfigConsul{
-							RequireSSL: true,
-						},
-					})
-					Expect(consulConfig.VerifyOutgoing).NotTo(BeNil())
-					Expect(*consulConfig.VerifyOutgoing).To(BeTrue())
-				})
+			It("is true", func() {
+				consulConfig = config.GenerateConfiguration(config.Config{})
+				Expect(consulConfig.VerifyOutgoing).NotTo(BeNil())
+				Expect(*consulConfig.VerifyOutgoing).To(BeTrue())
 			})
 		})
 
 		Describe("verify_incoming", func() {
-			Context("when `consul.require_ssl` is false", func() {
-				It("is nil", func() {
-					Expect(consulConfig.VerifyIncoming).To(BeNil())
-				})
-			})
-
-			Context("when `consul.require_ssl` is true", func() {
-				It("is true", func() {
-					consulConfig = config.GenerateConfiguration(config.Config{
-						Consul: config.ConfigConsul{
-							RequireSSL: true,
-						},
-					})
-					Expect(consulConfig.VerifyIncoming).NotTo(BeNil())
-					Expect(*consulConfig.VerifyIncoming).To(BeTrue())
-				})
+			It("is true", func() {
+				consulConfig = config.GenerateConfiguration(config.Config{})
+				Expect(consulConfig.VerifyIncoming).NotTo(BeNil())
+				Expect(*consulConfig.VerifyIncoming).To(BeTrue())
 			})
 		})
 
 		Describe("verify_server_hostname", func() {
-			Context("when `consul.require_ssl` is false", func() {
-				It("is nil", func() {
-					Expect(consulConfig.VerifyServerHostname).To(BeNil())
-				})
-			})
-
-			Context("when `consul.require_ssl` is true", func() {
-				It("is true", func() {
-					consulConfig = config.GenerateConfiguration(config.Config{
-						Consul: config.ConfigConsul{
-							RequireSSL: true,
-						},
-					})
-					Expect(consulConfig.VerifyServerHostname).NotTo(BeNil())
-					Expect(*consulConfig.VerifyServerHostname).To(BeTrue())
-				})
+			It("is true", func() {
+				consulConfig = config.GenerateConfiguration(config.Config{})
+				Expect(consulConfig.VerifyServerHostname).NotTo(BeNil())
+				Expect(*consulConfig.VerifyServerHostname).To(BeTrue())
 			})
 		})
 
 		Describe("ca_file", func() {
-			Context("when `consul.require_ssl` is false", func() {
-				It("is nil", func() {
-					Expect(consulConfig.CAFile).To(BeNil())
-				})
-			})
-
-			Context("when `consul.require_ssl` is true", func() {
-				It("is the location of the ca file", func() {
-					consulConfig = config.GenerateConfiguration(config.Config{
-						Consul: config.ConfigConsul{
-							RequireSSL: true,
-						},
-					})
-					Expect(consulConfig.CAFile).NotTo(BeNil())
-					Expect(*consulConfig.CAFile).To(Equal("/var/vcap/jobs/consul_agent/config/certs/ca.crt"))
-				})
+			It("is the location of the ca file", func() {
+				consulConfig = config.GenerateConfiguration(config.Config{})
+				Expect(consulConfig.CAFile).NotTo(BeNil())
+				Expect(*consulConfig.CAFile).To(Equal("/var/vcap/jobs/consul_agent/config/certs/ca.crt"))
 			})
 		})
 
 		Describe("key_file", func() {
-			Context("when `consul.require_ssl` is false", func() {
-				It("is nil", func() {
-					Expect(consulConfig.KeyFile).To(BeNil())
+			Context("when `consul.agent.mode` is `server`", func() {
+				It("is the location of the server.key file", func() {
+					consulConfig = config.GenerateConfiguration(config.Config{
+						Consul: config.ConfigConsul{
+							Agent: config.ConfigConsulAgent{
+								Mode: "server",
+							},
+						},
+					})
+					Expect(consulConfig.KeyFile).NotTo(BeNil())
+					Expect(*consulConfig.KeyFile).To(Equal("/var/vcap/jobs/consul_agent/config/certs/server.key"))
 				})
 			})
 
-			Context("when `consul.require_ssl` is true", func() {
-				Context("when `consul.agent.mode` is `server`", func() {
-					It("is the location of the server.key file", func() {
-						consulConfig = config.GenerateConfiguration(config.Config{
-							Consul: config.ConfigConsul{
-								RequireSSL: true,
-								Agent: config.ConfigConsulAgent{
-									Mode: "server",
-								},
-							},
-						})
-						Expect(consulConfig.KeyFile).NotTo(BeNil())
-						Expect(*consulConfig.KeyFile).To(Equal("/var/vcap/jobs/consul_agent/config/certs/server.key"))
-					})
-				})
-
-				Context("when `consul.agent.mode` is not `server`", func() {
-					It("is the location of the agent.key file", func() {
-						consulConfig = config.GenerateConfiguration(config.Config{
-							Consul: config.ConfigConsul{
-								RequireSSL: true,
-							},
-						})
-						Expect(consulConfig.KeyFile).NotTo(BeNil())
-						Expect(*consulConfig.KeyFile).To(Equal("/var/vcap/jobs/consul_agent/config/certs/agent.key"))
-					})
+			Context("when `consul.agent.mode` is not `server`", func() {
+				It("is the location of the agent.key file", func() {
+					consulConfig = config.GenerateConfiguration(config.Config{})
+					Expect(consulConfig.KeyFile).NotTo(BeNil())
+					Expect(*consulConfig.KeyFile).To(Equal("/var/vcap/jobs/consul_agent/config/certs/agent.key"))
 				})
 			})
 		})
 
 		Describe("cert_file", func() {
-			Context("when `consul.require_ssl` is false", func() {
-				It("is nil", func() {
-					Expect(consulConfig.CertFile).To(BeNil())
+			Context("when `consul.agent.mode` is `server`", func() {
+				It("is the location of the server.crt file", func() {
+					consulConfig = config.GenerateConfiguration(config.Config{
+						Consul: config.ConfigConsul{
+							Agent: config.ConfigConsulAgent{
+								Mode: "server",
+							},
+						},
+					})
+					Expect(consulConfig.CertFile).NotTo(BeNil())
+					Expect(*consulConfig.CertFile).To(Equal("/var/vcap/jobs/consul_agent/config/certs/server.crt"))
 				})
 			})
 
-			Context("when `consul.require_ssl` is true", func() {
-				Context("when `consul.agent.mode` is `server`", func() {
-					It("is the location of the server.crt file", func() {
-						consulConfig = config.GenerateConfiguration(config.Config{
-							Consul: config.ConfigConsul{
-								RequireSSL: true,
-								Agent: config.ConfigConsulAgent{
-									Mode: "server",
-								},
-							},
-						})
-						Expect(consulConfig.CertFile).NotTo(BeNil())
-						Expect(*consulConfig.CertFile).To(Equal("/var/vcap/jobs/consul_agent/config/certs/server.crt"))
-					})
-				})
-
-				Context("when `consul.agent.mode` is not `server`", func() {
-					It("is the location of the agent.key file", func() {
-						consulConfig = config.GenerateConfiguration(config.Config{
-							Consul: config.ConfigConsul{
-								RequireSSL: true,
-							},
-						})
-						Expect(consulConfig.CertFile).NotTo(BeNil())
-						Expect(*consulConfig.CertFile).To(Equal("/var/vcap/jobs/consul_agent/config/certs/agent.crt"))
-					})
+			Context("when `consul.agent.mode` is not `server`", func() {
+				It("is the location of the agent.key file", func() {
+					consulConfig = config.GenerateConfiguration(config.Config{})
+					Expect(consulConfig.CertFile).NotTo(BeNil())
+					Expect(*consulConfig.CertFile).To(Equal("/var/vcap/jobs/consul_agent/config/certs/agent.crt"))
 				})
 			})
 		})
 
 		Describe("encrypt", func() {
-			Context("when `consul.require_ssl` is false", func() {
+			Context("when `consul.encrypt_keys` is empty", func() {
 				It("is nil", func() {
+					consulConfig = config.GenerateConfiguration(config.Config{})
 					Expect(consulConfig.Encrypt).To(BeNil())
 				})
 			})
 
-			Context("when `consul.require_ssl` is true", func() {
-				Context("when `consul.encrypt_keys` is empty", func() {
-					It("is nil", func() {
-						consulConfig = config.GenerateConfiguration(config.Config{
+			Context("when `consul.encrypt_keys` is provided with keys", func() {
+				It("base 64 encodes the key if it is not already encoded", func() {
+					consulConfig = config.GenerateConfiguration(
+						config.Config{
 							Consul: config.ConfigConsul{
-								RequireSSL: true,
+								EncryptKeys: []string{"banana"},
 							},
 						})
-						Expect(consulConfig.Encrypt).To(BeNil())
-					})
+					Expect(consulConfig.Encrypt).NotTo(BeNil())
+					Expect(*consulConfig.Encrypt).To(Equal("enqzXBmgKOy13WIGsmUk+g=="))
 				})
 
-				Context("when `consul.encrypt_keys` is provided with keys", func() {
-					It("base 64 encodes the key if it is not already encoded", func() {
-						consulConfig = config.GenerateConfiguration(
-							config.Config{
-								Consul: config.ConfigConsul{
-									RequireSSL:  true,
-									EncryptKeys: []string{"banana"},
-								},
-							})
-						Expect(consulConfig.Encrypt).NotTo(BeNil())
-						Expect(*consulConfig.Encrypt).To(Equal("enqzXBmgKOy13WIGsmUk+g=="))
-					})
-
-					It("leaves the key alone if it is already base 64 encoded", func() {
-						consulConfig = config.GenerateConfiguration(
-							config.Config{
-								Consul: config.ConfigConsul{
-									RequireSSL:  true,
-									EncryptKeys: []string{"enqzXBmgKOy13WIGsmUk+g=="},
-								},
-							})
-						Expect(consulConfig.Encrypt).NotTo(BeNil())
-						Expect(*consulConfig.Encrypt).To(Equal("enqzXBmgKOy13WIGsmUk+g=="))
-					})
+				It("leaves the key alone if it is already base 64 encoded", func() {
+					consulConfig = config.GenerateConfiguration(
+						config.Config{
+							Consul: config.ConfigConsul{
+								EncryptKeys: []string{"enqzXBmgKOy13WIGsmUk+g=="},
+							},
+						})
+					Expect(consulConfig.Encrypt).NotTo(BeNil())
+					Expect(*consulConfig.Encrypt).To(Equal("enqzXBmgKOy13WIGsmUk+g=="))
 				})
 			})
 		})

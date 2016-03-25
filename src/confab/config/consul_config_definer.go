@@ -67,24 +67,22 @@ func GenerateConfiguration(config Config) ConsulConfig {
 		Protocol:           config.Consul.Agent.ProtocolVersion,
 	}
 
-	if config.Consul.RequireSSL {
-		consulConfig.VerifyOutgoing = boolPtr(true)
-		consulConfig.VerifyIncoming = boolPtr(true)
-		consulConfig.VerifyServerHostname = boolPtr(true)
-		certsDir := "/var/vcap/jobs/consul_agent/config/certs"
-		consulConfig.CAFile = strPtr(filepath.Join(certsDir, "ca.crt"))
+	consulConfig.VerifyOutgoing = boolPtr(true)
+	consulConfig.VerifyIncoming = boolPtr(true)
+	consulConfig.VerifyServerHostname = boolPtr(true)
+	certsDir := "/var/vcap/jobs/consul_agent/config/certs"
+	consulConfig.CAFile = strPtr(filepath.Join(certsDir, "ca.crt"))
 
-		if isServer {
-			consulConfig.KeyFile = strPtr(filepath.Join(certsDir, "server.key"))
-			consulConfig.CertFile = strPtr(filepath.Join(certsDir, "server.crt"))
-		} else {
-			consulConfig.KeyFile = strPtr(filepath.Join(certsDir, "agent.key"))
-			consulConfig.CertFile = strPtr(filepath.Join(certsDir, "agent.crt"))
-		}
+	if isServer {
+		consulConfig.KeyFile = strPtr(filepath.Join(certsDir, "server.key"))
+		consulConfig.CertFile = strPtr(filepath.Join(certsDir, "server.crt"))
+	} else {
+		consulConfig.KeyFile = strPtr(filepath.Join(certsDir, "agent.key"))
+		consulConfig.CertFile = strPtr(filepath.Join(certsDir, "agent.crt"))
+	}
 
-		if len(config.Consul.EncryptKeys) > 0 {
-			consulConfig.Encrypt = encryptKey(config.Consul.EncryptKeys[0])
-		}
+	if len(config.Consul.EncryptKeys) > 0 {
+		consulConfig.Encrypt = encryptKey(config.Consul.EncryptKeys[0])
 	}
 
 	if isServer {
