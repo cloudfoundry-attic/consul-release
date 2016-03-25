@@ -89,6 +89,75 @@ Run `bosh -d OUTPUT_MANIFEST_PATH deploy`.
 
 ## Configuring
 
+### Generating Keys and Certificates
+
+We only support running Consul in secure mode, you will need to provide
+certificates and keys for Consul.
+
+1. Generate SSL Certificates and Keys:
+To generate the certificates and keys that you need for Consul, we recommend
+using certstrap. This repository contains a helper script, `scripts/generate-certs`.
+This script uses certstrap to initialize a certificate authority (CA), and
+generate the certificates and keys for Consul.
+
+If you already have a CA, you may have an existing workflow. You can modify
+the `generate-certs` script to use your existing CA instead of generating a new one.
+
+The `generate-certs` script outputs files to the `./consul-certs` directory.
+
+2. Create Gossip Encryption Keys:
+To create an encryption key for use in the serf gossip protocol, provide an
+arbitrary string value. The consul agent job template transforms this string
+into a 16-byte Base64-encoded value for consumption by the consul process.
+
+3. Update your manifest:
+Copy the contents of each file in the `./consul-certs` directory, as well as the
+value for your Gossip encryption key, into the proper sections of your manifest.
+
+For reference see below:
+
+```
+properties:
+  consul:
+    encrypt_keys:
+    - RANDOM-SECRET-VALUE
+    ca_cert: |
+      -----BEGIN CERTIFICATE-----
+      ###########################################################
+      #######           Your New CA Certificate           #######
+      ###########################################################
+      -----END CERTIFICATE-----
+    agent_cert: |
+      ----BEGIN CERTIFICATE----
+      ###########################################################
+      #######           Your New Agent Certificate        #######
+      ###########################################################
+      ----END CERTIFICATE----
+    agent_key: |
+      -----BEGIN RSA PRIVATE KEY-----
+      ###########################################################
+      #######           Your New Agent Key                #######
+      ###########################################################
+      -----END RSA PRIVATE KEY-----
+    server_cert: |
+      ----BEGIN CERTIFICATE----
+      ###########################################################
+      #######           Your New Server Certificate       #######
+      ###########################################################
+      ----END CERTIFICATE----
+      ----BEGIN CERTIFICATE----
+      ###########################################################
+      #######           Your New CA Certificate           #######
+      ###########################################################
+      ----END CERTIFICATE----
+    server_key: |
+      -----BEGIN RSA PRIVATE KEY-----
+      ###########################################################
+      #######           Your New Server Key               #######
+      ###########################################################
+      -----END RSA PRIVATE KEY-----
+```
+
 ### Defining a Service
 
 This Consul release allows consumers to declare services provided by jobs that
