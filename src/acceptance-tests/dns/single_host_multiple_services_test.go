@@ -3,7 +3,7 @@ package dns_test
 import (
 	"fmt"
 
-	"github.com/cloudfoundry-incubator/consul-release/src/acceptance-tests/testing/consul"
+	"github.com/cloudfoundry-incubator/consul-release/src/acceptance-tests/testing/consulclient"
 	"github.com/cloudfoundry-incubator/consul-release/src/acceptance-tests/testing/helpers"
 	"github.com/miekg/dns"
 	"github.com/pivotal-cf-experimental/bosh-test/bosh"
@@ -16,7 +16,7 @@ import (
 var _ = Describe("Single host multiple services", func() {
 	var (
 		manifest destiny.Manifest
-		agent    consul.AgentStartStopper
+		agent    consulclient.AgentStartStopper
 	)
 
 	BeforeEach(func() {

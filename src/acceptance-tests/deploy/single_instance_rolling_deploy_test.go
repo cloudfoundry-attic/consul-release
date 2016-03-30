@@ -1,7 +1,7 @@
 package deploy_test
 
 import (
-	"github.com/cloudfoundry-incubator/consul-release/src/acceptance-tests/testing/consul"
+	"github.com/cloudfoundry-incubator/consul-release/src/acceptance-tests/testing/consulclient"
 	"github.com/cloudfoundry-incubator/consul-release/src/acceptance-tests/testing/helpers"
 	"github.com/pivotal-cf-experimental/bosh-test/bosh"
 	"github.com/pivotal-cf-experimental/destiny"
@@ -13,7 +13,7 @@ import (
 var _ = Describe("Single instance rolling deploys", func() {
 	var (
 		manifest  destiny.Manifest
-		kv        consul.HTTPKV
+		kv        consulclient.HTTPKV
 		testKey   string
 		testValue string
 	)

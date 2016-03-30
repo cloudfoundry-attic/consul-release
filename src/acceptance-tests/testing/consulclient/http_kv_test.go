@@ -1,4 +1,4 @@
-package consul_test
+package consulclient_test
 
 import (
 	"errors"
@@ -8,7 +8,7 @@ import (
 	"net/http/httptest"
 	"net/url"
 
-	"github.com/cloudfoundry-incubator/consul-release/src/acceptance-tests/testing/consul"
+	"github.com/cloudfoundry-incubator/consul-release/src/acceptance-tests/testing/consulclient"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -17,7 +17,7 @@ import (
 var _ = Describe("HTTPKV", func() {
 	Describe("Get", func() {
 		AfterEach(func() {
-			consul.ResetBodyReader()
+			consulclient.ResetBodyReader()
 		})
 
 		It("gets the key-value based on the key", func() {
@@ -35,7 +35,7 @@ var _ = Describe("HTTPKV", func() {
 				w.Write([]byte("some-value"))
 			}))
 
-			kv := consul.NewHTTPKV(server.URL)
+			kv := consulclient.NewHTTPKV(server.URL)
 
 			value, err := kv.Get("some-key")
 			Expect(err).NotTo(HaveOccurred())
@@ -50,7 +50,7 @@ var _ = Describe("HTTPKV", func() {
 						w.WriteHeader(http.StatusNotFound)
 					}))
 
-					kv := consul.NewHTTPKV(server.URL)
+					kv := consulclient.NewHTTPKV(server.URL)
 
 					_, err := kv.Get("some-key")
 					Expect(err).To(MatchError(errors.New("key \"some-key\" not found")))
@@ -63,7 +63,7 @@ var _ = Describe("HTTPKV", func() {
 						w.WriteHeader(http.StatusBadGateway)
 					}))
 
-					kv := consul.NewHTTPKV(server.URL)
+					kv := consulclient.NewHTTPKV(server.URL)
 
 					_, err := kv.Get("some-key")
 					Expect(err).To(MatchError(errors.New("consul http error: 502 Bad Gateway")))
@@ -72,7 +72,7 @@ var _ = Describe("HTTPKV", func() {
 
 			Context("when the consul address is invalid", func() {
 				It("returns an error", func() {
-					kv := consul.NewHTTPKV("banana://some-bad-address")
+					kv := consulclient.NewHTTPKV("banana://some-bad-address")
 
 					_, err := kv.Get("some-key")
 					Expect(err).To(MatchError(ContainSubstring("unsupported protocol")))
@@ -85,11 +85,11 @@ var _ = Describe("HTTPKV", func() {
 						w.Write([]byte("true"))
 					}))
 
-					consul.SetBodyReader(func(io.Reader) ([]byte, error) {
+					consulclient.SetBodyReader(func(io.Reader) ([]byte, error) {
 						return []byte{}, errors.New("bad things happened")
 					})
 
-					kv := consul.NewHTTPKV(server.URL)
+					kv := consulclient.NewHTTPKV(server.URL)
 
 					_, err := kv.Get("some-key")
 					Expect(err).To(MatchError(errors.New("bad things happened")))
@@ -100,7 +100,7 @@ var _ = Describe("HTTPKV", func() {
 
 	Describe("Set", func() {
 		AfterEach(func() {
-			consul.ResetBodyReader()
+			consulclient.ResetBodyReader()
 		})
 
 		It("sets a key-value pair over HTTP", func() {
@@ -120,7 +120,7 @@ var _ = Describe("HTTPKV", func() {
 				w.Write([]byte("true"))
 			}))
 
-			kv := consul.NewHTTPKV(server.URL)
+			kv := consulclient.NewHTTPKV(server.URL)
 
 			err := kv.Set("some-key", "some-value")
 			Expect(err).NotTo(HaveOccurred())
@@ -134,7 +134,7 @@ var _ = Describe("HTTPKV", func() {
 						w.Write([]byte("rpc error"))
 					}))
 
-					kv := consul.NewHTTPKV(server.URL)
+					kv := consulclient.NewHTTPKV(server.URL)
 
 					err := kv.Set("some-key", "some-value")
 					Expect(err).To(MatchError(errors.New("rpc error")))
@@ -147,11 +147,11 @@ var _ = Describe("HTTPKV", func() {
 						w.Write([]byte("true"))
 					}))
 
-					consul.SetBodyReader(func(io.Reader) ([]byte, error) {
+					consulclient.SetBodyReader(func(io.Reader) ([]byte, error) {
 						return []byte{}, errors.New("bad things happened")
 					})
 
-					kv := consul.NewHTTPKV(server.URL)
+					kv := consulclient.NewHTTPKV(server.URL)
 
 					err := kv.Set("some-key", "some-value")
 					Expect(err).To(MatchError(errors.New("bad things happened")))
@@ -165,7 +165,7 @@ var _ = Describe("HTTPKV", func() {
 						w.Write([]byte("something bad happened"))
 					}))
 
-					kv := consul.NewHTTPKV(server.URL)
+					kv := consulclient.NewHTTPKV(server.URL)
 
 					err := kv.Set("some-key", "some-value")
 					Expect(err).To(MatchError(errors.New("unexpected status: 418 I'm a teapot something bad happened")))
@@ -174,14 +174,14 @@ var _ = Describe("HTTPKV", func() {
 
 			Context("when the consul address is invalid", func() {
 				It("returns an error", func() {
-					kv := consul.NewHTTPKV("banana://some-bad-address")
+					kv := consulclient.NewHTTPKV("banana://some-bad-address")
 
 					err := kv.Set("some-key", "some-value")
 					Expect(err).To(MatchError(ContainSubstring("unsupported protocol")))
 				})
 
 				It("returns an error", func() {
-					kv := consul.NewHTTPKV("banana://%%%%%")
+					kv := consulclient.NewHTTPKV("banana://%%%%%")
 
 					err := kv.Set("some-key", "some-value")
 

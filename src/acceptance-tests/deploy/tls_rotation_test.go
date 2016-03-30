@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/cloudfoundry-incubator/consul-release/src/acceptance-tests/testing/consul"
+	"github.com/cloudfoundry-incubator/consul-release/src/acceptance-tests/testing/consulclient"
 	"github.com/cloudfoundry-incubator/consul-release/src/acceptance-tests/testing/helpers"
 	"github.com/pivotal-cf-experimental/bosh-test/bosh"
 	"github.com/pivotal-cf-experimental/destiny"
@@ -152,7 +152,7 @@ kz9FT4jnME5mUOg+0p5XEfoZUhklll3HWTU/hWVwJzplIRAz3mk=
 var _ = Describe("TLS key rotation", func() {
 	var (
 		manifest destiny.Manifest
-		kv       consul.HTTPKV
+		kv       consulclient.HTTPKV
 		spammer  *helpers.Spammer
 	)
 

@@ -1,4 +1,4 @@
-package consul_test
+package consulclient_test
 
 import (
 	"encoding/json"
@@ -10,7 +10,7 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/cloudfoundry-incubator/consul-release/src/acceptance-tests/testing/consul"
+	"github.com/cloudfoundry-incubator/consul-release/src/acceptance-tests/testing/consulclient"
 	"github.com/pivotal-cf-experimental/destiny"
 
 	. "github.com/onsi/ginkgo"
@@ -19,7 +19,7 @@ import (
 
 var _ = Describe("Agent", func() {
 	var (
-		agent     *consul.Agent
+		agent     *consulclient.Agent
 		configDir string
 	)
 
@@ -28,7 +28,7 @@ var _ = Describe("Agent", func() {
 		configDir, err = ioutil.TempDir("", "consul-agent")
 		Expect(err).NotTo(HaveOccurred())
 
-		agent = consul.NewAgent(consul.AgentOptions{
+		agent = consulclient.NewAgent(consulclient.AgentOptions{
 			ConfigDir:  configDir,
 			DataDir:    "/tmp/client",
 			Domain:     "cf.internal",
@@ -48,7 +48,7 @@ var _ = Describe("Agent", func() {
 		err = os.RemoveAll(configDir)
 		Expect(err).NotTo(HaveOccurred())
 
-		consul.ResetCreateFile()
+		consulclient.ResetCreateFile()
 
 		if agent.Process == nil {
 			return
@@ -74,7 +74,7 @@ var _ = Describe("Agent", func() {
 		})
 
 		It("uses the configuration options in the command", func() {
-			agent = consul.NewAgent(consul.AgentOptions{
+			agent = consulclient.NewAgent(consulclient.AgentOptions{
 				ConfigDir:  configDir,
 				DataDir:    "/tmp/some-data-dir",
 				Domain:     "cf.internal",
@@ -131,7 +131,7 @@ var _ = Describe("Agent", func() {
 		})
 
 		It("it optionally accepts a config dir", func() {
-			agent = consul.NewAgent(consul.AgentOptions{
+			agent = consulclient.NewAgent(consulclient.AgentOptions{
 				DataDir:   "/tmp/some-data-dir",
 				RetryJoin: []string{"127.0.0.1:5555", "192.168.0.5:1111"},
 			})
@@ -166,7 +166,7 @@ var _ = Describe("Agent", func() {
 			It("errors when the config dir cannot be created", func() {
 				err := os.Chmod(configDir, 0000)
 				Expect(err).NotTo(HaveOccurred())
-				agent = consul.NewAgent(consul.AgentOptions{
+				agent = consulclient.NewAgent(consulclient.AgentOptions{
 					ConfigDir: filepath.Join(configDir, "something"),
 				})
 
@@ -177,7 +177,7 @@ var _ = Describe("Agent", func() {
 			It("errors when the config dir cannot be written to", func() {
 				err := os.Chmod(configDir, 0000)
 				Expect(err).NotTo(HaveOccurred())
-				agent = consul.NewAgent(consul.AgentOptions{
+				agent = consulclient.NewAgent(consulclient.AgentOptions{
 					ConfigDir: configDir,
 				})
 
@@ -186,22 +186,22 @@ var _ = Describe("Agent", func() {
 			})
 
 			It("errors when the config file cannot be written to", func() {
-				agent = consul.NewAgent(consul.AgentOptions{
+				agent = consulclient.NewAgent(consulclient.AgentOptions{
 					ConfigDir: configDir,
 				})
 
-				consul.SetCreateFile(badCreate)
+				consulclient.SetCreateFile(badCreate)
 
 				err := agent.Start()
 				Expect(err).To(MatchError(ContainSubstring("bad file descriptor")))
 			})
 
 			It("errors when the any of the cert files cannot be created", func() {
-				agent = consul.NewAgent(consul.AgentOptions{
+				agent = consulclient.NewAgent(consulclient.AgentOptions{
 					ConfigDir: configDir,
 				})
 
-				consul.SetCreateFile(func(filename string) (*os.File, error) {
+				consulclient.SetCreateFile(func(filename string) (*os.File, error) {
 					if strings.Contains(filename, "agent.cert") {
 						return nil, errors.New("permission denied")
 					}
@@ -213,11 +213,11 @@ var _ = Describe("Agent", func() {
 			})
 
 			It("errors when any of the cert files cannot be written to", func() {
-				agent = consul.NewAgent(consul.AgentOptions{
+				agent = consulclient.NewAgent(consulclient.AgentOptions{
 					ConfigDir: configDir,
 				})
 
-				consul.SetCreateFile(func(filename string) (*os.File, error) {
+				consulclient.SetCreateFile(func(filename string) (*os.File, error) {
 					if strings.Contains(filename, "agent.cert") {
 						return badCreate(filename)
 					}

@@ -7,10 +7,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/cloudfoundry-incubator/consul-release/src/acceptance-tests/testing/consul"
+	"github.com/cloudfoundry-incubator/consul-release/src/acceptance-tests/testing/consulclient"
 )
 
-func SpamConsul(chan struct{}, *sync.WaitGroup, consul.HTTPKV) chan map[string]string {
+func SpamConsul(chan struct{}, *sync.WaitGroup, consulclient.HTTPKV) chan map[string]string {
 	return make(chan map[string]string)
 }
 

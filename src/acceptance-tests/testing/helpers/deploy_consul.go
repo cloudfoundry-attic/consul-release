@@ -9,12 +9,12 @@ import (
 
 	"golang.org/x/crypto/pbkdf2"
 
-	"github.com/cloudfoundry-incubator/consul-release/src/acceptance-tests/testing/consul"
+	"github.com/cloudfoundry-incubator/consul-release/src/acceptance-tests/testing/consulclient"
 	"github.com/pivotal-cf-experimental/bosh-test/bosh"
 	"github.com/pivotal-cf-experimental/destiny"
 )
 
-func DeployConsulWithInstanceCount(count int, client bosh.Client, config Config) (manifest destiny.Manifest, kv consul.HTTPKV, err error) {
+func DeployConsulWithInstanceCount(count int, client bosh.Client, config Config) (manifest destiny.Manifest, kv consulclient.HTTPKV, err error) {
 	guid, err := NewGUID()
 	if err != nil {
 		return
@@ -72,7 +72,7 @@ func DeployConsulWithInstanceCount(count int, client bosh.Client, config Config)
 		return
 	}
 
-	kv = consul.NewHTTPKV(fmt.Sprintf("http://%s:6769", manifest.Jobs[1].Networks[0].StaticIPs[0]))
+	kv = consulclient.NewHTTPKV(fmt.Sprintf("http://%s:6769", manifest.Jobs[1].Networks[0].StaticIPs[0]))
 	return
 }
 
@@ -89,11 +89,11 @@ func SetJobInstanceCount(job destiny.Job, network destiny.Network, properties de
 	return job, properties
 }
 
-func NewConsulAgent(manifest destiny.Manifest, count int) (*consul.Agent, error) {
+func NewConsulAgent(manifest destiny.Manifest, count int) (*consulclient.Agent, error) {
 	members := manifest.ConsulMembers()
 
 	if len(members) != count {
-		return &consul.Agent{}, fmt.Errorf("expected %d consul members, found %d", count, len(members))
+		return &consulclient.Agent{}, fmt.Errorf("expected %d consul members, found %d", count, len(members))
 	}
 
 	consulMemberAddresses := []string{}
@@ -103,12 +103,12 @@ func NewConsulAgent(manifest destiny.Manifest, count int) (*consul.Agent, error)
 
 	dataDir, err := ioutil.TempDir("", "consul")
 	if err != nil {
-		return &consul.Agent{}, err
+		return &consulclient.Agent{}, err
 	}
 
 	configDir, err := ioutil.TempDir("", "consul-config")
 	if err != nil {
-		return &consul.Agent{}, err
+		return &consulclient.Agent{}, err
 	}
 
 	var encryptKey string
@@ -117,7 +117,7 @@ func NewConsulAgent(manifest destiny.Manifest, count int) (*consul.Agent, error)
 		encryptKey = base64.StdEncoding.EncodeToString(pbkdf2.Key([]byte(key), []byte(""), 20000, 16, sha1.New))
 	}
 
-	return consul.NewAgent(consul.AgentOptions{
+	return consulclient.NewAgent(consulclient.AgentOptions{
 		DataDir:    dataDir,
 		RetryJoin:  consulMemberAddresses,
 		ConfigDir:  configDir,

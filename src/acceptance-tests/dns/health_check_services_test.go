@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/cloudfoundry-incubator/consul-release/src/acceptance-tests/testing/consul"
+	"github.com/cloudfoundry-incubator/consul-release/src/acceptance-tests/testing/consulclient"
 	"github.com/cloudfoundry-incubator/consul-release/src/acceptance-tests/testing/helpers"
 	"github.com/pivotal-cf-experimental/bosh-test/bosh"
 	"github.com/pivotal-cf-experimental/destiny"
@@ -17,7 +17,7 @@ import (
 var _ = Describe("Health Check", func() {
 	var (
 		manifest       destiny.Manifest
-		agent          consul.AgentStartStopper
+		agent          consulclient.AgentStartStopper
 		healthCheckURL string
 	)
 

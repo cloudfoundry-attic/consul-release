@@ -1,4 +1,4 @@
-package consul_test
+package consulclient_test
 
 import (
 	. "github.com/onsi/ginkgo"
@@ -9,5 +9,5 @@ import (
 
 func TestConsul(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "testing/consul")
+	RunSpecs(t, "testing/consulclient")
 }
