@@ -56,7 +56,7 @@ var _ = Describe("Scaling down instances", func() {
 			})
 
 			By("scaling from 3 nodes to 1", func() {
-				manifest.Jobs[0], manifest.Properties = helpers.SetJobInstanceCount(manifest.Jobs[0], manifest.Networks[0], manifest.Properties, 1)
+				manifest.Jobs[0], manifest.Properties = consul.SetJobInstanceCount(manifest.Jobs[0], manifest.Networks[0], manifest.Properties, 1)
 
 				members := manifest.ConsulMembers()
 				Expect(members).To(HaveLen(2))
@@ -114,7 +114,7 @@ var _ = Describe("Scaling down instances", func() {
 			})
 
 			By("scaling from 5 nodes to 3", func() {
-				manifest.Jobs[0], manifest.Properties = helpers.SetJobInstanceCount(manifest.Jobs[0], manifest.Networks[0], manifest.Properties, 3)
+				manifest.Jobs[0], manifest.Properties = consul.SetJobInstanceCount(manifest.Jobs[0], manifest.Networks[0], manifest.Properties, 3)
 
 				members := manifest.ConsulMembers()
 				Expect(members).To(HaveLen(4))

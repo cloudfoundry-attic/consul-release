@@ -12,7 +12,6 @@ import (
 	"github.com/cloudfoundry-incubator/consul-release/src/acceptance-tests/testing/consulclient"
 	"github.com/pivotal-cf-experimental/bosh-test/bosh"
 	"github.com/pivotal-cf-experimental/destiny/consul"
-	"github.com/pivotal-cf-experimental/destiny/core"
 	"github.com/pivotal-cf-experimental/destiny/iaas"
 )
 
@@ -63,7 +62,7 @@ func DeployConsulWithInstanceCount(count int, client bosh.Client, config Config)
 
 	manifest = consul.NewManifest(manifestConfig, iaasConfig)
 
-	manifest.Jobs[0], manifest.Properties = SetJobInstanceCount(manifest.Jobs[0], manifest.Networks[0], manifest.Properties, count)
+	manifest.Jobs[0], manifest.Properties = consul.SetJobInstanceCount(manifest.Jobs[0], manifest.Networks[0], manifest.Properties, count)
 
 	yaml, err := manifest.ToYAML()
 	if err != nil {
@@ -87,19 +86,6 @@ func DeployConsulWithInstanceCount(count int, client bosh.Client, config Config)
 
 	kv = consulclient.NewHTTPKV(fmt.Sprintf("http://%s:6769", manifest.Jobs[1].Networks[0].StaticIPs[0]))
 	return
-}
-
-func SetJobInstanceCount(job core.Job, network core.Network, properties consul.Properties, count int) (core.Job, consul.Properties) {
-	job.Instances = count
-	for i, net := range job.Networks {
-		if net.Name == network.Name {
-			net.StaticIPs = network.StaticIPs(count)
-			properties.Consul.Agent.Servers.Lan = net.StaticIPs
-		}
-		job.Networks[i] = net
-	}
-
-	return job, properties
 }
 
 func NewConsulAgent(manifest consul.Manifest, count int) (*consulclient.Agent, error) {
