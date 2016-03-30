@@ -7,7 +7,8 @@ import (
 	"github.com/cloudfoundry-incubator/consul-release/src/acceptance-tests/testing/helpers"
 	"github.com/miekg/dns"
 	"github.com/pivotal-cf-experimental/bosh-test/bosh"
-	"github.com/pivotal-cf-experimental/destiny"
+	"github.com/pivotal-cf-experimental/destiny/consul"
+	"github.com/pivotal-cf-experimental/destiny/core"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -15,7 +16,7 @@ import (
 
 var _ = Describe("Single host multiple services", func() {
 	var (
-		manifest destiny.Manifest
+		manifest consul.Manifest
 		agent    consulclient.AgentStartStopper
 	)
 
@@ -48,19 +49,19 @@ var _ = Describe("Single host multiple services", func() {
 
 	It("discovers multiples services on a single host", func() {
 		By("registering services", func() {
-			manifest.Jobs[0].Properties.Consul.Agent.Services = destiny.JobPropertiesConsulAgentServices{
-				"some-service": destiny.JobPropertiesConsulAgentService{
+			manifest.Jobs[0].Properties.Consul.Agent.Services = core.JobPropertiesConsulAgentServices{
+				"some-service": core.JobPropertiesConsulAgentService{
 					Name: "some-service-name",
-					Check: &destiny.JobPropertiesConsulAgentServiceCheck{
+					Check: &core.JobPropertiesConsulAgentServiceCheck{
 						Name:     "some-service-check",
 						Script:   fmt.Sprintf("curl http://%s:6769/health_check", manifest.Jobs[1].Networks[0].StaticIPs[0]),
 						Interval: "1m",
 					},
 					Tags: []string{"some-service-tag"},
 				},
-				"some-other-service": destiny.JobPropertiesConsulAgentService{
+				"some-other-service": core.JobPropertiesConsulAgentService{
 					Name: "some-other-service-name",
-					Check: &destiny.JobPropertiesConsulAgentServiceCheck{
+					Check: &core.JobPropertiesConsulAgentServiceCheck{
 						Name:     "some-other-service-check",
 						Script:   fmt.Sprintf("curl http://%s:6769/health_check", manifest.Jobs[1].Networks[0].StaticIPs[0]),
 						Interval: "1m",

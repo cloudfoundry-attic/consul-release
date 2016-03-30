@@ -11,10 +11,12 @@ import (
 
 	"github.com/cloudfoundry-incubator/consul-release/src/acceptance-tests/testing/consulclient"
 	"github.com/pivotal-cf-experimental/bosh-test/bosh"
-	"github.com/pivotal-cf-experimental/destiny"
+	"github.com/pivotal-cf-experimental/destiny/consul"
+	"github.com/pivotal-cf-experimental/destiny/core"
+	"github.com/pivotal-cf-experimental/destiny/iaas"
 )
 
-func DeployConsulWithInstanceCount(count int, client bosh.Client, config Config) (manifest destiny.Manifest, kv consulclient.HTTPKV, err error) {
+func DeployConsulWithInstanceCount(count int, client bosh.Client, config Config) (manifest consul.Manifest, kv consulclient.HTTPKV, err error) {
 	guid, err := NewGUID()
 	if err != nil {
 		return
@@ -25,30 +27,41 @@ func DeployConsulWithInstanceCount(count int, client bosh.Client, config Config)
 		return
 	}
 
-	manifestConfig := destiny.Config{
+	manifestConfig := consul.Config{
 		DirectorUUID: info.UUID,
 		Name:         fmt.Sprintf("consul-%s", guid),
 	}
 
+	var iaasConfig iaas.Config
 	switch info.CPI {
 	case "aws_cpi":
-		manifestConfig.IAAS = destiny.AWS
+		iaasConfig = iaas.AWSConfig{
+			AccessKeyID:           config.AWS.AccessKeyID,
+			SecretAccessKey:       config.AWS.SecretAccessKey,
+			DefaultKeyName:        config.AWS.DefaultKeyName,
+			DefaultSecurityGroups: config.AWS.DefaultSecurityGroups,
+			Region:                config.AWS.Region,
+			Subnet:                config.AWS.Subnet,
+			RegistryHost:          config.Registry.Host,
+			RegistryPassword:      config.Registry.Password,
+			RegistryPort:          config.Registry.Port,
+			RegistryUsername:      config.Registry.Username,
+		}
 		if config.AWS.Subnet != "" {
-			manifestConfig.AWS.Subnet = config.AWS.Subnet
 			manifestConfig.IPRange = "10.0.4.0/24"
 		} else {
 			err = errors.New("AWSSubnet is required for AWS IAAS deployment")
 			return
 		}
 	case "warden_cpi":
+		iaasConfig = iaas.NewWardenConfig()
 		manifestConfig.IPRange = "10.244.4.0/24"
-		manifestConfig.IAAS = destiny.Warden
 	default:
 		err = errors.New("unknown infrastructure type")
 		return
 	}
 
-	manifest = destiny.NewConsul(manifestConfig)
+	manifest = consul.NewManifest(manifestConfig, iaasConfig)
 
 	manifest.Jobs[0], manifest.Properties = SetJobInstanceCount(manifest.Jobs[0], manifest.Networks[0], manifest.Properties, count)
 
@@ -62,7 +75,7 @@ func DeployConsulWithInstanceCount(count int, client bosh.Client, config Config)
 		return
 	}
 
-	manifest, err = destiny.FromYAML(yaml)
+	manifest, err = consul.FromYAML(yaml)
 	if err != nil {
 		return
 	}
@@ -76,7 +89,7 @@ func DeployConsulWithInstanceCount(count int, client bosh.Client, config Config)
 	return
 }
 
-func SetJobInstanceCount(job destiny.Job, network destiny.Network, properties destiny.Properties, count int) (destiny.Job, destiny.Properties) {
+func SetJobInstanceCount(job core.Job, network core.Network, properties consul.Properties, count int) (core.Job, consul.Properties) {
 	job.Instances = count
 	for i, net := range job.Networks {
 		if net.Name == network.Name {
@@ -89,7 +102,7 @@ func SetJobInstanceCount(job destiny.Job, network destiny.Network, properties de
 	return job, properties
 }
 
-func NewConsulAgent(manifest destiny.Manifest, count int) (*consulclient.Agent, error) {
+func NewConsulAgent(manifest consul.Manifest, count int) (*consulclient.Agent, error) {
 	members := manifest.ConsulMembers()
 
 	if len(members) != count {

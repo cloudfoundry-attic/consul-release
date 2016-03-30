@@ -8,7 +8,8 @@ import (
 	"github.com/cloudfoundry-incubator/consul-release/src/acceptance-tests/testing/consulclient"
 	"github.com/cloudfoundry-incubator/consul-release/src/acceptance-tests/testing/helpers"
 	"github.com/pivotal-cf-experimental/bosh-test/bosh"
-	"github.com/pivotal-cf-experimental/destiny"
+	"github.com/pivotal-cf-experimental/destiny/consul"
+	"github.com/pivotal-cf-experimental/destiny/core"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -16,7 +17,7 @@ import (
 
 var _ = Describe("Health Check", func() {
 	var (
-		manifest       destiny.Manifest
+		manifest       consul.Manifest
 		agent          consulclient.AgentStartStopper
 		healthCheckURL string
 	)
@@ -51,10 +52,10 @@ var _ = Describe("Health Check", func() {
 
 	It("deregisters a service if the health check fails", func() {
 		By("registering a service", func() {
-			manifest.Jobs[0].Properties.Consul.Agent.Services = destiny.JobPropertiesConsulAgentServices{
-				"some-service": destiny.JobPropertiesConsulAgentService{
+			manifest.Jobs[0].Properties.Consul.Agent.Services = core.JobPropertiesConsulAgentServices{
+				"some-service": core.JobPropertiesConsulAgentService{
 					Name: "some-service-name",
-					Check: &destiny.JobPropertiesConsulAgentServiceCheck{
+					Check: &core.JobPropertiesConsulAgentServiceCheck{
 						Name:     "some-service-check",
 						Script:   fmt.Sprintf("curl -f %s", healthCheckURL),
 						Interval: "10s",

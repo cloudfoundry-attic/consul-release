@@ -11,7 +11,7 @@ import (
 	"syscall"
 
 	"github.com/cloudfoundry-incubator/consul-release/src/acceptance-tests/testing/consulclient"
-	"github.com/pivotal-cf-experimental/destiny"
+	"github.com/pivotal-cf-experimental/destiny/consul"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -32,10 +32,10 @@ var _ = Describe("Agent", func() {
 			ConfigDir:  configDir,
 			DataDir:    "/tmp/client",
 			Domain:     "cf.internal",
-			Key:        destiny.AgentKey,
-			Cert:       destiny.AgentCert,
-			CACert:     destiny.CACert,
-			Encrypt:    destiny.Encrypt,
+			Key:        consul.AgentKey,
+			Cert:       consul.AgentCert,
+			CACert:     consul.CACert,
+			Encrypt:    consul.Encrypt,
 			ServerName: "consul agent",
 			RetryJoin:  []string{"127.0.0.1:8301"},
 		})

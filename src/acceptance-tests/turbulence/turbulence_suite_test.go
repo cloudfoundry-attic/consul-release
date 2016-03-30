@@ -5,8 +5,9 @@ import (
 
 	"github.com/cloudfoundry-incubator/consul-release/src/acceptance-tests/testing/helpers"
 	"github.com/pivotal-cf-experimental/bosh-test/bosh"
-	"github.com/pivotal-cf-experimental/bosh-test/turbulence"
-	"github.com/pivotal-cf-experimental/destiny"
+	turbulenceclient "github.com/pivotal-cf-experimental/bosh-test/turbulence"
+	"github.com/pivotal-cf-experimental/destiny/iaas"
+	"github.com/pivotal-cf-experimental/destiny/turbulence"
 
 	"fmt"
 
@@ -25,8 +26,8 @@ var (
 	config helpers.Config
 	client bosh.Client
 
-	turbulenceManifest destiny.Manifest
-	turbulenceClient   turbulence.Client
+	turbulenceManifest turbulence.Manifest
+	turbulenceClient   turbulenceclient.Client
 )
 
 var _ = BeforeSuite(func() {
@@ -50,10 +51,10 @@ var _ = BeforeSuite(func() {
 		guid, err := helpers.NewGUID()
 		Expect(err).NotTo(HaveOccurred())
 
-		manifestConfig := destiny.Config{
+		manifestConfig := turbulence.Config{
 			DirectorUUID: info.UUID,
 			Name:         "turbulence-consul-" + guid,
-			BOSH: destiny.ConfigBOSH{
+			BOSH: turbulence.ConfigBOSH{
 				Target:         config.BOSH.Target,
 				Username:       config.BOSH.Username,
 				Password:       config.BOSH.Password,
@@ -61,37 +62,34 @@ var _ = BeforeSuite(func() {
 			},
 		}
 
+		var iaasConfig iaas.Config
 		switch info.CPI {
 		case "aws_cpi":
-			manifestConfig.IAAS = destiny.AWS
-
 			if config.AWS.Subnet == "" {
 				Fail("aws.subnet is required for AWS IAAS deployment")
 			}
 
 			manifestConfig.IPRange = "10.0.4.0/24"
-			manifestConfig.AWS = destiny.ConfigAWS{
+			iaasConfig = iaas.AWSConfig{
 				AccessKeyID:           config.AWS.AccessKeyID,
 				SecretAccessKey:       config.AWS.SecretAccessKey,
 				DefaultKeyName:        config.AWS.DefaultKeyName,
 				DefaultSecurityGroups: config.AWS.DefaultSecurityGroups,
 				Region:                config.AWS.Region,
 				Subnet:                config.AWS.Subnet,
-			}
-			manifestConfig.Registry = destiny.ConfigRegistry{
-				Host:     config.Registry.Host,
-				Port:     config.Registry.Port,
-				Username: config.Registry.Username,
-				Password: config.Registry.Password,
+				RegistryHost:          config.Registry.Host,
+				RegistryPassword:      config.Registry.Password,
+				RegistryPort:          config.Registry.Port,
+				RegistryUsername:      config.Registry.Username,
 			}
 		case "warden_cpi":
 			manifestConfig.IPRange = "10.244.4.0/24"
-			manifestConfig.IAAS = destiny.Warden
+			iaasConfig = iaas.NewWardenConfig()
 		default:
 			Fail("unknown infrastructure type")
 		}
 
-		turbulenceManifest = destiny.NewTurbulence(manifestConfig)
+		turbulenceManifest = turbulence.NewManifest(manifestConfig, iaasConfig)
 
 		yaml, err := turbulenceManifest.ToYAML()
 		Expect(err).NotTo(HaveOccurred())
@@ -99,7 +97,7 @@ var _ = BeforeSuite(func() {
 		yaml, err = client.ResolveManifestVersions(yaml)
 		Expect(err).NotTo(HaveOccurred())
 
-		turbulenceManifest, err = destiny.FromYAML(yaml)
+		turbulenceManifest, err = turbulence.FromYAML(yaml)
 		Expect(err).NotTo(HaveOccurred())
 
 		err = client.Deploy(yaml)
@@ -117,7 +115,7 @@ var _ = BeforeSuite(func() {
 			turbulenceManifest.Properties.TurbulenceAPI.Password,
 			turbulenceManifest.Jobs[0].Networks[0].StaticIPs[0])
 
-		turbulenceClient = turbulence.NewClient(turbulenceUrl, 5*time.Minute, 2*time.Second)
+		turbulenceClient = turbulenceclient.NewClient(turbulenceUrl, 5*time.Minute, 2*time.Second)
 	})
 })
 
