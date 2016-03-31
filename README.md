@@ -178,8 +178,8 @@ database:
 7   templates:
 8   - name: database
 9     release: database
-10   - name: consul_agent
-11     release: consul
+10  - name: consul_agent
+11    release: consul
 12   properties:
 13     consul:
 14       agent:
@@ -233,8 +233,8 @@ jobs:
   templates:
   - name: database
     release: database
-   - name: consul_agent
-     release: consul
+  - name: consul_agent
+    release: consul
    properties:
      consul:
        agent:
