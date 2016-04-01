@@ -178,20 +178,20 @@ database:
 7   templates:
 8   - name: database
 9     release: database
-10   - name: consul_agent
-11     release: consul
-12   properties:
-13     consul:
-14       agent:
-15         services:
-16           big_database:
-17             name: big_database
-18             tags:
-19             - db
-20             - persistence
-21             check:
-22               script: /bin/check_db
-23               interval: 10s
+10  - name: consul_agent
+11    release: consul
+12  properties:
+13    consul:
+14      agent:
+15        services:
+16          big_database:
+17            name: big_database
+18            tags:
+19            - db
+20            - persistence
+21            check:
+22              script: /bin/check_db
+23              interval: 10s
 ```
 
 In this example we are defining a "database" service that we want to make
@@ -233,17 +233,17 @@ jobs:
   templates:
   - name: database
     release: database
-   - name: consul_agent
-     release: consul
-   properties:
-     consul:
-       agent:
-         services:
-           database:
-             check:
-               name: dns_health_check
-               script: /var/vcap/jobs/database/bin/dns_health_check
-               interval: 3s
+  - name: consul_agent
+    release: consul
+  properties:
+    consul:
+      agent:
+        services:
+          database:
+            check:
+              name: dns_health_check
+              script: /var/vcap/jobs/database/bin/dns_health_check
+              interval: 3s
 ```
 
 In the `check` section of that definition, we can see that it assumes a script
