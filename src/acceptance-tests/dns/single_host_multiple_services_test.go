@@ -49,24 +49,22 @@ var _ = Describe("Single host multiple services", func() {
 
 	It("discovers multiples services on a single host", func() {
 		By("registering services", func() {
-			manifest.Jobs[0].Properties.Consul.Agent.Services = core.JobPropertiesConsulAgentServices{
-				"some-service": core.JobPropertiesConsulAgentService{
-					Name: "some-service-name",
-					Check: &core.JobPropertiesConsulAgentServiceCheck{
-						Name:     "some-service-check",
-						Script:   fmt.Sprintf("curl http://%s:6769/health_check", manifest.Jobs[1].Networks[0].StaticIPs[0]),
-						Interval: "1m",
+			healthCheck := fmt.Sprintf("curl -f http://%s:6769/health_check", manifest.Jobs[1].Networks[0].StaticIPs[0])
+			manifest.Jobs[1].Properties = &core.JobProperties{
+				Consul: core.JobPropertiesConsul{
+					Agent: core.JobPropertiesConsulAgent{
+						Mode: "client",
+						Services: core.JobPropertiesConsulAgentServices{
+							"consul-test-consumer": core.JobPropertiesConsulAgentService{},
+							"some-service": core.JobPropertiesConsulAgentService{
+								Check: &core.JobPropertiesConsulAgentServiceCheck{
+									Name:     "some-service-check",
+									Script:   healthCheck,
+									Interval: "1m",
+								},
+							},
+						},
 					},
-					Tags: []string{"some-service-tag"},
-				},
-				"some-other-service": core.JobPropertiesConsulAgentService{
-					Name: "some-other-service-name",
-					Check: &core.JobPropertiesConsulAgentServiceCheck{
-						Name:     "some-other-service-check",
-						Script:   fmt.Sprintf("curl http://%s:6769/health_check", manifest.Jobs[1].Networks[0].StaticIPs[0]),
-						Interval: "1m",
-					},
-					Tags: []string{"some-other-service-tag"},
 				},
 			}
 		})
@@ -91,12 +89,12 @@ var _ = Describe("Single host multiple services", func() {
 
 		By("resolving service addresses", func() {
 			Eventually(func() ([]string, error) {
-				return checkService("some-service-name.service.cf.internal")
-			}, "1m", "10s").Should(ConsistOf(manifest.Jobs[0].Networks[0].StaticIPs))
+				return checkService("consul-test-consumer.service.cf.internal")
+			}, "1m", "10s").Should(ConsistOf(manifest.Jobs[1].Networks[0].StaticIPs))
 
 			Eventually(func() ([]string, error) {
-				return checkService("some-other-service-name.service.cf.internal")
-			}, "1m", "10s").Should(ConsistOf(manifest.Jobs[0].Networks[0].StaticIPs))
+				return checkService("some-service.service.cf.internal")
+			}, "1m", "10s").Should(ConsistOf(manifest.Jobs[1].Networks[0].StaticIPs))
 		})
 	})
 })
