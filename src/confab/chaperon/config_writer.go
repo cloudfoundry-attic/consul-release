@@ -25,7 +25,7 @@ func NewConfigWriter(dir string, logger logger) ConfigWriter {
 
 func (w ConfigWriter) Write(cfg config.Config) error {
 	w.logger.Info("config-writer.write.generate-configuration")
-	consulConfig := config.GenerateConfiguration(cfg)
+	consulConfig := config.GenerateConfiguration(cfg, w.dir)
 
 	data, err := json.Marshal(&consulConfig)
 	if err != nil {
