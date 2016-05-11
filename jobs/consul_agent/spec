@@ -12,7 +12,6 @@ templates:
   agent.key.erb: config/certs/agent.key
 
 packages:
-  - consul-common
   - consul
   - confab
 

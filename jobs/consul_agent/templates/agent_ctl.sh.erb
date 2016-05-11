@@ -1,5 +1,10 @@
 #!/bin/bash -exu
 
+mkdir -p /var/vcap/sys/log
+
+exec > >(tee -a >(logger -p user.info -t vcap.$(basename $1).stdout) | awk -W interactive '{lineWithDate="echo [`date +\"%Y-%m-%d %H:%M:%S%z\"`] \"" $0 "\""; system(lineWithDate)  }' >>/var/vcap/sys/log/$(basename $0).log)
+exec 2> >(tee -a >(logger -p user.error -t vcap.$(basename $0).stderr) | awk -W interactive '{lineWithDate="echo [`date +\"%Y-%m-%d %H:%M:%S%z\"`] \"" $0 "\""; system(lineWithDate)  }' >>/var/vcap/sys/log/$(basename $0).err.log)
+
 LOG_DIR=/var/vcap/sys/log/consul_agent
 RUN_DIR=/var/vcap/sys/run/consul_agent
 DATA_DIR=/var/vcap/store/consul_agent
@@ -9,15 +14,27 @@ PKG=/var/vcap/packages/consul
 JOB_DIR=/var/vcap/jobs/consul_agent
 PIDFILE=$RUN_DIR/consul_agent.pid
 
+pid_guard() {
+  echo "------------ STARTING `basename $0` at `date` --------------" | tee /dev/stderr
+  pidfile=$1
+  name=$2
+
+  if [ -f "$pidfile" ]; then
+    pid=$(head -1 "$pidfile")
+
+    if [ -n "$pid" ] && [ -e /proc/$pid ]; then
+      echo "$name is already running, please stop it first"
+      exit 1
+    fi
+
+    echo "Removing stale pidfile..."
+    rm $pidfile
+  fi
+}
+
 function main() {
   local confab_package
   confab_package=/var/vcap/packages/confab
-
-  source /var/vcap/packages/consul-common/utils.sh
-
-  mkdir -p /var/vcap/sys/log/monit
-  exec 1>> /var/vcap/sys/log/monit/consul_agent.out.log
-  exec 2>> /var/vcap/sys/log/monit/consul_agent.err.log
 
   case $1 in
     start)
