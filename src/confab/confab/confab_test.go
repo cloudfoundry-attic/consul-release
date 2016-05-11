@@ -583,7 +583,7 @@ var _ = Describe("confab", func() {
 				})
 			})
 
-			It("prints an error and exits status 1", func() {
+			It("prints an error and exits status 1 without killing the process", func() {
 				cmd := exec.Command(pathToConfab,
 					"start",
 					"--config-file", configFile.Name(),
@@ -601,9 +601,11 @@ var _ = Describe("confab", func() {
 				cmd.Stderr = stderr
 
 				Eventually(cmd.Run, COMMAND_TIMEOUT, COMMAND_TIMEOUT).ShouldNot(Succeed())
-				Expect(stderr).To(ContainSubstring("error during start"))
-				Expect(stderr).To(ContainSubstring("already running"))
-				Expect(stdout).To(ContainSubstring("controller.stop-agent.success"))
+				Expect(stderr).To(ContainSubstring("consul_agent is already running, please stop it first"))
+
+				pid, err := getPID(pidFile.Name())
+				Expect(err).NotTo(HaveOccurred())
+				Expect(isPIDRunning(pid)).To(BeTrue())
 			})
 		})
 

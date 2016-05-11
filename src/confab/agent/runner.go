@@ -25,32 +25,7 @@ type Runner struct {
 	cmd       *exec.Cmd
 }
 
-func isRunningProcess(pidFilePath string) bool {
-	pidFileContents, err := ioutil.ReadFile(pidFilePath)
-	if err != nil {
-		return false
-	}
-
-	pid, err := strconv.Atoi(string(pidFileContents))
-	if err != nil {
-		return false
-	}
-
-	proc, err := os.FindProcess(pid)
-	if err != nil {
-		return false
-	}
-	err = proc.Signal(syscall.Signal(0))
-	return err == nil
-}
-
 func (r *Runner) Run() error {
-	if isRunningProcess(r.PIDFile) {
-		err := fmt.Errorf("consul_agent is already running, please stop it first")
-		r.Logger.Error("agent-runner.run.consul-already-running", err)
-		return err
-	}
-
 	if _, err := os.Stat(r.ConfigDir); os.IsNotExist(err) {
 		err := fmt.Errorf("config dir does not exist: %s", r.ConfigDir)
 		r.Logger.Error("agent-runner.run.config-dir-missing", err)

@@ -131,6 +131,11 @@ func main() {
 				controller.Config.Path.ConsulConfigDir), flagSet)
 		}
 
+		if chaperon.IsRunningProcess(agentRunner.PIDFile) {
+			stderr.Println("consul_agent is already running, please stop it first")
+			os.Exit(1)
+		}
+
 		if len(agentClient.ExpectedMembers) == 0 {
 			printUsageAndExit("at least one \"expected-member\" must be provided", flagSet)
 		}

@@ -396,33 +396,6 @@ var _ = Describe("Runner", func() {
 			Expect(stderrBytes.String()).To(Equal("some standard error"))
 		})
 
-		Context("when the pid file already exists", func() {
-			Context("when the pid file points at the pid of a currently running process", func() {
-				It("errors without running the command", func() {
-					myPID := os.Getpid()
-					Expect(ioutil.WriteFile(runner.PIDFile, []byte(fmt.Sprintf("%d", myPID)), 0666)).To(Succeed())
-
-					Expect(runner.Run()).To(MatchError("consul_agent is already running, please stop it first"))
-					Expect(getFakeAgentOutput(runner).PID).To(Equal(0))
-					Expect(logger.Messages).To(ContainSequence([]fakes.LoggerMessage{
-						{
-							Action: "agent-runner.run.consul-already-running",
-							Error:  errors.New("consul_agent is already running, please stop it first"),
-						},
-					}))
-				})
-			})
-
-			Context("when the pid file points to a non-existent process", func() {
-				It("succeeds", func() {
-					Expect(ioutil.WriteFile(runner.PIDFile, []byte("-1"), 0666)).To(Succeed())
-
-					Expect(runner.Run()).To(Succeed())
-					Expect(runner.WritePID()).To(Succeed())
-				})
-			})
-		})
-
 		Context("when starting the process fails", func() {
 			It("returns the error", func() {
 				runner.Path = "/tmp/not-a-thing-we-can-launch"
