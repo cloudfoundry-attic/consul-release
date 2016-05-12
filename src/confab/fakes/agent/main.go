@@ -83,6 +83,7 @@ func main() {
 				log.Fatalf("Failed to close server: %s\n", err)
 			}
 
+			ow.Exit()
 			os.Exit(0)
 		}
 
