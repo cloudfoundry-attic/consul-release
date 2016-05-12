@@ -68,21 +68,21 @@ func (ow OutputWriter) writeOutput() {
 }
 
 func (ow *OutputWriter) LeaveCalled() {
-	ow.callCountChan <- "leave"
+	ow.data.LeaveCallCount++
+	ow.writeOutput()
 }
 
 func (ow *OutputWriter) UseKeyCalled() {
-	ow.callCountChan <- "usekey"
+	ow.data.UseKeyCallCount++
+	ow.writeOutput()
 }
 
 func (ow *OutputWriter) InstallKeyCalled() {
-	ow.callCountChan <- "installkey"
+	ow.data.InstallKeyCallCount++
+	ow.writeOutput()
 }
 
 func (ow *OutputWriter) StatsCalled() {
-	ow.callCountChan <- "stats"
-}
-
-func (ow *OutputWriter) Exit() {
-	ow.callCountChan <- "exit"
+	ow.data.StatsCallCount++
+	ow.writeOutput()
 }
