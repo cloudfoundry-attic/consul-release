@@ -2,7 +2,7 @@
 
 mkdir -p /var/vcap/sys/log
 
-exec > >(tee -a >(logger -p user.info -t vcap.$(basename $1).stdout) | awk -W interactive '{lineWithDate="echo [`date +\"%Y-%m-%d %H:%M:%S%z\"`] \"" $0 "\""; system(lineWithDate)  }' >>/var/vcap/sys/log/$(basename $0).log)
+exec > >(tee -a >(logger -p user.info -t vcap.$(basename $1).stdout) | awk -W interactive '{lineWithDate="echo [`date +\"%Y-%m-%d %H:%M:%S%z\"`] \"" $0 "\""; system(lineWithDate)	}' >>/var/vcap/sys/log/$(basename $0).log)
 exec 2> >(tee -a >(logger -p user.error -t vcap.$(basename $0).stderr) | awk -W interactive '{lineWithDate="echo [`date +\"%Y-%m-%d %H:%M:%S%z\"`] \"" $0 "\""; system(lineWithDate)  }' >>/var/vcap/sys/log/$(basename $0).err.log)
 
 LOG_DIR=/var/vcap/sys/log/consul_agent
@@ -14,40 +14,22 @@ PKG=/var/vcap/packages/consul
 JOB_DIR=/var/vcap/jobs/consul_agent
 PIDFILE=$RUN_DIR/consul_agent.pid
 
-pid_guard() {
-  echo "------------ STARTING `basename $0` at `date` --------------" | tee /dev/stderr
-  pidfile=$1
-  name=$2
-
-  if [ -f "$pidfile" ]; then
-    pid=$(head -1 "$pidfile")
-
-    if [ -n "$pid" ] && [ -e /proc/$pid ]; then
-      echo "$name is already running, please stop it first"
-      exit 1
-    fi
-
-    echo "Removing stale pidfile..."
-    rm $pidfile
-  fi
-}
-
 function main() {
   local confab_package
   confab_package=/var/vcap/packages/confab
 
   case $1 in
-    start)
-      start "${confab_package}"
-      ;;
+	start)
+	  start "${confab_package}"
+	  ;;
 
-    stop)
-      stop "${confab_package}"
-      ;;
+	stop)
+	  stop "${confab_package}"
+	  ;;
 
-    *)
-      echo "Usage: $0 {start|stop}"
-      ;;
+	*)
+	  echo "Usage: $0 {start|stop}"
+	  ;;
   esac
 }
 
@@ -69,8 +51,6 @@ function setup_resolvconf() {
 function start() {
   local confab_package
   confab_package="${1}"
-
-  pid_guard "${PIDFILE}" "consul_agent"
 
   mkdir -p "${LOG_DIR}"
   chown -R vcap:vcap "${LOG_DIR}"
@@ -104,7 +84,7 @@ function start() {
 
   GOMAXPROCS=$(nproc)
   if [ "$GOMAXPROCS" = "1" ]; then
-    GOMAXPROCS=2
+	GOMAXPROCS=2
   fi
 
   export GOMAXPROCS
@@ -116,15 +96,15 @@ function start() {
   recursors=""
 
   for nameserver in ${nameservers[@]}; do
-    recursors="${recursors} -recursor=${nameserver}"
+	recursors="${recursors} -recursor=${nameserver}"
   done
 
   chpst -u vcap:vcap "${confab_package}/bin/confab" \
-    start \
-    ${recursors} \
-    --config-file ${JOB_DIR}/confab.json \
-    2> >(tee -a ${LOG_DIR}/consul_agent.stderr.log | logger -p user.error -t vcap.consul-agent) \
-    1> >(tee -a ${LOG_DIR}/consul_agent.stdout.log | logger -p user.info  -t vcap.consul-agent)
+	start \
+	${recursors} \
+	--config-file ${JOB_DIR}/confab.json \
+	2> >(tee -a ${LOG_DIR}/consul_agent.stderr.log | logger -p user.error -t vcap.consul-agent) \
+	1> >(tee -a ${LOG_DIR}/consul_agent.stdout.log | logger -p user.info  -t vcap.consul-agent)
 }
 
 function stop() {
@@ -132,10 +112,10 @@ function stop() {
   confab_package="${1}"
 
   "${confab_package}/bin/confab" \
-    stop \
-    --config-file ${JOB_DIR}/confab.json \
-    2> >(tee -a ${LOG_DIR}/consul_agent.stderr.log | logger -p user.error -t vcap.consul-agent) \
-    1> >(tee -a ${LOG_DIR}/consul_agent.stdout.log | logger -p user.info  -t vcap.consul-agent)
+	stop \
+	--config-file ${JOB_DIR}/confab.json \
+	2> >(tee -a ${LOG_DIR}/consul_agent.stderr.log | logger -p user.error -t vcap.consul-agent) \
+	1> >(tee -a ${LOG_DIR}/consul_agent.stdout.log | logger -p user.info  -t vcap.consul-agent)
 }
 
 main $@
