@@ -36,6 +36,9 @@ var _ = BeforeSuite(func() {
 
 	pathToConfab, err = gexec.Build("github.com/cloudfoundry-incubator/consul-release/src/confab/confab")
 	Expect(err).NotTo(HaveOccurred())
+
+	cmd := exec.Command("which", "lsof")
+	Expect(cmd.Run()).To(Succeed())
 })
 
 var _ = AfterSuite(func() {
