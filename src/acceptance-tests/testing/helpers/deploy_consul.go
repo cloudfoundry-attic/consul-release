@@ -79,7 +79,7 @@ func DeployConsulWithInstanceCount(count int, client bosh.Client, config Config)
 		return
 	}
 
-	err = client.Deploy(yaml)
+	_, err = client.Deploy(yaml)
 	if err != nil {
 		return
 	}

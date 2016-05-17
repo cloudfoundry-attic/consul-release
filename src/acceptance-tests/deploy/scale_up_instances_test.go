@@ -41,10 +41,7 @@ var _ = Describe("Scaling up Instances", func() {
 
 			Eventually(func() ([]bosh.VM, error) {
 				return client.DeploymentVMs(manifest.Name)
-			}, "1m", "10s").Should(ConsistOf([]bosh.VM{
-				{"running"},
-				{"running"},
-			}))
+			}, "1m", "10s").Should(ConsistOf(helpers.GetVMsFromManifest(manifest)))
 		})
 
 		It("provides a functioning cluster after the scale up", func() {
@@ -62,17 +59,12 @@ var _ = Describe("Scaling up Instances", func() {
 				yaml, err := manifest.ToYAML()
 				Expect(err).NotTo(HaveOccurred())
 
-				err = client.Deploy(yaml)
+				_, err = client.Deploy(yaml)
 				Expect(err).NotTo(HaveOccurred())
 
 				Eventually(func() ([]bosh.VM, error) {
 					return client.DeploymentVMs(manifest.Name)
-				}, "1m", "10s").Should(ConsistOf([]bosh.VM{
-					{"running"},
-					{"running"},
-					{"running"},
-					{"running"},
-				}))
+				}, "1m", "10s").Should(ConsistOf(helpers.GetVMsFromManifest(manifest)))
 			})
 
 			By("setting a persistent value to check the cluster is up after the scale up", func() {
@@ -95,12 +87,7 @@ var _ = Describe("Scaling up Instances", func() {
 
 			Eventually(func() ([]bosh.VM, error) {
 				return client.DeploymentVMs(manifest.Name)
-			}, "1m", "10s").Should(ConsistOf([]bosh.VM{
-				{"running"},
-				{"running"},
-				{"running"},
-				{"running"},
-			}))
+			}, "1m", "10s").Should(ConsistOf(helpers.GetVMsFromManifest(manifest)))
 
 			spammer = helpers.NewSpammer(kv, 1*time.Second)
 		})
@@ -121,19 +108,12 @@ var _ = Describe("Scaling up Instances", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				spammer.Spam()
-				err = client.Deploy(yaml)
+				_, err = client.Deploy(yaml)
 				Expect(err).NotTo(HaveOccurred())
 
 				Eventually(func() ([]bosh.VM, error) {
 					return client.DeploymentVMs(manifest.Name)
-				}, "1m", "10s").Should(ConsistOf([]bosh.VM{
-					{"running"},
-					{"running"},
-					{"running"},
-					{"running"},
-					{"running"},
-					{"running"},
-				}))
+				}, "1m", "10s").Should(ConsistOf(helpers.GetVMsFromManifest(manifest)))
 
 				spammer.Stop()
 			})

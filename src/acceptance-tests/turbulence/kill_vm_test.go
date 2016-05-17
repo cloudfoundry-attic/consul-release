@@ -35,12 +35,7 @@ var _ = Describe("KillVm", func() {
 
 		Eventually(func() ([]bosh.VM, error) {
 			return client.DeploymentVMs(consulManifest.Name)
-		}, "1m", "10s").Should(ConsistOf([]bosh.VM{
-			{"running"},
-			{"running"},
-			{"running"},
-			{"running"},
-		}))
+		}, "1m", "10s").Should(ConsistOf(helpers.GetVMsFromManifest(consulManifest)))
 
 		spammer = helpers.NewSpammer(kv, 1*time.Second)
 	})
@@ -55,12 +50,7 @@ var _ = Describe("KillVm", func() {
 
 			Eventually(func() ([]bosh.VM, error) {
 				return client.DeploymentVMs(consulManifest.Name)
-			}, "1m", "10s").Should(ConsistOf([]bosh.VM{
-				{"running"},
-				{"running"},
-				{"running"},
-				{"running"},
-			}))
+			}, "1m", "10s").Should(ConsistOf(helpers.GetVMsFromManifest(consulManifest)))
 		})
 
 		By("deleting the deployment", func() {
@@ -92,12 +82,7 @@ var _ = Describe("KillVm", func() {
 
 				Eventually(func() ([]bosh.VM, error) {
 					return client.DeploymentVMs(consulManifest.Name)
-				}, "1m", "10s").Should(ConsistOf([]bosh.VM{
-					{"running"},
-					{"running"},
-					{"running"},
-					{"running"},
-				}))
+				}, "1m", "10s").Should(ConsistOf(helpers.GetVMsFromManifest(consulManifest)))
 
 				spammer.Stop()
 			})

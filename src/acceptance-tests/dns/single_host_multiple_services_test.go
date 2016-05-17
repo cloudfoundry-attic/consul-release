@@ -28,10 +28,7 @@ var _ = Describe("Single host multiple services", func() {
 
 		Eventually(func() ([]bosh.VM, error) {
 			return client.DeploymentVMs(manifest.Name)
-		}, "1m", "10s").Should(ConsistOf([]bosh.VM{
-			{"running"},
-			{"running"},
-		}))
+		}, "1m", "10s").Should(ConsistOf(helpers.GetVMsFromManifest(manifest)))
 
 		agent, err = helpers.NewConsulAgent(manifest, 2)
 		Expect(err).NotTo(HaveOccurred())
@@ -76,15 +73,12 @@ var _ = Describe("Single host multiple services", func() {
 			yaml, err = client.ResolveManifestVersions(yaml)
 			Expect(err).NotTo(HaveOccurred())
 
-			err = client.Deploy(yaml)
+			_, err = client.Deploy(yaml)
 			Expect(err).NotTo(HaveOccurred())
 
 			Eventually(func() ([]bosh.VM, error) {
 				return client.DeploymentVMs(manifest.Name)
-			}, "1m", "10s").Should(ConsistOf([]bosh.VM{
-				{"running"},
-				{"running"},
-			}))
+			}, "1m", "10s").Should(ConsistOf(helpers.GetVMsFromManifest(manifest)))
 		})
 
 		By("resolving service addresses", func() {

@@ -100,14 +100,12 @@ var _ = BeforeSuite(func() {
 		turbulenceManifest, err = turbulence.FromYAML(yaml)
 		Expect(err).NotTo(HaveOccurred())
 
-		err = client.Deploy(yaml)
+		_, err = client.Deploy(yaml)
 		Expect(err).NotTo(HaveOccurred())
 
 		Eventually(func() ([]bosh.VM, error) {
 			return client.DeploymentVMs(turbulenceManifest.Name)
-		}, "1m", "10s").Should(ConsistOf([]bosh.VM{
-			{"running"},
-		}))
+		}, "1m", "10s").Should(ConsistOf(getVMsFromManifest(turbulenceManifest)))
 	})
 
 	By("preparing turbulence client", func() {
@@ -127,3 +125,16 @@ var _ = AfterSuite(func() {
 		}
 	})
 })
+
+func getVMsFromManifest(manifest turbulence.Manifest) []bosh.VM {
+	var vms []bosh.VM
+
+	for _, job := range manifest.Jobs {
+		for i := 0; i < job.Instances; i++ {
+			vms = append(vms, bosh.VM{JobName: job.Name, Index: i, State: "running"})
+
+		}
+	}
+
+	return vms
+}
