@@ -18,7 +18,7 @@ function main() {
 
   case "${1}" in
     "start")
-      chpst -u vcap:vcap "${pkg_dir}/bin/testconsumer" --port 6769 --consul-url http://127.0.0.1:8500 \
+      chpst -u vcap:vcap "${pkg_dir}/bin/testconsumer" --port 6769 --consul-url http://127.0.0.1:8500 --path-to-check-a-record "${pkg_dir}/bin/check-a-record" \
         2> >(tee -a ${log_dir}/consul-test-consumer.stderr.log | logger -p user.error -t vcap.consul-test-consumer) \
         1> >(tee -a ${log_dir}/consul-test-consumer.stdout.log | logger -p user.info  -t vcap.consul-test-consumer) &
       echo "${!}" > "${pidfile}"

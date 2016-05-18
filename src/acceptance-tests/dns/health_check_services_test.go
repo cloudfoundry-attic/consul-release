@@ -2,11 +2,9 @@ package dns_test
 
 import (
 	"fmt"
-	"net/http"
-	"strings"
 
-	"github.com/cloudfoundry-incubator/consul-release/src/acceptance-tests/testing/consulclient"
 	"github.com/cloudfoundry-incubator/consul-release/src/acceptance-tests/testing/helpers"
+	testconsumerclient "github.com/cloudfoundry-incubator/consul-release/src/acceptance-tests/testing/testconsumer/client"
 	"github.com/pivotal-cf-experimental/bosh-test/bosh"
 	"github.com/pivotal-cf-experimental/destiny/consul"
 	"github.com/pivotal-cf-experimental/destiny/core"
@@ -17,34 +15,28 @@ import (
 
 var _ = Describe("Health Check", func() {
 	var (
-		manifest       consul.Manifest
-		agent          consulclient.AgentStartStopper
-		healthCheckURL string
+		manifest consul.Manifest
+		tcClient testconsumerclient.Client
 	)
 
 	BeforeEach(func() {
 		var err error
 
-		manifest, _, err = helpers.DeployConsulWithInstanceCount(1, client, config)
+		manifest, _, err = helpers.DeployConsulWithInstanceCount(1, boshClient, config)
 		Expect(err).NotTo(HaveOccurred())
 
 		Eventually(func() ([]bosh.VM, error) {
-			return client.DeploymentVMs(manifest.Name)
+			return boshClient.DeploymentVMs(manifest.Name)
 		}, "1m", "10s").Should(ConsistOf(helpers.GetVMsFromManifest(manifest)))
 
-		agent, err = helpers.NewConsulAgent(manifest, 2)
-		Expect(err).NotTo(HaveOccurred())
-
-		agent.Start()
-		healthCheckURL = fmt.Sprintf("http://%s:6769/health_check", manifest.Jobs[1].Networks[0].StaticIPs[0])
+		tcClient = testconsumerclient.New(fmt.Sprintf("http://%s:6769", manifest.Jobs[1].Networks[0].StaticIPs[0]))
 	})
 
 	AfterEach(func() {
 		if !CurrentGinkgoTestDescription().Failed {
-			err := client.DeleteDeployment(manifest.Name)
+			err := boshClient.DeleteDeployment(manifest.Name)
 			Expect(err).NotTo(HaveOccurred())
 		}
-		agent.Stop()
 	})
 
 	Context("with an operator defined check script", func() {
@@ -55,7 +47,7 @@ var _ = Describe("Health Check", func() {
 						Name: "some-service-name",
 						Check: &core.JobPropertiesConsulAgentServiceCheck{
 							Name:     "some-service-check",
-							Script:   fmt.Sprintf("curl -f %s", healthCheckURL),
+							Script:   fmt.Sprintf("curl -f %s", fmt.Sprintf("http://%s:6769/health_check", manifest.Jobs[1].Networks[0].StaticIPs[0])),
 							Interval: "10s",
 						},
 						Tags: []string{"some-service-tag"},
@@ -67,44 +59,42 @@ var _ = Describe("Health Check", func() {
 				yaml, err := manifest.ToYAML()
 				Expect(err).NotTo(HaveOccurred())
 
-				yaml, err = client.ResolveManifestVersions(yaml)
+				yaml, err = boshClient.ResolveManifestVersions(yaml)
 				Expect(err).NotTo(HaveOccurred())
 
-				_, err = client.Deploy(yaml)
+				_, err = boshClient.Deploy(yaml)
 				Expect(err).NotTo(HaveOccurred())
 
 				Eventually(func() ([]bosh.VM, error) {
-					return client.DeploymentVMs(manifest.Name)
+					return boshClient.DeploymentVMs(manifest.Name)
 				}, "1m", "10s").Should(ConsistOf(helpers.GetVMsFromManifest(manifest)))
 			})
 
 			By("resolving the service address", func() {
 				Eventually(func() ([]string, error) {
-					return checkService("some-service-name.service.cf.internal")
+					return tcClient.DNS("some-service-name.service.cf.internal")
 				}, "1m", "10s").Should(ConsistOf(manifest.Jobs[0].Networks[0].StaticIPs))
 			})
 
 			By("causing the health check to fail", func() {
-				response, err := http.Post(healthCheckURL, "", strings.NewReader("false"))
+				err := tcClient.SetHealthCheck(false)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(response.StatusCode).To(Equal(http.StatusOK))
 			})
 
 			By("the service should be deregistered", func() {
 				Eventually(func() ([]string, error) {
-					return checkService("some-service-name.service.cf.internal")
+					return tcClient.DNS("some-service-name.service.cf.internal")
 				}, "1m", "10s").Should(BeEmpty())
 			})
 
 			By("causing the health check to succeed", func() {
-				response, err := http.Post(healthCheckURL, "", strings.NewReader("true"))
+				err := tcClient.SetHealthCheck(true)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(response.StatusCode).To(Equal(http.StatusOK))
 			})
 
 			By("the service should be alive", func() {
 				Eventually(func() ([]string, error) {
-					return checkService("some-service-name.service.cf.internal")
+					return tcClient.DNS("some-service-name.service.cf.internal")
 				}, "1m", "10s").Should(ConsistOf(manifest.Jobs[0].Networks[0].StaticIPs))
 			})
 		})
@@ -129,44 +119,42 @@ var _ = Describe("Health Check", func() {
 				yaml, err := manifest.ToYAML()
 				Expect(err).NotTo(HaveOccurred())
 
-				yaml, err = client.ResolveManifestVersions(yaml)
+				yaml, err = boshClient.ResolveManifestVersions(yaml)
 				Expect(err).NotTo(HaveOccurred())
 
-				_, err = client.Deploy(yaml)
+				_, err = boshClient.Deploy(yaml)
 				Expect(err).NotTo(HaveOccurred())
 
 				Eventually(func() ([]bosh.VM, error) {
-					return client.DeploymentVMs(manifest.Name)
+					return boshClient.DeploymentVMs(manifest.Name)
 				}, "1m", "10s").Should(ConsistOf(helpers.GetVMsFromManifest(manifest)))
 			})
 
 			By("resolving the service address", func() {
 				Eventually(func() ([]string, error) {
-					return checkService("consul-test-consumer.service.cf.internal")
+					return tcClient.DNS("consul-test-consumer.service.cf.internal")
 				}, "1m", "10s").Should(ConsistOf(manifest.Jobs[1].Networks[0].StaticIPs))
 			})
 
 			By("causing the health check to fail", func() {
-				response, err := http.Post(healthCheckURL, "", strings.NewReader("false"))
+				err := tcClient.SetHealthCheck(false)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(response.StatusCode).To(Equal(http.StatusOK))
 			})
 
 			By("the service should be deregistered", func() {
 				Eventually(func() ([]string, error) {
-					return checkService("consul-test-consumer.service.cf.internal")
+					return tcClient.DNS("consul-test-consumer.service.cf.internal")
 				}, "1m", "10s").Should(BeEmpty())
 			})
 
 			By("causing the health check to succeed", func() {
-				response, err := http.Post(healthCheckURL, "", strings.NewReader("true"))
+				err := tcClient.SetHealthCheck(true)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(response.StatusCode).To(Equal(http.StatusOK))
 			})
 
 			By("the service should be alive", func() {
 				Eventually(func() ([]string, error) {
-					return checkService("consul-test-consumer.service.cf.internal")
+					return tcClient.DNS("consul-test-consumer.service.cf.internal")
 				}, "1m", "10s").Should(ConsistOf(manifest.Jobs[1].Networks[0].StaticIPs))
 			})
 		})

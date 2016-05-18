@@ -12,8 +12,8 @@ import (
 )
 
 var (
-	config helpers.Config
-	client bosh.Client
+	config     helpers.Config
+	boshClient bosh.Client
 )
 
 func TestDNS(t *testing.T) {
@@ -28,7 +28,7 @@ var _ = BeforeSuite(func() {
 	config, err = helpers.LoadConfig(configPath)
 	Expect(err).NotTo(HaveOccurred())
 
-	client = bosh.NewClient(bosh.Config{
+	boshClient = bosh.NewClient(bosh.Config{
 		URL:              fmt.Sprintf("https://%s:25555", config.BOSH.Target),
 		Username:         config.BOSH.Username,
 		Password:         config.BOSH.Password,
