@@ -124,9 +124,6 @@
 [submodule "src/acceptance-tests/vendor/github.com/pivotal-cf-experimental/destiny"]
 	path = src/acceptance-tests/vendor/github.com/pivotal-cf-experimental/destiny
 	url = https://github.com/pivotal-cf-experimental/destiny
-[submodule "src/acceptance-tests/vendor/github.com/miekg/dns"]
-	path = src/acceptance-tests/vendor/github.com/miekg/dns
-	url = https://github.com/miekg/dns.git
 [submodule "src/acceptance-tests/vendor/github.com/cloudfoundry-incubator/check-a-record"]
 	path = src/acceptance-tests/vendor/github.com/cloudfoundry-incubator/check-a-record
 	url = https://github.com/cloudfoundry-incubator/check-a-record.git

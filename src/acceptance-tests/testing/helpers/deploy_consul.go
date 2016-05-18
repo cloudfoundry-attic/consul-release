@@ -1,13 +1,8 @@
 package helpers
 
 import (
-	"crypto/sha1"
-	"encoding/base64"
 	"errors"
 	"fmt"
-	"io/ioutil"
-
-	"golang.org/x/crypto/pbkdf2"
 
 	"github.com/cloudfoundry-incubator/consul-release/src/acceptance-tests/testing/consulclient"
 	"github.com/pivotal-cf-experimental/bosh-test/bosh"
@@ -86,45 +81,4 @@ func DeployConsulWithInstanceCount(count int, client bosh.Client, config Config)
 
 	kv = consulclient.NewHTTPKV(fmt.Sprintf("http://%s:6769", manifest.Jobs[1].Networks[0].StaticIPs[0]))
 	return
-}
-
-func NewConsulAgent(manifest consul.Manifest, count int) (*consulclient.Agent, error) {
-	members := manifest.ConsulMembers()
-
-	if len(members) != count {
-		return &consulclient.Agent{}, fmt.Errorf("expected %d consul members, found %d", count, len(members))
-	}
-
-	consulMemberAddresses := []string{}
-	for _, member := range members {
-		consulMemberAddresses = append(consulMemberAddresses, member.Address)
-	}
-
-	dataDir, err := ioutil.TempDir("", "consul")
-	if err != nil {
-		return &consulclient.Agent{}, err
-	}
-
-	configDir, err := ioutil.TempDir("", "consul-config")
-	if err != nil {
-		return &consulclient.Agent{}, err
-	}
-
-	var encryptKey string
-	if len(manifest.Properties.Consul.EncryptKeys) > 0 {
-		key := manifest.Properties.Consul.EncryptKeys[0]
-		encryptKey = base64.StdEncoding.EncodeToString(pbkdf2.Key([]byte(key), []byte(""), 20000, 16, sha1.New))
-	}
-
-	return consulclient.NewAgent(consulclient.AgentOptions{
-		DataDir:    dataDir,
-		RetryJoin:  consulMemberAddresses,
-		ConfigDir:  configDir,
-		Domain:     "cf.internal",
-		Key:        manifest.Properties.Consul.AgentKey,
-		Cert:       manifest.Properties.Consul.AgentCert,
-		CACert:     manifest.Properties.Consul.CACert,
-		Encrypt:    encryptKey,
-		ServerName: "consul agent",
-	}), nil
 }
