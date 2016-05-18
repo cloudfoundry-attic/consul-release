@@ -14,11 +14,17 @@ func TestConsumer(t *testing.T) {
 	RunSpecs(t, "testing/testconsumer")
 }
 
-var pathToConsumer string
+var (
+	pathToConsumer     string
+	pathToCheckARecord string
+)
 
 var _ = BeforeSuite(func() {
 	var err error
 	pathToConsumer, err = gexec.Build("github.com/cloudfoundry-incubator/consul-release/src/acceptance-tests/testing/testconsumer")
+	Expect(err).NotTo(HaveOccurred())
+
+	pathToCheckARecord, err = gexec.Build("github.com/cloudfoundry-incubator/consul-release/src/acceptance-tests/testing/testconsumer/fakes/checkarecord")
 	Expect(err).NotTo(HaveOccurred())
 })
 

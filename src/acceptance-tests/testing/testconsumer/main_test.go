@@ -34,7 +34,7 @@ var _ = Describe("Proxying consul requests", func() {
 
 	Context("main", func() {
 		It("returns 1 when the consul url is malformed", func() {
-			command := exec.Command(pathToConsumer, "--port", port, "--consul-url", "%%%%%%%%%%")
+			command := exec.Command(pathToConsumer, "--port", port, "--consul-url", "%%%%%%%%%%", "--path-to-check-a-record", pathToCheckARecord)
 
 			var err error
 			session, err = gexec.Start(command, GinkgoWriter, GinkgoWriter)
@@ -42,6 +42,17 @@ var _ = Describe("Proxying consul requests", func() {
 
 			Eventually(session).Should(gexec.Exit(1))
 			Expect(session.Err.Contents()).To(ContainSubstring("invalid URL escape"))
+		})
+
+		It("returns 1 when path-to-check-a-record is not provided", func() {
+			command := exec.Command(pathToConsumer, "--port", port, "--consul-url", "127.0.0.1")
+
+			var err error
+			session, err = gexec.Start(command, GinkgoWriter, GinkgoWriter)
+			Expect(err).NotTo(HaveOccurred())
+
+			Eventually(session).Should(gexec.Exit(1))
+			Expect(session.Err.Contents()).To(ContainSubstring("--path-to-check-a-record is required"))
 		})
 	})
 
@@ -51,7 +62,7 @@ var _ = Describe("Proxying consul requests", func() {
 				w.WriteHeader(http.StatusTeapot)
 			}))
 
-			command := exec.Command(pathToConsumer, "--port", port, "--consul-url", consulServer.URL)
+			command := exec.Command(pathToConsumer, "--port", port, "--consul-url", consulServer.URL, "--path-to-check-a-record", pathToCheckARecord)
 
 			var err error
 			session, err = gexec.Start(command, GinkgoWriter, GinkgoWriter)
@@ -78,6 +89,40 @@ var _ = Describe("Proxying consul requests", func() {
 
 	})
 
+	Context("dns", func() {
+		var pathToCheckARecord string
+
+		BeforeEach(func() {
+			var err error
+
+			consulServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+				w.WriteHeader(http.StatusTeapot)
+			}))
+
+			args := []string{
+				"-ldflags",
+				"-X main.Addresses=127.0.0.2,127.0.0.3,127.0.0.4 -X main.ServiceName=something.service.cf.internal",
+			}
+
+			pathToCheckARecord, err = gexec.Build("github.com/cloudfoundry-incubator/consul-release/src/acceptance-tests/testing/testconsumer/fakes/checkarecord", args...)
+			Expect(err).NotTo(HaveOccurred())
+
+			command := exec.Command(pathToConsumer, "--port", port, "--consul-url", consulServer.URL, "--path-to-check-a-record", pathToCheckARecord)
+
+			session, err = gexec.Start(command, GinkgoWriter, GinkgoWriter)
+			Expect(err).NotTo(HaveOccurred())
+
+			waitForServerToStart(port)
+		})
+
+		It("returns an array of ip addresses given the service", func() {
+			status, body, err := makeRequest("GET", fmt.Sprintf("http://localhost:%s/dns?service=something.service.cf.internal", port), "")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(status).To(Equal(http.StatusOK))
+			Expect(body).To(Equal(`["127.0.0.2","127.0.0.3","127.0.0.4"]`))
+		})
+	})
+
 	Context("with a functioning consul", func() {
 		BeforeEach(func() {
 			consulServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
@@ -96,7 +141,7 @@ var _ = Describe("Proxying consul requests", func() {
 				w.WriteHeader(http.StatusTeapot)
 			}))
 
-			command := exec.Command(pathToConsumer, "--port", port, "--consul-url", consulServer.URL)
+			command := exec.Command(pathToConsumer, "--port", port, "--consul-url", consulServer.URL, "--path-to-check-a-record", pathToCheckARecord)
 
 			var err error
 			session, err = gexec.Start(command, GinkgoWriter, GinkgoWriter)
@@ -131,7 +176,7 @@ var _ = Describe("Proxying consul requests", func() {
 	Context("proxy errors", func() {
 		It("returns the underlying proxy error message", func() {
 			var err error
-			command := exec.Command(pathToConsumer, "--port", port, "--consul-url", "http://localhost:999999")
+			command := exec.Command(pathToConsumer, "--port", port, "--consul-url", "http://localhost:999999", "--path-to-check-a-record", pathToCheckARecord)
 
 			session, err = gexec.Start(command, GinkgoWriter, GinkgoWriter)
 			Expect(err).NotTo(HaveOccurred())

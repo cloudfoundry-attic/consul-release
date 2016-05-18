@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/cloudfoundry-incubator/consul-release/src/acceptance-tests/testing/testconsumer/handlers"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
