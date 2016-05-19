@@ -1,13 +1,13 @@
 ---
-consul/consul-template_0.9.0_linux_amd64.tar.gz:
-  object_id: ee5243dc-fc50-4d77-80d7-63fbb85dc0ef
-  sha: a44e441f9347abe64956e5bb30c4d4b0464d1f73
-  size: 2460384
-consul/consul_0.5.2_linux_amd64.zip:
-  object_id: e6f14d67-938c-4d31-bc9a-a4d425bd8557
-  sha: b3ae610c670fc3b81737d44724ebde969da66ebf
-  size: 4803609
 golang/go1.6.1.linux-amd64.tar.gz:
   object_id: 6ed0fb3d-f52b-4255-a4da-6fa3e3e97194
   sha: c73492474dcc7a233772d27e948b74468d9f1849
   size: 84824395
+consul/consul-template_0.14.0_linux_amd64.zip:
+  object_id: 9658016c-ab14-4037-b859-d144fa9fc9e7
+  sha: f932301f69a477253e4e4bf3c60159ea77cf28a8
+  size: 3523492
+consul/consul_0.6.4_linux_amd64.zip:
+  object_id: de9ee191-b088-4cef-8c02-e68d4d16eb29
+  sha: 85de555de27cae126f0f89e762f6136e1c7104b6
+  size: 6206903

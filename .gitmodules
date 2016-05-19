@@ -6,7 +6,7 @@
 	url = https://github.com/onsi/gomega
 [submodule "src/github.com/hashicorp/consul"]
 	path = src/confab/vendor/github.com/hashicorp/consul
-	url = https://github.com/njbennett/consul
+	url = https://github.com/cloudfoundry-incubator/consul
 [submodule "src/github.com/armon/circbuf"]
 	path = src/confab/vendor/github.com/armon/circbuf
 	url = https://github.com/armon/circbuf
@@ -127,3 +127,9 @@
 [submodule "src/acceptance-tests/vendor/github.com/cloudfoundry-incubator/check-a-record"]
 	path = src/acceptance-tests/vendor/github.com/cloudfoundry-incubator/check-a-record
 	url = https://github.com/cloudfoundry-incubator/check-a-record.git
+[submodule "src/confab/vendor/github.com/armon/go-metrics"]
+	path = src/confab/vendor/github.com/armon/go-metrics
+	url = https://github.com/armon/go-metrics
+[submodule "src/confab/vendor/github.com/hashicorp/go-msgpack"]
+	path = src/confab/vendor/github.com/hashicorp/go-msgpack
+	url = https://github.com/hashicorp/go-msgpack
