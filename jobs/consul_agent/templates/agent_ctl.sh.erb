@@ -82,13 +82,6 @@ function start() {
 
   setcap cap_net_bind_service=+ep $PKG/bin/consul
 
-  GOMAXPROCS=$(nproc)
-  if [ "$GOMAXPROCS" = "1" ]; then
-	GOMAXPROCS=2
-  fi
-
-  export GOMAXPROCS
-
   local nameservers
   nameservers=("$(cat /etc/resolv.conf | grep nameserver | awk '{print $2}' | grep -Ev '127.0.0.1\b')")
 
