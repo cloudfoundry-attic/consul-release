@@ -160,6 +160,35 @@ var _ = Describe("ConsulConfigDefiner", func() {
 			})
 		})
 
+		Describe("retry_join_wan", func() {
+			It("defaults to an empty slice of strings", func() {
+				Expect(consulConfig.RetryJoinWAN).To(Equal([]string{}))
+			})
+
+			Context("when `consul.agent.servers.wan` has a list of servers", func() {
+				It("uses those values", func() {
+					consulConfig = config.GenerateConfiguration(config.Config{
+						Consul: config.ConfigConsul{
+							Agent: config.ConfigConsulAgent{
+								Servers: config.ConfigConsulAgentServers{
+									WAN: []string{
+										"first-wan-server",
+										"second-wan-server",
+										"third-wan-server",
+									},
+								},
+							},
+						},
+					})
+					Expect(consulConfig.RetryJoinWAN).To(Equal([]string{
+						"first-wan-server",
+						"second-wan-server",
+						"third-wan-server",
+					}))
+				})
+			})
+		})
+
 		Describe("bind_addr", func() {
 			It("defaults to an empty string", func() {
 				Expect(consulConfig.BindAddr).To(Equal(""))

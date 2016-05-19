@@ -26,23 +26,24 @@ type ConfigPath struct {
 }
 
 type ConfigNode struct {
-	Name       string
-	Index      int
+	Name       string `json:"name"`
+	Index      int    `json:"index"`
 	ExternalIP string `json:"external_ip"`
 }
 
 type ConfigConsulAgent struct {
-	Servers         ConfigConsulAgentServers
-	Services        map[string]ServiceDefinition
-	Mode            string
-	Domain          string `json:"domain"`
-	Datacenter      string `json:"datacenter"`
-	LogLevel        string `json:"log_level"`
-	ProtocolVersion int    `json:"protocol_version"`
+	Servers         ConfigConsulAgentServers     `json:"servers"`
+	Services        map[string]ServiceDefinition `json:"services"`
+	Mode            string                       `json:"mode"`
+	Domain          string                       `json:"domain"`
+	Datacenter      string                       `json:"datacenter"`
+	LogLevel        string                       `json:"log_level"`
+	ProtocolVersion int                          `json:"protocol_version"`
 }
 
 type ConfigConsulAgentServers struct {
-	LAN []string
+	LAN []string `json:"lan"`
+	WAN []string `json:"wan"`
 }
 
 func Default() Config {
@@ -57,6 +58,7 @@ func Default() Config {
 			Agent: ConfigConsulAgent{
 				Servers: ConfigConsulAgentServers{
 					LAN: []string{},
+					WAN: []string{},
 				},
 			},
 		},

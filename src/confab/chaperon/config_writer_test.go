@@ -58,6 +58,7 @@ var _ = Describe("ConfigWriter", func() {
 				},
 				"rejoin_after_leave": true,
 				"retry_join": [],
+				"retry_join_wan": [],
 				"bind_addr": "",
 				"disable_remote_exec": true,
 				"disable_update_check": true,

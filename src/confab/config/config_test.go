@@ -15,6 +15,7 @@ var _ = Describe("Config", func() {
 					Agent: config.ConfigConsulAgent{
 						Servers: config.ConfigConsulAgentServers{
 							LAN: []string{},
+							WAN: []string{},
 						},
 					},
 				},
@@ -55,7 +56,11 @@ var _ = Describe("Config", func() {
 						"mode": "server",
 						"datacenter": "dc1",
 						"log_level": "debug",
-						"protocol_version": 1
+						"protocol_version": 1,
+						"servers": {
+							"lan": ["server1", "server2", "server3"],
+							"wan": ["wan-server1", "wan-server2", "wan-server3"]
+						}
 					},
 					"encrypt_keys": ["key-1", "key-2"]
 				},
@@ -90,7 +95,8 @@ var _ = Describe("Config", func() {
 						LogLevel:        "debug",
 						ProtocolVersion: 1,
 						Servers: config.ConfigConsulAgentServers{
-							LAN: []string{},
+							LAN: []string{"server1", "server2", "server3"},
+							WAN: []string{"wan-server1", "wan-server2", "wan-server3"},
 						},
 					},
 					EncryptKeys: []string{"key-1", "key-2"},
@@ -116,6 +122,7 @@ var _ = Describe("Config", func() {
 					Agent: config.ConfigConsulAgent{
 						Servers: config.ConfigConsulAgentServers{
 							LAN: []string{},
+							WAN: []string{},
 						},
 					},
 				},

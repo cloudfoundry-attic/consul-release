@@ -83,6 +83,7 @@ var _ = Describe("confab", func() {
 						"log_level":  "debug",
 						"servers": map[string]interface{}{
 							"lan": []string{"member-1", "member-2", "member-3"},
+							"wan": []string{"wan-member-1", "wan-member-2", "wan-member-3"},
 						},
 						"services": map[string]interface{}{
 							"cloud_controller": map[string]interface{}{
@@ -190,6 +191,11 @@ var _ = Describe("confab", func() {
 					"member-1",
 					"member-2",
 					"member-3"
+				],
+				"retry_join_wan": [
+					"wan-member-1",
+					"wan-member-2",
+					"wan-member-3"
 				],
 				"bind_addr": "10.0.0.1",
 				"disable_remote_exec": true,
