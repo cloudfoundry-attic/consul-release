@@ -1,10 +1,6 @@
 #!/bin/bash -exu
 
-mkdir -p /var/vcap/sys/log
-
-exec > >(tee -a >(logger -p user.info -t vcap.$(basename $1).stdout) | awk -W interactive '{lineWithDate="echo [`date +\"%Y-%m-%d %H:%M:%S%z\"`] \"" $0 "\""; system(lineWithDate)	}' >>/var/vcap/sys/log/$(basename $0).log)
-exec 2> >(tee -a >(logger -p user.error -t vcap.$(basename $0).stderr) | awk -W interactive '{lineWithDate="echo [`date +\"%Y-%m-%d %H:%M:%S%z\"`] \"" $0 "\""; system(lineWithDate)  }' >>/var/vcap/sys/log/$(basename $0).err.log)
-
+SCRIPT_NAME=$(basename $0)
 LOG_DIR=/var/vcap/sys/log/consul_agent
 RUN_DIR=/var/vcap/sys/run/consul_agent
 DATA_DIR=/var/vcap/store/consul_agent
@@ -13,48 +9,30 @@ CERT_DIR=$CONF_DIR/certs
 PKG=/var/vcap/packages/consul
 JOB_DIR=/var/vcap/jobs/consul_agent
 PIDFILE=$RUN_DIR/consul_agent.pid
+CONFAB_PACKAGE=/var/vcap/packages/confab
 
-function main() {
-  local confab_package
-  confab_package=/var/vcap/packages/confab
+mkdir -p "${LOG_DIR}"
+chown -R vcap:vcap "${LOG_DIR}"
 
-  case $1 in
-	start)
-	  start "${confab_package}"
-	  ;;
-
-	stop)
-	  stop "${confab_package}"
-	  ;;
-
-	*)
-	  echo "Usage: $0 {start|stop}"
-	  ;;
-  esac
-}
+exec > >(tee -a >(logger -p user.info -t vcap.${SCRIPT_NAME}.stdout) | awk -W interactive '{lineWithDate="echo [`date +\"%Y-%m-%d %H:%M:%S%z\"`] \"" $0 "\""; system(lineWithDate)	}' >>$LOG_DIR/${SCRIPT_NAME}.log)
+exec 2> >(tee -a >(logger -p user.error -t vcap.${SCRIPT_NAME}.stderr) | awk -W interactive '{lineWithDate="echo [`date +\"%Y-%m-%d %H:%M:%S%z\"`] \"" $0 "\""; system(lineWithDate)  }' >>$LOG_DIR/${SCRIPT_NAME}.err.log)
 
 function setup_resolvconf() {
   local resolvconf_file
   resolvconf_file=/etc/resolvconf/resolv.conf.d/head
 
   if ! grep -qE '127.0.0.1\b' "${resolvconf_file}"; then
-	  if [[ "$(stat -c "%s" "${resolvconf_file}")" = "0" ]]; then
-		  echo 'nameserver 127.0.0.1' > "${resolvconf_file}"
-	  else
-		  sed -i -e '1i nameserver 127.0.0.1' "${resolvconf_file}"
-	  fi
+          if [[ "$(stat -c "%s" "${resolvconf_file}")" = "0" ]]; then
+                  echo 'nameserver 127.0.0.1' > "${resolvconf_file}"
+          else
+                  sed -i -e '1i nameserver 127.0.0.1' "${resolvconf_file}"
+          fi
   fi
 
   resolvconf -u
 }
 
-function start() {
-  local confab_package
-  confab_package="${1}"
-
-  mkdir -p "${LOG_DIR}"
-  chown -R vcap:vcap "${LOG_DIR}"
-
+function create_directories_and_chown_to_vcap() {
   mkdir -p "${RUN_DIR}"
   chown -R vcap:vcap "${RUN_DIR}"
 
@@ -66,7 +44,9 @@ function start() {
 
   chown vcap:vcap ${CERT_DIR}/*.{crt,key}
   chmod 640 ${CERT_DIR}/*.{crt,key}
+}
 
+function set_virtual_memory() {
   # "Consul uses a significant amount of virtual memory, since LMDB uses
   # mmap() underneath. It uses about 700MB of a 32bit system and 40GB on a
   # 64bit system."
@@ -74,13 +54,17 @@ function start() {
   # this mainly applies to bosh-lite
   ulimit -v unlimited
   ulimit -n 4096
+}
 
-  setup_resolvconf
+function start_confab() {
+  local confab_package
+  confab_package=$1
 
-  local server
-  server=<%=p("consul.agent.mode") == "server"%>
+  local job_dir
+  job_dir=$2
 
-  setcap cap_net_bind_service=+ep $PKG/bin/consul
+  local log_dir
+  log_dir=$3
 
   local nameservers
   nameservers=("$(cat /etc/resolv.conf | grep nameserver | awk '{print $2}' | grep -Ev '127.0.0.1\b')")
@@ -89,26 +73,61 @@ function start() {
   recursors=""
 
   for nameserver in ${nameservers[@]}; do
-	recursors="${recursors} -recursor=${nameserver}"
+    recursors="${recursors} -recursor=${nameserver}"
   done
 
-  chpst -u vcap:vcap "${confab_package}/bin/confab" \
-	start \
-	${recursors} \
-	--config-file ${JOB_DIR}/confab.json \
-	2> >(tee -a ${LOG_DIR}/consul_agent.stderr.log | logger -p user.error -t vcap.consul-agent) \
-	1> >(tee -a ${LOG_DIR}/consul_agent.stdout.log | logger -p user.info  -t vcap.consul-agent)
+  "${confab_package}/bin/confab" \
+    start \
+    ${recursors} \
+    --config-file "${job_dir}/confab.json" \
+    1> >(tee -a ${log_dir}/consul_agent.stdout.log | logger -p user.info -t vcap.consul-agent) \
+    2> >(tee -a ${log_dir}/consul_agent.stderr.log | logger -p user.error -t vcap.consul-agent)
 }
+export -f start_confab
 
-function stop() {
+function stop_confab() {
   local confab_package
-  confab_package="${1}"
+  confab_package=$1
+
+  local job_dir
+  job_dir=$2
+
+  local log_dir
+  log_dir=$3
 
   "${confab_package}/bin/confab" \
-	stop \
-	--config-file ${JOB_DIR}/confab.json \
-	2> >(tee -a ${LOG_DIR}/consul_agent.stderr.log | logger -p user.error -t vcap.consul-agent) \
-	1> >(tee -a ${LOG_DIR}/consul_agent.stdout.log | logger -p user.info  -t vcap.consul-agent)
+    stop \
+    --config-file "${job_dir}/confab.json" \
+    1> >(tee -a ${log_dir}/consul_agent.stdout.log | logger -p user.info -t vcap.consul-agent) \
+    2> >(tee -a ${log_dir}/consul_agent.stderr.log | logger -p user.error -t vcap.consul-agent)
+}
+export -f stop_confab
+
+function setup() {
+  create_directories_and_chown_to_vcap
+
+  set_virtual_memory
+
+  setup_resolvconf
+
+  setcap cap_net_bind_service=+ep ${PKG}/bin/consul
+}
+
+function main() {
+  case ${1} in
+        start)
+          setup
+          su vcap -c "start_confab ${CONFAB_PACKAGE} ${JOB_DIR} ${LOG_DIR}" > /dev/null 2>&1
+          ;;
+
+        stop)
+          su vcap -c "stop_confab ${CONFAB_PACKAGE} ${JOB_DIR} ${LOG_DIR}" > /dev/null 2>&1
+          ;;
+
+        *)
+    echo "Usage: ${0} {start|stop}"
+          ;;
+  esac
 }
 
 main $@
