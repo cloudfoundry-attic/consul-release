@@ -57,6 +57,8 @@ function set_virtual_memory() {
 }
 
 function start_confab() {
+  set -exu
+
   local confab_package
   confab_package=$1
 
@@ -65,6 +67,9 @@ function start_confab() {
 
   local log_dir
   log_dir=$3
+
+  exec > >(tee -a ${log_dir}/consul_agent.stdout.log | logger -p user.info -t vcap.consul-agent)
+  exec 2> >(tee -a ${log_dir}/consul_agent.stderr.log | logger -p user.error -t vcap.consul-agent)
 
   local nameservers
   nameservers=("$(cat /etc/resolv.conf | grep nameserver | awk '{print $2}' | grep -Ev '127.0.0.1\b')")
@@ -79,13 +84,13 @@ function start_confab() {
   "${confab_package}/bin/confab" \
     start \
     ${recursors} \
-    --config-file "${job_dir}/confab.json" \
-    1> >(tee -a ${log_dir}/consul_agent.stdout.log | logger -p user.info -t vcap.consul-agent) \
-    2> >(tee -a ${log_dir}/consul_agent.stderr.log | logger -p user.error -t vcap.consul-agent)
+    --config-file "${job_dir}/confab.json"
 }
 export -f start_confab
 
 function stop_confab() {
+  set -exu
+
   local confab_package
   confab_package=$1
 
@@ -95,11 +100,12 @@ function stop_confab() {
   local log_dir
   log_dir=$3
 
+  exec > >(tee -a ${log_dir}/consul_agent.stdout.log | logger -p user.info -t vcap.consul-agent)
+  exec 2> >(tee -a ${log_dir}/consul_agent.stderr.log | logger -p user.error -t vcap.consul-agent)
+
   "${confab_package}/bin/confab" \
     stop \
-    --config-file "${job_dir}/confab.json" \
-    1> >(tee -a ${log_dir}/consul_agent.stdout.log | logger -p user.info -t vcap.consul-agent) \
-    2> >(tee -a ${log_dir}/consul_agent.stderr.log | logger -p user.error -t vcap.consul-agent)
+    --config-file "${job_dir}/confab.json"
 }
 export -f stop_confab
 
@@ -117,11 +123,11 @@ function main() {
   case ${1} in
         start)
           setup
-          su vcap -c "start_confab ${CONFAB_PACKAGE} ${JOB_DIR} ${LOG_DIR}" > /dev/null 2>&1
+          su vcap -c "start_confab ${CONFAB_PACKAGE} ${JOB_DIR} ${LOG_DIR}" &> /dev/null
           ;;
 
         stop)
-          su vcap -c "stop_confab ${CONFAB_PACKAGE} ${JOB_DIR} ${LOG_DIR}" > /dev/null 2>&1
+          su vcap -c "stop_confab ${CONFAB_PACKAGE} ${JOB_DIR} ${LOG_DIR}" &> /dev/null
           ;;
 
         *)
