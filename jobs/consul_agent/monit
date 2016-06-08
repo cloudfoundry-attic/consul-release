@@ -3,7 +3,6 @@ check process consul_agent
   start program "/var/vcap/jobs/consul_agent/bin/agent_ctl start"
     as uid vcap and gid vcap with timeout 60 seconds
   stop program "/var/vcap/jobs/consul_agent/bin/agent_ctl stop"
-    as uid vcap and gid vcap
   group vcap
 
 <% if p("consul.agent.mode") == "server" && !p("consul.agent.servers.wan").empty? %>

@@ -1,7 +1,6 @@
 #!/bin/bash -exu
 
 LOG_DIR=/var/vcap/sys/log/consul_agent
-RUN_DIR=/var/vcap/sys/run/consul_agent
 DATA_DIR=/var/vcap/store/consul_agent
 CONF_DIR=/var/vcap/jobs/consul_agent/config
 CERT_DIR=$CONF_DIR/certs
@@ -25,9 +24,6 @@ function setup_resolvconf() {
 function create_directories_and_chown_to_vcap() {
   mkdir -p "${LOG_DIR}"
   chown -R vcap:vcap "${LOG_DIR}"
-
-  mkdir -p "${RUN_DIR}"
-  chown -R vcap:vcap "${RUN_DIR}"
 
   mkdir -p "${DATA_DIR}"
   chown -R vcap:vcap "${DATA_DIR}"
