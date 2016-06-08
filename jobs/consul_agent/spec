@@ -3,8 +3,9 @@ name: consul_agent
 
 templates:
   agent_ctl.sh.erb: bin/agent_ctl
-  confab.json.erb: confab.json
   join_ctl.sh.erb: bin/join_ctl
+  pre-start.erb: bin/pre-start
+  confab.json.erb: confab.json
   ca.crt.erb: config/certs/ca.crt
   server.crt.erb: config/certs/server.crt
   server.key.erb: config/certs/server.key
