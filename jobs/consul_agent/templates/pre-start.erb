@@ -49,7 +49,7 @@ function set_virtual_memory() {
   ulimit -n 4096
 }
 
-function setup() {
+function main() {
   create_directories_and_chown_to_vcap
 
   set_virtual_memory
@@ -59,4 +59,4 @@ function setup() {
   setcap cap_net_bind_service=+ep ${PKG}/bin/consul
 }
 
-setup
+main

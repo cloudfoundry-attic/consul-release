@@ -5,8 +5,8 @@ LOG_DIR=/var/vcap/sys/log/consul_agent
 JOB_DIR=/var/vcap/jobs/consul_agent
 CONFAB_PACKAGE=/var/vcap/packages/confab
 
-exec > >(tee -a >(logger -p user.info -t vcap.${SCRIPT_NAME}.stdout) | awk -W interactive '{lineWithDate="echo [`date +\"%Y-%m-%d %H:%M:%S%z\"`] \"" $0 "\""; system(lineWithDate)	}' >>$LOG_DIR/${SCRIPT_NAME}.log)
-exec 2> >(tee -a >(logger -p user.error -t vcap.${SCRIPT_NAME}.stderr) | awk -W interactive '{lineWithDate="echo [`date +\"%Y-%m-%d %H:%M:%S%z\"`] \"" $0 "\""; system(lineWithDate)  }' >>$LOG_DIR/${SCRIPT_NAME}.err.log)
+exec > >(tee -a >(logger -p user.info -t vcap.${SCRIPT_NAME}.stdout) | awk -W interactive '{lineWithDate="echo [`date +\"%Y-%m-%d %H:%M:%S%z\"`] \"" $0 "\""; system(lineWithDate)  }' >> $LOG_DIR/${SCRIPT_NAME}.log)
+exec 2> >(tee -a >(logger -p user.error -t vcap.${SCRIPT_NAME}.stderr) | awk -W interactive '{lineWithDate="echo [`date +\"%Y-%m-%d %H:%M:%S%z\"`] \"" $0 "\""; system(lineWithDate)  }' >> $LOG_DIR/${SCRIPT_NAME}.err.log)
 
 function start_confab() {
   local nameservers
@@ -23,7 +23,7 @@ function start_confab() {
     start \
     ${recursors} \
     --config-file "${JOB_DIR}/confab.json" \
-    1 > >(tee -a ${LOG_DIR}/consul_agent.stdout.log | logger -p user.info -t vcap.consul-agent) \
+    1> >(tee -a ${LOG_DIR}/consul_agent.stdout.log | logger -p user.info -t vcap.consul-agent) \
     2> >(tee -a ${LOG_DIR}/consul_agent.stderr.log | logger -p user.error -t vcap.consul-agent)
 }
 
