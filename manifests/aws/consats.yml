@@ -25,9 +25,9 @@ compilation:
   cloud_properties:
     availability_zone: AWS_AVAILABILITY_ZONE # REPLACE ME
     ephemeral_disk:
-      size: 1024
+      size: 2048
       type: gp2
-    instance_type: m3.medium
+    instance_type: c3.large
 
 networks:
 - name: consats
