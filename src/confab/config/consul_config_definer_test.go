@@ -181,7 +181,7 @@ var _ = Describe("ConsulConfigDefiner", func() {
 								},
 							},
 						},
-					})
+					}, configDir)
 					Expect(consulConfig.RetryJoinWAN).To(Equal([]string{
 						"first-wan-server",
 						"second-wan-server",
