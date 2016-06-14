@@ -205,11 +205,11 @@ var _ = Describe("ConfigWriter", func() {
 
 		Context("failure cases", func() {
 			It("returns an error when the config file can't be written to", func() {
-				err := os.Chmod(configDir, 0000)
-				Expect(err).NotTo(HaveOccurred())
+				configFile := filepath.Join(configDir, "config.json")
+				Expect(os.Mkdir(configFile, os.ModeDir)).To(Succeed())
 
-				err = writer.Write(cfg)
-				Expect(err).To(MatchError(ContainSubstring("permission denied")))
+				err := writer.Write(cfg)
+				Expect(err).To(MatchError(ContainSubstring("is a directory")))
 
 				Expect(logger.Messages()).To(ContainSequence([]fakes.LoggerMessage{
 					{
@@ -223,7 +223,7 @@ var _ = Describe("ConfigWriter", func() {
 					},
 					{
 						Action: "config-writer.write.write-file.failed",
-						Error:  fmt.Errorf("open %s: permission denied", filepath.Join(configDir, "config.json")),
+						Error:  fmt.Errorf("open %s: is a directory", filepath.Join(configDir, "config.json")),
 					},
 				}))
 			})

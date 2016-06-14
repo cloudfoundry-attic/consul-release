@@ -4,7 +4,8 @@ import (
 	"io/ioutil"
 	"os"
 	"strconv"
-	"syscall"
+
+	"github.com/cloudfoundry-incubator/consul-release/src/confab/utils"
 )
 
 func IsRunningProcess(pidFilePath string) bool {
@@ -23,5 +24,5 @@ func IsRunningProcess(pidFilePath string) bool {
 		return false // never returns an error according to the go docs
 	}
 
-	return proc.Signal(syscall.Signal(0)) == nil
+	return utils.CheckProcessRunning(proc) == nil
 }
