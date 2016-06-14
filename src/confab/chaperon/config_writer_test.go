@@ -46,7 +46,7 @@ var _ = Describe("ConfigWriter", func() {
 
 			buf, err := ioutil.ReadFile(filepath.Join(configDir, "config.json"))
 			Expect(err).NotTo(HaveOccurred())
-			Expect(buf).To(MatchJSON(`{
+			Expect(buf).To(MatchJSON(fmt.Sprintf(`{
 				"server": false,
 				"domain": "",
 				"datacenter": "",
@@ -66,10 +66,10 @@ var _ = Describe("ConfigWriter", func() {
 				"verify_outgoing": true,
 				"verify_incoming": true,
 				"verify_server_hostname": true,
-				"ca_file": "/var/vcap/jobs/consul_agent/config/certs/ca.crt",
-				"key_file": "/var/vcap/jobs/consul_agent/config/certs/agent.key",
-				"cert_file": "/var/vcap/jobs/consul_agent/config/certs/agent.crt"
-			}`))
+				"ca_file": "%[1]s/certs/ca.crt",
+				"key_file": "%[1]s/certs/agent.key",
+				"cert_file": "%[1]s/certs/agent.crt"
+			}`, configDir)))
 
 			Expect(logger.Messages).To(ContainSequence([]fakes.LoggerMessage{
 				{
@@ -78,7 +78,7 @@ var _ = Describe("ConfigWriter", func() {
 				{
 					Action: "config-writer.write.write-file",
 					Data: []lager.Data{{
-						"config": config.GenerateConfiguration(cfg),
+						"config": config.GenerateConfiguration(cfg, configDir),
 					}},
 				},
 				{
@@ -102,7 +102,7 @@ var _ = Describe("ConfigWriter", func() {
 					{
 						Action: "config-writer.write.write-file",
 						Data: []lager.Data{{
-							"config": config.GenerateConfiguration(cfg),
+							"config": config.GenerateConfiguration(cfg, configDir),
 						}},
 					},
 					{
