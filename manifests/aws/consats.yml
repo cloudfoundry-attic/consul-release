@@ -25,7 +25,7 @@ compilation:
   cloud_properties:
     availability_zone: AWS_AVAILABILITY_ZONE # REPLACE ME
     ephemeral_disk:
-      size: 2048
+      size: 10240
       type: gp2
     instance_type: c3.large
 
@@ -72,7 +72,7 @@ resource_pools:
   cloud_properties:
     availability_zone: AWS_AVAILABILITY_ZONE # REPLACE ME
     ephemeral_disk:
-      size: 1024
+      size: 10240
       type: gp2
     instance_type: m3.medium
 
