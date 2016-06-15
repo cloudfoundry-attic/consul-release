@@ -8,8 +8,8 @@ import (
 	"os"
 	"os/exec"
 	"strconv"
+	"sync"
 	"syscall"
-	"time"
 
 	"code.cloudfoundry.org/lager"
 )
@@ -23,6 +23,7 @@ type Runner struct {
 	Recursors []string
 	Logger    logger
 	cmd       *exec.Cmd
+	wg        sync.WaitGroup
 }
 
 func (r *Runner) Run() error {
@@ -57,8 +58,11 @@ func (r *Runner) Run() error {
 		})
 		return err
 	}
-
-	go r.cmd.Wait() // reap child process if it dies
+	r.wg.Add(1)
+	go func() {
+		r.cmd.Wait()
+		r.wg.Done()
+	}()
 
 	r.Logger.Info("agent-runner.run.success")
 	return nil
@@ -122,15 +126,7 @@ func (r *Runner) Wait() error {
 		"pid": process.Pid,
 	})
 
-	for {
-		err = process.Signal(syscall.Signal(0))
-		if err == nil {
-			time.Sleep(10 * time.Millisecond)
-			continue
-		}
-
-		break
-	}
+	r.wg.Wait()
 
 	r.Logger.Info("agent-runner.wait.success")
 	return nil

@@ -42,7 +42,7 @@ type FakeAgentOutput struct {
 	PID  int
 }
 
-func getFakeAgentOutput(runner agent.Runner) FakeAgentOutput {
+func getFakeAgentOutput(runner *agent.Runner) FakeAgentOutput {
 	bytes, err := ioutil.ReadFile(filepath.Join(runner.ConfigDir, "fake-output.json"))
 	if err != nil {
 		return FakeAgentOutput{}
@@ -54,7 +54,7 @@ func getFakeAgentOutput(runner agent.Runner) FakeAgentOutput {
 	return output
 }
 
-func getPID(runner agent.Runner) (int, error) {
+func getPID(runner *agent.Runner) (int, error) {
 	pidFileContents, err := ioutil.ReadFile(runner.PIDFile)
 	if err != nil {
 		return 0, err
@@ -68,7 +68,7 @@ func getPID(runner agent.Runner) (int, error) {
 	return pid, nil
 }
 
-func processIsRunning(runner agent.Runner) bool {
+func processIsRunning(runner *agent.Runner) bool {
 	pid, err := getPID(runner)
 	Expect(err).NotTo(HaveOccurred())
 
