@@ -1,16 +1,13 @@
 package main_test
 
 import (
-	"bytes"
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strconv"
-	"strings"
-	"syscall"
 	"testing"
 
 	"github.com/onsi/gomega/gexec"
@@ -18,6 +15,8 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
+
+const Windows = runtime.GOOS == "windows"
 
 func TestMain(t *testing.T) {
 	RegisterFailHandler(Fail)
@@ -37,8 +36,9 @@ var _ = BeforeSuite(func() {
 	pathToConfab, err = gexec.Build("github.com/cloudfoundry-incubator/consul-release/src/confab/confab")
 	Expect(err).NotTo(HaveOccurred())
 
-	cmd := exec.Command("which", "lsof")
-	Expect(cmd.Run()).To(Succeed())
+	if !Windows {
+		Expect(exec.Command("which", "lsof").Run()).To(Succeed())
+	}
 })
 
 var _ = AfterSuite(func() {
@@ -66,25 +66,12 @@ func killProcessWithPIDFile(pidFilePath string) {
 	killPID(pid)
 }
 
-func killPID(pid int) {
-	process, err := os.FindProcess(pid)
-	Expect(err).NotTo(HaveOccurred())
-
-	process.Signal(syscall.SIGKILL)
-}
-
 func pidIsForRunningProcess(pidFilePath string) bool {
 	pid, err := getPID(pidFilePath)
 	if err != nil {
 		return false
 	}
-
-	running, err := isPIDRunning(pid)
-	if err != nil {
-		return false
-	}
-
-	return running
+	return isPIDRunning(pid)
 }
 
 func getPID(pidFilePath string) (int, error) {
@@ -94,19 +81,6 @@ func getPID(pidFilePath string) (int, error) {
 	}
 
 	return strconv.Atoi(string(pidFileContents))
-}
-
-func isPIDRunning(pid int) (bool, error) {
-	process, err := os.FindProcess(pid)
-	if err != nil {
-		return false, err
-	}
-
-	if err := process.Signal(syscall.Signal(0)); err != nil {
-		return false, err
-	}
-
-	return true, nil
 }
 
 func fakeAgentOutput(configDir string) (FakeAgentOutputData, error) {
@@ -123,21 +97,6 @@ func fakeAgentOutput(configDir string) (FakeAgentOutputData, error) {
 	}
 
 	return decodedFakeOutput, nil
-}
-
-func killProcessAttachedToPort(port int) {
-	cmdLine := fmt.Sprintf("lsof -i :%d | tail -1 | cut -d' ' -f4", port)
-	cmd := exec.Command("bash", "-c", cmdLine)
-	buffer := bytes.NewBuffer([]byte{})
-	cmd.Stdout = buffer
-	Expect(cmd.Run()).To(Succeed())
-
-	pidStr := strings.TrimSpace(buffer.String())
-	if pidStr != "" {
-		pid, err := strconv.Atoi(pidStr)
-		Expect(err).NotTo(HaveOccurred())
-		killPID(pid)
-	}
 }
 
 func writeConfigurationFile(filename string, configuration map[string]interface{}) {

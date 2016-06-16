@@ -14,7 +14,8 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-const COMMAND_TIMEOUT = "15s"
+const COMMAND_TIMEOUT = time.Second * 15
+const POLL_INTERVAL = time.Millisecond * 250
 
 var _ = Describe("confab", func() {
 	var (
@@ -38,6 +39,8 @@ var _ = Describe("confab", func() {
 
 		pidFile, err = ioutil.TempFile(tempDir, "fake-pid-file")
 		Expect(err).NotTo(HaveOccurred())
+
+		Expect(pidFile.Close()).To(Succeed())
 
 		err = os.Remove(pidFile.Name())
 		Expect(err).NotTo(HaveOccurred())
@@ -130,8 +133,9 @@ var _ = Describe("confab", func() {
 			)
 			Eventually(stop.Run, COMMAND_TIMEOUT, COMMAND_TIMEOUT).Should(Succeed())
 
-			_, err = isPIDRunning(pid)
-			Expect(err).To(MatchError(ContainSubstring("process already finished")))
+			Eventually(func() bool {
+				return isPIDRunning(pid)
+			}, COMMAND_TIMEOUT, time.Millisecond*250).Should(BeFalse())
 
 			Expect(fakeAgentOutput(consulConfigDir)).To(Equal(FakeAgentOutputData{
 				PID: pid,
@@ -322,6 +326,12 @@ var _ = Describe("confab", func() {
 			})
 
 			It("checks sync state up to the timeout", func() {
+				if Windows {
+					// On Windows the timeout works, but due to the
+					// overhead of shelling out the elapsed time
+					// regularly exceeds the 1 second tolerance.
+					Skip("Flaky on Windows due to the overhead of shelling out")
+				}
 				writeConfigurationFile(configFile.Name(), map[string]interface{}{
 					"path": map[string]interface{}{
 						"agent_path":        pathToFakeAgent,
@@ -393,6 +403,7 @@ var _ = Describe("confab", func() {
 				"--config-file", configFile.Name(),
 			)
 			Eventually(cmd.Run, COMMAND_TIMEOUT, COMMAND_TIMEOUT).Should(Succeed())
+
 			Eventually(func() error {
 				conn, err := net.Dial("tcp", "localhost:8400")
 				if err == nil {
@@ -414,7 +425,9 @@ var _ = Describe("confab", func() {
 				return pidIsForRunningProcess(pidFile.Name())
 			}, "5s").Should(BeFalse())
 
-			Expect(fakeAgentOutput(consulConfigDir)).To(Equal(FakeAgentOutputData{
+			Eventually(func() (FakeAgentOutputData, error) {
+				return fakeAgentOutput(consulConfigDir)
+			}, COMMAND_TIMEOUT, POLL_INTERVAL).Should(Equal(FakeAgentOutputData{
 				PID: pid,
 				Args: []string{
 					"agent",
@@ -670,7 +683,10 @@ var _ = Describe("confab", func() {
 				cmd.Stderr = buffer
 				Eventually(cmd.Run, COMMAND_TIMEOUT, COMMAND_TIMEOUT).ShouldNot(Succeed())
 				Expect(buffer).To(ContainSubstring("error during start"))
-				Expect(buffer).To(ContainSubstring("connection refused"))
+				Expect(buffer).To(Or(
+					ContainSubstring("connection refused"),
+					ContainSubstring("No connection could be made"), // Windows
+				))
 			})
 		})
 
@@ -695,7 +711,10 @@ var _ = Describe("confab", func() {
 				buffer := bytes.NewBuffer([]byte{})
 				cmd.Stderr = buffer
 				Eventually(cmd.Run, COMMAND_TIMEOUT, COMMAND_TIMEOUT).ShouldNot(Succeed())
-				Expect(buffer).To(ContainSubstring("no such file or directory"))
+				Expect(buffer).To(Or(
+					ContainSubstring("no such file or directory"),
+					ContainSubstring("The system cannot find the file specified"), // Windows
+				))
 			})
 		})
 
@@ -703,6 +722,7 @@ var _ = Describe("confab", func() {
 			It("returns an error and exits with status 1", func() {
 				tmpFile, err := ioutil.TempFile(tempDir, "config")
 				Expect(err).NotTo(HaveOccurred())
+				defer tmpFile.Close()
 
 				_, err = tmpFile.Write([]byte(`%%%%%%%%%`))
 				Expect(err).NotTo(HaveOccurred())
@@ -748,6 +768,9 @@ var _ = Describe("confab", func() {
 			})
 
 			It("returns an error and exits with status 1", func() {
+				if Windows {
+					Skip("Not implemented on Windows")
+				}
 				err := os.Chmod(consulConfigDir, 0000)
 				Expect(err).NotTo(HaveOccurred())
 
