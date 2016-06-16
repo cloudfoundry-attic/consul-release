@@ -54,34 +54,38 @@ var _ = Describe("ConfigWriter", func() {
 
 			buf, err := ioutil.ReadFile(filepath.Join(configDir, "config.json"))
 			Expect(err).NotTo(HaveOccurred())
-			Expect(buf).To(MatchJSON(fmt.Sprintf(`{
-				"server": false,
-				"domain": "",
+
+			conf := map[string]interface{}{
+				"server":     false,
+				"domain":     "",
 				"datacenter": "",
-				"data_dir": %q,
+				"data_dir": dataDir,
 				"log_level": "",
 				"node_name": "node-0",
-				"ports": {
-					"dns": 53
+				"ports": map[string]interface{}{
+					"dns": 53,
 				},
-				"rejoin_after_leave": true,
-				"retry_join": [],
-				"retry_join_wan": [],
-				"bind_addr": "",
-				"disable_remote_exec": true,
-				"disable_update_check": true,
-				"protocol": 0,
-				"verify_outgoing": true,
-				"verify_incoming": true,
+				"rejoin_after_leave":     true,
+				"retry_join":             []string{},
+				"retry_join_wan":         []string{},
+				"bind_addr":              "",
+				"disable_remote_exec":    true,
+				"disable_update_check":   true,
+				"protocol":               0,
+				"verify_outgoing":        true,
+				"verify_incoming":        true,
 				"verify_server_hostname": true,
-				"ca_file": "%[2]s/certs/ca.crt",
-				"key_file": "%[2]s/certs/agent.key",
-				"cert_file": "%[2]s/certs/agent.crt",
-				"dns_config": {
+				"ca_file":                filepath.Join(configDir, "certs", "ca.crt"),
+				"key_file":               filepath.Join(configDir, "certs", "agent.key"),
+				"cert_file":              filepath.Join(configDir, "certs", "agent.crt"),
+				"dns_config": map[string]interface{}{
 				  "allow_stale": false,
 				  "max_stale": "5s"
 				}
-			}`, dataDir, configDir)))
+			}
+			body, err := json.Marshal(conf)
+			Expect(err).To(BeNil())
+			Expect(buf).To(MatchJSON(body))
 
 			Expect(logger.Messages()).To(ContainSequence([]fakes.LoggerMessage{
 				{

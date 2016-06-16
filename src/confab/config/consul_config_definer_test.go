@@ -1,6 +1,8 @@
 package config_test
 
 import (
+	"path/filepath"
+
 	"github.com/cloudfoundry-incubator/consul-release/src/confab/config"
 
 	. "github.com/onsi/ginkgo"
@@ -314,7 +316,8 @@ var _ = Describe("ConsulConfigDefiner", func() {
 			It("is the location of the ca file", func() {
 				consulConfig = config.GenerateConfiguration(config.Config{}, "/var/vcap/jobs/consul_agent_windows/config", "")
 				Expect(consulConfig.CAFile).NotTo(BeNil())
-				Expect(*consulConfig.CAFile).To(Equal("/var/vcap/jobs/consul_agent_windows/config/certs/ca.crt"))
+				Expect(filepath.ToSlash(*consulConfig.CAFile)).To(
+					Equal("/var/vcap/jobs/consul_agent_windows/config/certs/ca.crt"))
 			})
 		})
 
@@ -329,7 +332,8 @@ var _ = Describe("ConsulConfigDefiner", func() {
 						},
 					}, configDir, "")
 					Expect(consulConfig.KeyFile).NotTo(BeNil())
-					Expect(*consulConfig.KeyFile).To(Equal("/var/vcap/jobs/consul_agent/config/certs/server.key"))
+					Expect(filepath.ToSlash(*consulConfig.KeyFile)).To(
+						Equal("/var/vcap/jobs/consul_agent/config/certs/server.key"))
 				})
 			})
 
@@ -337,7 +341,8 @@ var _ = Describe("ConsulConfigDefiner", func() {
 				It("is the location of the agent.key file", func() {
 					consulConfig = config.GenerateConfiguration(config.Config{}, configDir, "")
 					Expect(consulConfig.KeyFile).NotTo(BeNil())
-					Expect(*consulConfig.KeyFile).To(Equal("/var/vcap/jobs/consul_agent/config/certs/agent.key"))
+					Expect(filepath.ToSlash(*consulConfig.KeyFile)).To(
+						Equal("/var/vcap/jobs/consul_agent/config/certs/agent.key"))
 				})
 			})
 		})
@@ -353,7 +358,8 @@ var _ = Describe("ConsulConfigDefiner", func() {
 						},
 					}, configDir, "")
 					Expect(consulConfig.CertFile).NotTo(BeNil())
-					Expect(*consulConfig.CertFile).To(Equal("/var/vcap/jobs/consul_agent/config/certs/server.crt"))
+					Expect(filepath.ToSlash(*consulConfig.CertFile)).To(
+						Equal("/var/vcap/jobs/consul_agent/config/certs/server.crt"))
 				})
 			})
 
@@ -361,7 +367,8 @@ var _ = Describe("ConsulConfigDefiner", func() {
 				It("is the location of the agent.key file", func() {
 					consulConfig = config.GenerateConfiguration(config.Config{}, configDir, "")
 					Expect(consulConfig.CertFile).NotTo(BeNil())
-					Expect(*consulConfig.CertFile).To(Equal("/var/vcap/jobs/consul_agent/config/certs/agent.crt"))
+					Expect(filepath.ToSlash(*consulConfig.CertFile)).To(
+						Equal("/var/vcap/jobs/consul_agent/config/certs/agent.crt"))
 				})
 			})
 		})
