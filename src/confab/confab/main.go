@@ -16,6 +16,7 @@ import (
 	"github.com/cloudfoundry-incubator/consul-release/src/confab/agent"
 	"github.com/cloudfoundry-incubator/consul-release/src/confab/chaperon"
 	"github.com/cloudfoundry-incubator/consul-release/src/confab/config"
+	"github.com/cloudfoundry-incubator/consul-release/src/confab/utils"
 	"github.com/hashicorp/consul/api"
 	consulagent "github.com/hashicorp/consul/command/agent"
 )
@@ -132,7 +133,7 @@ func main() {
 				controller.Config.Path.ConsulConfigDir), flagSet)
 		}
 
-		if chaperon.IsRunningProcess(agentRunner.PIDFile) {
+		if utils.IsRunningProcess(agentRunner.PIDFile) {
 			stderr.Println("consul_agent is already running, please stop it first")
 			os.Exit(1)
 		}

@@ -66,14 +66,6 @@ func killProcessWithPIDFile(pidFilePath string) {
 	killPID(pid)
 }
 
-func pidIsForRunningProcess(pidFilePath string) bool {
-	pid, err := getPID(pidFilePath)
-	if err != nil {
-		return false
-	}
-	return isPIDRunning(pid)
-}
-
 func getPID(pidFilePath string) (int, error) {
 	pidFileContents, err := ioutil.ReadFile(pidFilePath)
 	if err != nil {

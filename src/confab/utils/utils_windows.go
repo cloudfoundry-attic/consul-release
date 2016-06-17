@@ -2,21 +2,15 @@
 
 package utils
 
-import (
-	"os"
-	"syscall"
-)
+import "os"
 
-func checkProcessRunning(process *os.Process) error {
-	handle, e := syscall.OpenProcess(syscall.PROCESS_QUERY_INFORMATION, false, uint32(process.Pid))
-	if e != nil {
-		return os.NewSyscallError("OpenProcess", e)
+func IsPIDRunning(pid int) bool {
+	// On Windows FindProcess returns
+	// an error if the PID is invalid.
+	process, err := os.FindProcess(pid)
+	if err != nil {
+		return false
 	}
-	defer syscall.CloseHandle(handle)
-	var ec uint32
-	e = syscall.GetExitCodeProcess(syscall.Handle(handle), &ec)
-	if e != nil {
-		return os.NewSyscallError("GetExitCodeProcess", e)
-	}
-	return nil
+	process.Release()
+	return true
 }

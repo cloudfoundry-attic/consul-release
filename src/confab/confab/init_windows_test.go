@@ -9,6 +9,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/cloudfoundry-incubator/consul-release/src/confab/utils"
 	. "github.com/onsi/gomega"
 )
 
@@ -50,17 +51,6 @@ func parseNetstatLine(line [][]byte) (port, pid int, err error) {
 	return
 }
 
-func isPIDRunning(pid int) bool {
-	// On Windows FindProcess returns
-	// an error if the PID is invalid.
-	process, err := os.FindProcess(pid)
-	if err != nil {
-		return false
-	}
-	process.Release()
-	return true
-}
-
 func killPID(pid int) {
 	process, err := os.FindProcess(pid)
 	if err != nil {
@@ -69,6 +59,6 @@ func killPID(pid int) {
 	process.Signal(syscall.SIGKILL)
 	process.Release()
 	Eventually(func() bool {
-		return isPIDRunning(pid)
+		return utils.IsPIDRunning(pid)
 	}, COMMAND_TIMEOUT, time.Millisecond*250).Should(BeFalse())
 }

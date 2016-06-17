@@ -29,13 +29,6 @@ func killProcessAttachedToPort(port int) {
 	}
 }
 
-func isPIDRunning(pid int) bool {
-	// On Unix FindProcess always returns
-	// a non-nil Process and a nil error.
-	process, _ := os.FindProcess(pid)
-	return process.Signal(syscall.Signal(0)) == nil
-}
-
 func killPID(pid int) {
 	process, err := os.FindProcess(pid)
 	Expect(err).NotTo(HaveOccurred())
