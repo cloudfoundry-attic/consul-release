@@ -70,7 +70,7 @@ var _ = Describe("Runner", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			_, err = os.Stat(runner.PIDFile)
-			Expect(os.IsNotExist(err)).To(BeTrue())
+			Expect(err).To(BeAnOsIsNotExistError())
 
 			Expect(logger.Messages()).To(ContainSequence([]fakes.LoggerMessage{
 				{
