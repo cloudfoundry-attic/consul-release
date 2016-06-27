@@ -100,10 +100,16 @@ using certstrap. This repository contains a helper script, `scripts/generate-cer
 This script uses certstrap to initialize a certificate authority (CA), and
 generate the certificates and keys for Consul.
 
+2.  All servers must have a certificate valid for `server.<datacenter>.<domain>` or 
+the client will reject the handshake.
+For a default consul configuration, this means that a server certificate with the common name `server.dc1.cf.internal` will need to be created.
+Further documentation concerning TLS encryption may be found on the official consul [documentation](https://www.consul.io/docs/agent/encryption.html).
+
 If you already have a CA, you may have an existing workflow. You can modify
 the `generate-certs` script to use your existing CA instead of generating a new one.
 
 The `generate-certs` script outputs files to the `./consul-certs` directory.
+
 
 2. Create Gossip Encryption Keys:
 To create an encryption key for use in the serf gossip protocol, provide an
