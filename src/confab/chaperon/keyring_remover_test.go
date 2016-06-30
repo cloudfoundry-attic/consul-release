@@ -43,7 +43,7 @@ var _ = Describe("KeyringRemover", func() {
 			_, err = os.Stat(keyring.Name())
 			Expect(err).To(MatchError(ContainSubstring("no such file")))
 
-			Expect(logger.Messages).To(ContainSequence([]fakes.LoggerMessage{
+			Expect(logger.Messages()).To(ContainSequence([]fakes.LoggerMessage{
 				{
 					Action: "keyring-remover.execute",
 					Data: []lager.Data{{
@@ -78,7 +78,7 @@ var _ = Describe("KeyringRemover", func() {
 					err = remover.Execute()
 					Expect(err).To(MatchError(ContainSubstring("permission denied")))
 
-					Expect(logger.Messages).To(ContainSequence([]fakes.LoggerMessage{
+					Expect(logger.Messages()).To(ContainSequence([]fakes.LoggerMessage{
 						{
 							Action: "keyring-remover.execute",
 							Data: []lager.Data{{

@@ -60,7 +60,7 @@ var _ = Describe("Client", func() {
 				Expect(client.VerifyJoined()).To(Succeed())
 				Expect(consulAPIAgent.MembersArgsForCall(0)).To(BeFalse())
 
-				Expect(logger.Messages).To(ContainSequence([]fakes.LoggerMessage{
+				Expect(logger.Messages()).To(ContainSequence([]fakes.LoggerMessage{
 					{
 						Action: "agent-client.verify-joined.members.request",
 						Data: []lager.Data{{
@@ -92,7 +92,7 @@ var _ = Describe("Client", func() {
 				Expect(client.VerifyJoined()).To(MatchError("no expected members"))
 				Expect(consulAPIAgent.MembersArgsForCall(0)).To(BeFalse())
 
-				Expect(logger.Messages).To(ContainSequence([]fakes.LoggerMessage{
+				Expect(logger.Messages()).To(ContainSequence([]fakes.LoggerMessage{
 					{
 						Action: "agent-client.verify-joined.members.request",
 						Data: []lager.Data{{
@@ -126,7 +126,7 @@ var _ = Describe("Client", func() {
 				Expect(client.VerifyJoined()).To(MatchError("members call error"))
 				Expect(consulAPIAgent.MembersArgsForCall(0)).To(BeFalse())
 
-				Expect(logger.Messages).To(ContainSequence([]fakes.LoggerMessage{
+				Expect(logger.Messages()).To(ContainSequence([]fakes.LoggerMessage{
 					{
 						Action: "agent-client.verify-joined.members.request",
 						Data: []lager.Data{{
@@ -158,7 +158,7 @@ var _ = Describe("Client", func() {
 		It("verifies the sync state of the raft log", func() {
 			Expect(client.VerifySynced()).To(Succeed())
 			Expect(consulRPCClient.StatsCallCount()).To(Equal(1))
-			Expect(logger.Messages).To(ContainSequence([]fakes.LoggerMessage{
+			Expect(logger.Messages()).To(ContainSequence([]fakes.LoggerMessage{
 				{
 					Action: "agent-client.verify-synced.stats.request",
 				},
@@ -188,7 +188,7 @@ var _ = Describe("Client", func() {
 			It("returns an error", func() {
 				Expect(client.VerifySynced()).To(MatchError("log not in sync"))
 				Expect(consulRPCClient.StatsCallCount()).To(Equal(1))
-				Expect(logger.Messages).To(ContainSequence([]fakes.LoggerMessage{
+				Expect(logger.Messages()).To(ContainSequence([]fakes.LoggerMessage{
 					{
 						Action: "agent-client.verify-synced.stats.request",
 					},
@@ -215,7 +215,7 @@ var _ = Describe("Client", func() {
 			It("immediately returns an error", func() {
 				Expect(client.VerifySynced()).To(MatchError("RPC error"))
 				Expect(consulRPCClient.StatsCallCount()).To(Equal(1))
-				Expect(logger.Messages).To(ContainSequence([]fakes.LoggerMessage{
+				Expect(logger.Messages()).To(ContainSequence([]fakes.LoggerMessage{
 					{
 						Action: "agent-client.verify-synced.stats.request",
 					},
@@ -240,7 +240,7 @@ var _ = Describe("Client", func() {
 			It("immediately returns an error", func() {
 				Expect(client.VerifySynced()).To(MatchError("commit index must not be zero"))
 				Expect(consulRPCClient.StatsCallCount()).To(Equal(1))
-				Expect(logger.Messages).To(ContainSequence([]fakes.LoggerMessage{
+				Expect(logger.Messages()).To(ContainSequence([]fakes.LoggerMessage{
 					{
 						Action: "agent-client.verify-synced.stats.request",
 					},
@@ -274,7 +274,7 @@ var _ = Describe("Client", func() {
 		It("returns true", func() {
 			Expect(client.IsLastNode()).To(BeTrue())
 			Expect(consulAPIAgent.MembersCallCount()).To(Equal(1))
-			Expect(logger.Messages).To(ContainSequence([]fakes.LoggerMessage{
+			Expect(logger.Messages()).To(ContainSequence([]fakes.LoggerMessage{
 				{
 					Action: "agent-client.is-last-node.members.request",
 					Data: []lager.Data{{
@@ -310,7 +310,7 @@ var _ = Describe("Client", func() {
 			It("returns false", func() {
 				Expect(client.IsLastNode()).To(BeFalse())
 				Expect(consulAPIAgent.MembersCallCount()).To(Equal(1))
-				Expect(logger.Messages).To(ContainSequence([]fakes.LoggerMessage{
+				Expect(logger.Messages()).To(ContainSequence([]fakes.LoggerMessage{
 					{
 						Action: "agent-client.is-last-node.members.request",
 						Data: []lager.Data{{
@@ -348,7 +348,7 @@ var _ = Describe("Client", func() {
 				It("returns false", func() {
 					Expect(client.IsLastNode()).To(BeFalse())
 					Expect(consulAPIAgent.MembersCallCount()).To(Equal(1))
-					Expect(logger.Messages).To(ContainSequence([]fakes.LoggerMessage{
+					Expect(logger.Messages()).To(ContainSequence([]fakes.LoggerMessage{
 						{
 							Action: "agent-client.is-last-node.members.request",
 							Data: []lager.Data{{
@@ -384,7 +384,7 @@ var _ = Describe("Client", func() {
 				_, err := client.IsLastNode()
 				Expect(err).To(MatchError("members error"))
 				Expect(consulAPIAgent.MembersCallCount()).To(Equal(1))
-				Expect(logger.Messages).To(ContainSequence([]fakes.LoggerMessage{
+				Expect(logger.Messages()).To(ContainSequence([]fakes.LoggerMessage{
 					{
 						Action: "agent-client.is-last-node.members.request",
 						Data: []lager.Data{{
@@ -435,7 +435,7 @@ var _ = Describe("Client", func() {
 
 			Expect(consulRPCClient.RemoveKeyCallCount()).To(Equal(0))
 
-			Expect(logger.Messages).To(ContainSequence([]fakes.LoggerMessage{
+			Expect(logger.Messages()).To(ContainSequence([]fakes.LoggerMessage{
 				{
 					Action: "agent-client.set-keys.list-keys.request",
 				},
@@ -514,7 +514,7 @@ var _ = Describe("Client", func() {
 				key = consulRPCClient.RemoveKeyArgsForCall(1)
 				Expect(key).To(Equal("key4"))
 
-				Expect(logger.Messages).To(ContainSequence([]fakes.LoggerMessage{
+				Expect(logger.Messages()).To(ContainSequence([]fakes.LoggerMessage{
 					{
 						Action: "agent-client.set-keys.list-keys.request",
 					},
@@ -595,7 +595,7 @@ var _ = Describe("Client", func() {
 			Context("when provided with a nil slice", func() {
 				It("returns a reasonably named error", func() {
 					Expect(client.SetKeys(nil)).To(MatchError("must provide a non-nil slice of keys"))
-					Expect(logger.Messages).To(ContainSequence([]fakes.LoggerMessage{
+					Expect(logger.Messages()).To(ContainSequence([]fakes.LoggerMessage{
 						{
 							Action: "agent-client.set-keys.nil-slice",
 							Error:  errors.New("must provide a non-nil slice of keys"),
@@ -607,7 +607,7 @@ var _ = Describe("Client", func() {
 			Context("when provided with an empty slice", func() {
 				It("returns a reasonably named error", func() {
 					Expect(client.SetKeys([]string{})).To(MatchError("must provide a non-empty slice of keys"))
-					Expect(logger.Messages).To(ContainSequence([]fakes.LoggerMessage{
+					Expect(logger.Messages()).To(ContainSequence([]fakes.LoggerMessage{
 						{
 							Action: "agent-client.set-keys.empty-slice",
 							Error:  errors.New("must provide a non-empty slice of keys"),
@@ -621,7 +621,7 @@ var _ = Describe("Client", func() {
 					consulRPCClient.ListKeysReturns([]string{}, errors.New("list keys error"))
 
 					Expect(client.SetKeys([]string{"key1"})).To(MatchError("list keys error"))
-					Expect(logger.Messages).To(ContainSequence([]fakes.LoggerMessage{
+					Expect(logger.Messages()).To(ContainSequence([]fakes.LoggerMessage{
 						{
 							Action: "agent-client.set-keys.list-keys.request",
 						},
@@ -639,7 +639,7 @@ var _ = Describe("Client", func() {
 					consulRPCClient.RemoveKeyReturns(errors.New("remove key error"))
 
 					Expect(client.SetKeys([]string{"key1"})).To(MatchError("remove key error"))
-					Expect(logger.Messages).To(ContainSequence([]fakes.LoggerMessage{
+					Expect(logger.Messages()).To(ContainSequence([]fakes.LoggerMessage{
 						{
 							Action: "agent-client.set-keys.list-keys.request",
 						},
@@ -671,7 +671,7 @@ var _ = Describe("Client", func() {
 					consulRPCClient.InstallKeyReturns(errors.New("install key error"))
 
 					Expect(client.SetKeys([]string{"key1"})).To(MatchError("install key error"))
-					Expect(logger.Messages).To(ContainSequence([]fakes.LoggerMessage{
+					Expect(logger.Messages()).To(ContainSequence([]fakes.LoggerMessage{
 						{
 							Action: "agent-client.set-keys.list-keys.request",
 						},
@@ -703,7 +703,7 @@ var _ = Describe("Client", func() {
 					consulRPCClient.UseKeyReturns(errors.New("use key error"))
 
 					Expect(client.SetKeys([]string{"key1"})).To(MatchError("use key error"))
-					Expect(logger.Messages).To(ContainSequence([]fakes.LoggerMessage{
+					Expect(logger.Messages()).To(ContainSequence([]fakes.LoggerMessage{
 						{
 							Action: "agent-client.set-keys.list-keys.request",
 						},
@@ -748,7 +748,7 @@ var _ = Describe("Client", func() {
 		It("leaves the cluster", func() {
 			Expect(client.Leave()).To(Succeed())
 			Expect(consulRPCClient.LeaveCallCount()).To(Equal(1))
-			Expect(logger.Messages).To(ContainSequence([]fakes.LoggerMessage{
+			Expect(logger.Messages()).To(ContainSequence([]fakes.LoggerMessage{
 				{
 					Action: "agent-client.leave.leave.request",
 				},
@@ -764,7 +764,7 @@ var _ = Describe("Client", func() {
 
 				Expect(client.Leave()).To(MatchError("leave error"))
 				Expect(consulRPCClient.LeaveCallCount()).To(Equal(1))
-				Expect(logger.Messages).To(ContainSequence([]fakes.LoggerMessage{
+				Expect(logger.Messages()).To(ContainSequence([]fakes.LoggerMessage{
 					{
 						Action: "agent-client.leave.leave.request",
 					},
@@ -781,7 +781,7 @@ var _ = Describe("Client", func() {
 				client.ConsulRPCClient = nil
 
 				Expect(client.Leave()).To(MatchError("consul rpc client is nil"))
-				Expect(logger.Messages).To(ContainSequence([]fakes.LoggerMessage{
+				Expect(logger.Messages()).To(ContainSequence([]fakes.LoggerMessage{
 					{
 						Action: "agent-client.leave.nil-rpc-client",
 						Error:  errors.New("consul rpc client is nil"),

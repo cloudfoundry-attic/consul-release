@@ -69,7 +69,7 @@ var _ = Describe("Runner", func() {
 			_, err = os.Stat(runner.PIDFile)
 			Expect(err).To(MatchError(ContainSubstring("no such file or directory")))
 
-			Expect(logger.Messages).To(ContainSequence([]fakes.LoggerMessage{
+			Expect(logger.Messages()).To(ContainSequence([]fakes.LoggerMessage{
 				{
 					Action: "agent-runner.cleanup.remove",
 					Data: []lager.Data{{
@@ -89,7 +89,7 @@ var _ = Describe("Runner", func() {
 				err := runner.Cleanup()
 				Expect(err).To(MatchError(expectedError))
 
-				Expect(logger.Messages).To(ContainSequence([]fakes.LoggerMessage{
+				Expect(logger.Messages()).To(ContainSequence([]fakes.LoggerMessage{
 					{
 						Action: "agent-runner.cleanup.remove",
 						Data: []lager.Data{{
@@ -128,7 +128,7 @@ var _ = Describe("Runner", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(runner.Stop()).To(Succeed())
-				Expect(logger.Messages).To(ContainSequence([]fakes.LoggerMessage{
+				Expect(logger.Messages()).To(ContainSequence([]fakes.LoggerMessage{
 					{
 						Action: "agent-runner.stop.get-process",
 					},
@@ -159,7 +159,7 @@ var _ = Describe("Runner", func() {
 			It("returns an error", func() {
 				runner.PIDFile = "/tmp/nope-i-do-not-exist"
 				Expect(runner.Stop()).To(MatchError(ContainSubstring("no such file or directory")))
-				Expect(logger.Messages).To(ContainSequence([]fakes.LoggerMessage{
+				Expect(logger.Messages()).To(ContainSequence([]fakes.LoggerMessage{
 					{
 						Action: "agent-runner.stop.get-process",
 					},
@@ -225,7 +225,7 @@ var _ = Describe("Runner", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(runner.Wait()).To(Succeed())
-				Expect(logger.Messages).To(ContainSequence([]fakes.LoggerMessage{
+				Expect(logger.Messages()).To(ContainSequence([]fakes.LoggerMessage{
 					{
 						Action: "agent-runner.wait.get-process",
 					},
@@ -256,7 +256,7 @@ var _ = Describe("Runner", func() {
 			It("returns an error", func() {
 				runner.PIDFile = "/tmp/nope-i-do-not-exist"
 				Expect(runner.Wait()).To(MatchError(ContainSubstring("no such file or directory")))
-				Expect(logger.Messages).To(ContainSequence([]fakes.LoggerMessage{
+				Expect(logger.Messages()).To(ContainSequence([]fakes.LoggerMessage{
 					{
 						Action: "agent-runner.wait.get-process",
 					},
@@ -287,7 +287,7 @@ var _ = Describe("Runner", func() {
 			pid, err := getPID(runner)
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(logger.Messages).To(ContainSequence([]fakes.LoggerMessage{
+			Expect(logger.Messages()).To(ContainSequence([]fakes.LoggerMessage{
 				{
 					Action: "agent-runner.run.write-pidfile",
 					Data: []lager.Data{{
@@ -327,7 +327,7 @@ var _ = Describe("Runner", func() {
 			pid, err := getPID(runner)
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(logger.Messages).To(ContainSequence([]fakes.LoggerMessage{
+			Expect(logger.Messages()).To(ContainSequence([]fakes.LoggerMessage{
 				{
 					Action: "agent-runner.run.start",
 					Data: []lager.Data{{
@@ -401,7 +401,7 @@ var _ = Describe("Runner", func() {
 				runner.Path = "/tmp/not-a-thing-we-can-launch"
 				Expect(runner.Run()).To(MatchError(ContainSubstring("no such file or directory")))
 
-				Expect(logger.Messages).To(ContainSequence([]fakes.LoggerMessage{
+				Expect(logger.Messages()).To(ContainSequence([]fakes.LoggerMessage{
 					{
 						Action: "agent-runner.run.start",
 						Data: []lager.Data{{
@@ -436,7 +436,7 @@ var _ = Describe("Runner", func() {
 				runner.ConfigDir = fmt.Sprintf("/tmp/this-directory-does-not-existi-%x", rand.Int31())
 				Expect(runner.Run()).To(MatchError(ContainSubstring("config dir does not exist")))
 
-				Expect(logger.Messages).To(ContainSequence([]fakes.LoggerMessage{
+				Expect(logger.Messages()).To(ContainSequence([]fakes.LoggerMessage{
 					{
 						Action: "agent-runner.run.config-dir-missing",
 						Error:  fmt.Errorf("config dir does not exist: %s", runner.ConfigDir),

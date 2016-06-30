@@ -14,14 +14,14 @@ type LoggerMessage struct {
 
 type Logger struct {
 	sync.Mutex
-	Messages []LoggerMessage
+	messages []LoggerMessage
 }
 
 func (l *Logger) Info(action string, data ...lager.Data) {
 	l.Lock()
 	defer l.Unlock()
 
-	l.Messages = append(l.Messages, LoggerMessage{
+	l.messages = append(l.messages, LoggerMessage{
 		Action: action,
 		Data:   data,
 	})
@@ -31,9 +31,16 @@ func (l *Logger) Error(action string, err error, data ...lager.Data) {
 	l.Lock()
 	defer l.Unlock()
 
-	l.Messages = append(l.Messages, LoggerMessage{
+	l.messages = append(l.messages, LoggerMessage{
 		Action: action,
 		Error:  err,
 		Data:   data,
 	})
+}
+
+func (l *Logger) Messages() []LoggerMessage {
+	l.Lock()
+	defer l.Unlock()
+
+	return l.messages
 }

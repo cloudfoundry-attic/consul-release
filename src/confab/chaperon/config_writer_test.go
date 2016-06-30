@@ -71,7 +71,7 @@ var _ = Describe("ConfigWriter", func() {
 				"cert_file": "%[1]s/certs/agent.crt"
 			}`, configDir)))
 
-			Expect(logger.Messages).To(ContainSequence([]fakes.LoggerMessage{
+			Expect(logger.Messages()).To(ContainSequence([]fakes.LoggerMessage{
 				{
 					Action: "config-writer.write.generate-configuration",
 				},
@@ -95,7 +95,7 @@ var _ = Describe("ConfigWriter", func() {
 				err = writer.Write(cfg)
 				Expect(err).To(MatchError(ContainSubstring("permission denied")))
 
-				Expect(logger.Messages).To(ContainSequence([]fakes.LoggerMessage{
+				Expect(logger.Messages()).To(ContainSequence([]fakes.LoggerMessage{
 					{
 						Action: "config-writer.write.generate-configuration",
 					},
