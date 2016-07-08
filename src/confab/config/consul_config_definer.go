@@ -3,9 +3,7 @@ package config
 import (
 	"crypto/sha1"
 	"encoding/base64"
-	"fmt"
 	"path/filepath"
-	"strings"
 
 	"golang.org/x/crypto/pbkdf2"
 )
@@ -39,7 +37,7 @@ type ConsulConfigPorts struct {
 	DNS int `json:"dns"`
 }
 
-func GenerateConfiguration(config Config, configDir string) ConsulConfig {
+func GenerateConfiguration(config Config, configDir, nodeName string) ConsulConfig {
 	lan := config.Consul.Agent.Servers.LAN
 	if lan == nil {
 		lan = []string{}
@@ -50,16 +48,13 @@ func GenerateConfiguration(config Config, configDir string) ConsulConfig {
 		wan = []string{}
 	}
 
-	nodeName := strings.Replace(config.Node.Name, "_", "-", -1)
-	nodeName = fmt.Sprintf("%s-%d", nodeName, config.Node.Index)
-
 	isServer := config.Consul.Agent.Mode == "server"
 
 	consulConfig := ConsulConfig{
 		Server:     isServer,
 		Domain:     config.Consul.Agent.Domain,
 		Datacenter: config.Consul.Agent.Datacenter,
-		DataDir:    "/var/vcap/store/consul_agent",
+		DataDir:    config.Path.DataDir,
 		LogLevel:   config.Consul.Agent.LogLevel,
 		NodeName:   nodeName,
 		Ports: ConsulConfigPorts{

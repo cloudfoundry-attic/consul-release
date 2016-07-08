@@ -23,6 +23,7 @@ type ConfigPath struct {
 	ConsulConfigDir string `json:"consul_config_dir"`
 	PIDFile         string `json:"pid_file"`
 	KeyringFile     string `json:"keyring_file"`
+	DataDir         string `json:"data_dir"`
 }
 
 type ConfigNode struct {
@@ -53,6 +54,7 @@ func Default() Config {
 			ConsulConfigDir: "/var/vcap/jobs/consul_agent/config",
 			PIDFile:         "/var/vcap/sys/run/consul_agent/consul_agent.pid",
 			KeyringFile:     "/var/vcap/store/consul_agent/serf/local.keyring",
+			DataDir:         "/var/vcap/store/consul_agent",
 		},
 		Consul: ConfigConsul{
 			Agent: ConfigConsulAgent{

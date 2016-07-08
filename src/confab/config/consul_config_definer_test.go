@@ -14,7 +14,7 @@ var _ = Describe("ConsulConfigDefiner", func() {
 
 		BeforeEach(func() {
 			configDir = "/var/vcap/jobs/consul_agent/config"
-			consulConfig = config.GenerateConfiguration(config.Config{}, configDir)
+			consulConfig = config.GenerateConfiguration(config.Config{}, configDir, "")
 		})
 
 		Describe("datacenter", func() {
@@ -30,7 +30,7 @@ var _ = Describe("ConsulConfigDefiner", func() {
 								Datacenter: "my-datacenter",
 							},
 						},
-					}, configDir)
+					}, configDir, "")
 					Expect(consulConfig.Datacenter).To(Equal("my-datacenter"))
 				})
 			})
@@ -44,15 +44,20 @@ var _ = Describe("ConsulConfigDefiner", func() {
 							Domain: "some-domain",
 						},
 					},
-				}, configDir)
+				}, configDir, "")
 
 				Expect(config.Domain).To(Equal("some-domain"))
 			})
 		})
 
-		Describe("data_dir", func() {
-			It("defaults to `/var/vcap/store/consul_agent`", func() {
-				Expect(consulConfig.DataDir).To(Equal("/var/vcap/store/consul_agent"))
+		Describe("data dir", func() {
+			It("gets the data dir from the config", func() {
+				config := config.GenerateConfiguration(config.Config{
+					Path: config.ConfigPath{
+						DataDir: "/some/data/dir",
+					},
+				}, "", "")
+				Expect(config.DataDir).To(Equal("/some/data/dir"))
 			})
 		})
 
@@ -69,23 +74,19 @@ var _ = Describe("ConsulConfigDefiner", func() {
 								LogLevel: "some-log-level",
 							},
 						},
-					}, configDir)
+					}, configDir, "")
 					Expect(consulConfig.LogLevel).To(Equal("some-log-level"))
 				})
 			})
 		})
 
 		Describe("node_name", func() {
-			It("uses the job name and index as the value", func() {
-				consulConfig = config.GenerateConfiguration(config.Config{
-					Node: config.ConfigNode{
-						Name:  "node_name",
-						Index: 0,
-					},
-				}, configDir)
-				Expect(consulConfig.NodeName).To(Equal("node-name-0"))
+			It("uses the specified node name", func() {
+				consulConfig = config.GenerateConfiguration(config.Config{}, configDir, "some-node-name")
+				Expect(consulConfig.NodeName).To(Equal("some-node-name"))
 			})
 		})
+
 
 		Describe("server", func() {
 			It("defaults to false", func() {
@@ -100,7 +101,7 @@ var _ = Describe("ConsulConfigDefiner", func() {
 								Mode: "server",
 							},
 						},
-					}, configDir)
+					}, configDir, "")
 					Expect(consulConfig.Server).To(BeTrue())
 				})
 			})
@@ -113,7 +114,7 @@ var _ = Describe("ConsulConfigDefiner", func() {
 								Mode: "banana",
 							},
 						},
-					}, configDir)
+					}, configDir, "")
 					Expect(consulConfig.Server).To(BeFalse())
 				})
 			})
@@ -152,7 +153,7 @@ var _ = Describe("ConsulConfigDefiner", func() {
 								},
 							},
 						},
-					}, configDir)
+					}, configDir, "")
 					Expect(consulConfig.RetryJoin).To(Equal([]string{
 						"first-server",
 						"second-server",
@@ -181,7 +182,7 @@ var _ = Describe("ConsulConfigDefiner", func() {
 								},
 							},
 						},
-					}, configDir)
+					}, configDir, "")
 					Expect(consulConfig.RetryJoinWAN).To(Equal([]string{
 						"first-wan-server",
 						"second-wan-server",
@@ -202,7 +203,7 @@ var _ = Describe("ConsulConfigDefiner", func() {
 						Node: config.ConfigNode{
 							ExternalIP: "0.0.0.0",
 						},
-					}, configDir)
+					}, configDir, "")
 					Expect(consulConfig.BindAddr).To(Equal("0.0.0.0"))
 				})
 			})
@@ -233,7 +234,7 @@ var _ = Describe("ConsulConfigDefiner", func() {
 								ProtocolVersion: 21,
 							},
 						},
-					}, configDir)
+					}, configDir, "")
 					Expect(consulConfig.Protocol).To(Equal(21))
 				})
 			})
@@ -241,7 +242,7 @@ var _ = Describe("ConsulConfigDefiner", func() {
 
 		Describe("verify_outgoing", func() {
 			It("is true", func() {
-				consulConfig = config.GenerateConfiguration(config.Config{}, configDir)
+				consulConfig = config.GenerateConfiguration(config.Config{}, configDir, "")
 				Expect(consulConfig.VerifyOutgoing).NotTo(BeNil())
 				Expect(*consulConfig.VerifyOutgoing).To(BeTrue())
 			})
@@ -249,7 +250,7 @@ var _ = Describe("ConsulConfigDefiner", func() {
 
 		Describe("verify_incoming", func() {
 			It("is true", func() {
-				consulConfig = config.GenerateConfiguration(config.Config{}, configDir)
+				consulConfig = config.GenerateConfiguration(config.Config{}, configDir, "")
 				Expect(consulConfig.VerifyIncoming).NotTo(BeNil())
 				Expect(*consulConfig.VerifyIncoming).To(BeTrue())
 			})
@@ -257,7 +258,7 @@ var _ = Describe("ConsulConfigDefiner", func() {
 
 		Describe("verify_server_hostname", func() {
 			It("is true", func() {
-				consulConfig = config.GenerateConfiguration(config.Config{}, configDir)
+				consulConfig = config.GenerateConfiguration(config.Config{}, configDir, "")
 				Expect(consulConfig.VerifyServerHostname).NotTo(BeNil())
 				Expect(*consulConfig.VerifyServerHostname).To(BeTrue())
 			})
@@ -265,7 +266,7 @@ var _ = Describe("ConsulConfigDefiner", func() {
 
 		Describe("ca_file", func() {
 			It("is the location of the ca file", func() {
-				consulConfig = config.GenerateConfiguration(config.Config{}, "/var/vcap/jobs/consul_agent_windows/config")
+				consulConfig = config.GenerateConfiguration(config.Config{}, "/var/vcap/jobs/consul_agent_windows/config", "")
 				Expect(consulConfig.CAFile).NotTo(BeNil())
 				Expect(*consulConfig.CAFile).To(Equal("/var/vcap/jobs/consul_agent_windows/config/certs/ca.crt"))
 			})
@@ -280,7 +281,7 @@ var _ = Describe("ConsulConfigDefiner", func() {
 								Mode: "server",
 							},
 						},
-					}, configDir)
+					}, configDir, "")
 					Expect(consulConfig.KeyFile).NotTo(BeNil())
 					Expect(*consulConfig.KeyFile).To(Equal("/var/vcap/jobs/consul_agent/config/certs/server.key"))
 				})
@@ -288,7 +289,7 @@ var _ = Describe("ConsulConfigDefiner", func() {
 
 			Context("when `consul.agent.mode` is not `server`", func() {
 				It("is the location of the agent.key file", func() {
-					consulConfig = config.GenerateConfiguration(config.Config{}, configDir)
+					consulConfig = config.GenerateConfiguration(config.Config{}, configDir, "")
 					Expect(consulConfig.KeyFile).NotTo(BeNil())
 					Expect(*consulConfig.KeyFile).To(Equal("/var/vcap/jobs/consul_agent/config/certs/agent.key"))
 				})
@@ -304,7 +305,7 @@ var _ = Describe("ConsulConfigDefiner", func() {
 								Mode: "server",
 							},
 						},
-					}, configDir)
+					}, configDir, "")
 					Expect(consulConfig.CertFile).NotTo(BeNil())
 					Expect(*consulConfig.CertFile).To(Equal("/var/vcap/jobs/consul_agent/config/certs/server.crt"))
 				})
@@ -312,7 +313,7 @@ var _ = Describe("ConsulConfigDefiner", func() {
 
 			Context("when `consul.agent.mode` is not `server`", func() {
 				It("is the location of the agent.key file", func() {
-					consulConfig = config.GenerateConfiguration(config.Config{}, configDir)
+					consulConfig = config.GenerateConfiguration(config.Config{}, configDir, "")
 					Expect(consulConfig.CertFile).NotTo(BeNil())
 					Expect(*consulConfig.CertFile).To(Equal("/var/vcap/jobs/consul_agent/config/certs/agent.crt"))
 				})
@@ -322,7 +323,7 @@ var _ = Describe("ConsulConfigDefiner", func() {
 		Describe("encrypt", func() {
 			Context("when `consul.encrypt_keys` is empty", func() {
 				It("is nil", func() {
-					consulConfig = config.GenerateConfiguration(config.Config{}, configDir)
+					consulConfig = config.GenerateConfiguration(config.Config{}, configDir, "")
 					Expect(consulConfig.Encrypt).To(BeNil())
 				})
 			})
@@ -334,7 +335,7 @@ var _ = Describe("ConsulConfigDefiner", func() {
 							Consul: config.ConfigConsul{
 								EncryptKeys: []string{"banana"},
 							},
-						}, configDir)
+						}, configDir, "")
 					Expect(consulConfig.Encrypt).NotTo(BeNil())
 					Expect(*consulConfig.Encrypt).To(Equal("enqzXBmgKOy13WIGsmUk+g=="))
 				})
@@ -345,7 +346,7 @@ var _ = Describe("ConsulConfigDefiner", func() {
 							Consul: config.ConfigConsul{
 								EncryptKeys: []string{"enqzXBmgKOy13WIGsmUk+g=="},
 							},
-						}, configDir)
+						}, configDir, "")
 					Expect(consulConfig.Encrypt).NotTo(BeNil())
 					Expect(*consulConfig.Encrypt).To(Equal("enqzXBmgKOy13WIGsmUk+g=="))
 				})
@@ -374,7 +375,7 @@ var _ = Describe("ConsulConfigDefiner", func() {
 								},
 							},
 						},
-					}, configDir)
+					}, configDir, "")
 					Expect(consulConfig.BootstrapExpect).NotTo(BeNil())
 					Expect(*consulConfig.BootstrapExpect).To(Equal(3))
 				})

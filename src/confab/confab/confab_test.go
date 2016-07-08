@@ -19,6 +19,7 @@ const COMMAND_TIMEOUT = "15s"
 var _ = Describe("confab", func() {
 	var (
 		tempDir         string
+		dataDir         string
 		consulConfigDir string
 		pidFile         *os.File
 		configFile      *os.File
@@ -27,6 +28,9 @@ var _ = Describe("confab", func() {
 	BeforeEach(func() {
 		var err error
 		tempDir, err = ioutil.TempDir("", "testing")
+		Expect(err).NotTo(HaveOccurred())
+
+		dataDir, err = ioutil.TempDir("", "dataDir")
 		Expect(err).NotTo(HaveOccurred())
 
 		consulConfigDir, err = ioutil.TempDir(tempDir, "fake-agent-config-dir")
@@ -74,6 +78,7 @@ var _ = Describe("confab", func() {
 					"agent_path":        pathToFakeAgent,
 					"consul_config_dir": consulConfigDir,
 					"pid_file":          pidFile.Name(),
+					"data_dir":          dataDir,
 				},
 				"consul": map[string]interface{}{
 					"encrypt_keys": []string{"banana"},
@@ -180,7 +185,7 @@ var _ = Describe("confab", func() {
 				"server": false,
 				"domain": "some-domain",
 				"datacenter": "dc1",
-				"data_dir": "/var/vcap/store/consul_agent",
+				"data_dir": %q,
 				"log_level": "debug",
 				"node_name": "my-node-3",
 				"ports": {
@@ -204,11 +209,11 @@ var _ = Describe("confab", func() {
 				"verify_outgoing": true,
 				"verify_incoming": true,
 				"verify_server_hostname": true,
-				"ca_file": "%[1]s/certs/ca.crt",
-				"key_file": "%[1]s/certs/agent.key",
-				"cert_file": "%[1]s/certs/agent.crt",
+				"ca_file": "%[2]s/certs/ca.crt",
+				"key_file": "%[2]s/certs/agent.key",
+				"cert_file": "%[2]s/certs/agent.crt",
 				"encrypt": "enqzXBmgKOy13WIGsmUk+g=="
-			}`, consulConfigDir)))
+			}`, dataDir, consulConfigDir)))
 		})
 	})
 
@@ -219,6 +224,7 @@ var _ = Describe("confab", func() {
 					"agent_path":        pathToFakeAgent,
 					"consul_config_dir": consulConfigDir,
 					"pid_file":          pidFile.Name(),
+					"data_dir":          dataDir,
 				},
 				"consul": map[string]interface{}{
 					"agent": map[string]interface{}{
@@ -268,6 +274,7 @@ var _ = Describe("confab", func() {
 						"agent_path":        pathToFakeAgent,
 						"consul_config_dir": consulConfigDir,
 						"pid_file":          pidFile.Name(),
+						"data_dir":          dataDir,
 					},
 					"consul": map[string]interface{}{
 						"agent": map[string]interface{}{
@@ -316,6 +323,7 @@ var _ = Describe("confab", func() {
 						"agent_path":        pathToFakeAgent,
 						"consul_config_dir": consulConfigDir,
 						"pid_file":          pidFile.Name(),
+						"data_dir":          dataDir,
 					},
 					"consul": map[string]interface{}{
 						"agent": map[string]interface{}{
@@ -361,6 +369,7 @@ var _ = Describe("confab", func() {
 					"agent_path":        pathToFakeAgent,
 					"consul_config_dir": consulConfigDir,
 					"pid_file":          pidFile.Name(),
+					"data_dir":          dataDir,
 				},
 				"consul": map[string]interface{}{
 					"agent": map[string]interface{}{
@@ -422,6 +431,7 @@ var _ = Describe("confab", func() {
 					"agent_path":        pathToFakeAgent,
 					"consul_config_dir": consulConfigDir,
 					"pid_file":          pidFile.Name(),
+					"data_dir":          dataDir,
 				},
 			})
 		})
@@ -491,6 +501,7 @@ var _ = Describe("confab", func() {
 						"agent_path":        "/tmp/path/that/does/not/exist",
 						"consul_config_dir": consulConfigDir,
 						"pid_file":          pidFile.Name(),
+						"data_dir":          dataDir,
 					},
 					"consul": map[string]interface{}{
 						"agent": map[string]interface{}{
@@ -520,6 +531,7 @@ var _ = Describe("confab", func() {
 						"agent_path":        pathToFakeAgent,
 						"consul_config_dir": consulConfigDir,
 						"pid_file":          "",
+						"data_dir":          dataDir,
 					},
 					"consul": map[string]interface{}{
 						"agent": map[string]interface{}{
@@ -549,6 +561,7 @@ var _ = Describe("confab", func() {
 						"agent_path":        pathToFakeAgent,
 						"consul_config_dir": "/tmp/path/that/does/not/exist",
 						"pid_file":          pidFile.Name(),
+						"data_dir":          dataDir,
 					},
 					"consul": map[string]interface{}{
 						"agent": map[string]interface{}{
@@ -578,6 +591,7 @@ var _ = Describe("confab", func() {
 						"agent_path":        pathToFakeAgent,
 						"consul_config_dir": consulConfigDir,
 						"pid_file":          pidFile.Name(),
+						"data_dir":          dataDir,
 					},
 					"consul": map[string]interface{}{
 						"agent": map[string]interface{}{
@@ -622,6 +636,7 @@ var _ = Describe("confab", func() {
 						"agent_path":        pathToFakeAgent,
 						"consul_config_dir": consulConfigDir,
 						"pid_file":          pidFile.Name(),
+						"data_dir":          dataDir,
 					},
 					"consul": map[string]interface{}{
 						"agent": map[string]interface{}{
@@ -706,6 +721,7 @@ var _ = Describe("confab", func() {
 						"agent_path":        pathToFakeAgent,
 						"consul_config_dir": consulConfigDir,
 						"pid_file":          pidFile.Name(),
+						"data_dir":          dataDir,
 					},
 					"consul": map[string]interface{}{
 						"agent": map[string]interface{}{
