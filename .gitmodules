@@ -31,9 +31,6 @@
 [submodule "src/acceptance-tests/vendor/github.com/onsi/ginkgo"]
 	path = src/acceptance-tests/vendor/github.com/onsi/ginkgo
 	url = https://github.com/onsi/ginkgo
-[submodule "src/acceptance-tests/vendor/github.com/cloudfoundry-incubator/candiedyaml"]
-	path = src/acceptance-tests/vendor/github.com/cloudfoundry-incubator/candiedyaml
-	url = https://github.com/cloudfoundry-incubator/candiedyaml
 [submodule "src/acceptance-tests/vendor/github.com/onsi/gomega"]
 	path = src/acceptance-tests/vendor/github.com/onsi/gomega
 	url = https://github.com/onsi/gomega
@@ -49,9 +46,6 @@
 [submodule "src/confab/vendor/github.com/pivotal-cf-experimental/gomegamatchers"]
 	path = src/confab/vendor/github.com/pivotal-cf-experimental/gomegamatchers
 	url = https://github.com/pivotal-cf-experimental/gomegamatchers.git
-[submodule "src/confab/vendor/github.com/cloudfoundry-incubator/candiedyaml"]
-	path = src/confab/vendor/github.com/cloudfoundry-incubator/candiedyaml
-	url = https://github.com/cloudfoundry-incubator/candiedyaml.git
 [submodule "src/acceptance-tests/vendor/github.com/pivotal-cf-experimental/destiny"]
 	path = src/acceptance-tests/vendor/github.com/pivotal-cf-experimental/destiny
 	url = https://github.com/pivotal-cf-experimental/destiny
