@@ -205,8 +205,8 @@ var _ = Describe("Runner", func() {
 				Expect(processIsRunning(runner)).To(BeTrue())
 			})
 
+			done := make(chan struct{})
 			By("checking that Wait() blocks", func() {
-				done := make(chan struct{})
 				go func() {
 					if err := runner.Wait(); err != nil {
 						panic(err)
@@ -250,6 +250,8 @@ var _ = Describe("Runner", func() {
 			By("checking that the process no longer exists", func() {
 				Eventually(func() bool { return processIsRunning(runner) }).Should(BeFalse())
 			})
+
+			Eventually(done).Should(Receive())
 		})
 
 		Context("when the PID file cannot be read", func() {
