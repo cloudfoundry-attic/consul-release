@@ -87,7 +87,6 @@ var _ = Describe("ConsulConfigDefiner", func() {
 			})
 		})
 
-
 		Describe("server", func() {
 			It("defaults to false", func() {
 				Expect(consulConfig.Server).To(BeFalse())
