@@ -37,7 +37,7 @@ var _ = Describe("KillVm", func() {
 			return client.DeploymentVMs(consulManifest.Name)
 		}, "1m", "10s").Should(ConsistOf(helpers.GetVMsFromManifest(consulManifest)))
 
-		spammer = helpers.NewSpammer(kv, 1*time.Second)
+		spammer = helpers.NewSpammer(kv, 1*time.Second, "test-consumer-0")
 	})
 
 	AfterEach(func() {

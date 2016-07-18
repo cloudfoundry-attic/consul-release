@@ -17,3 +17,16 @@ func GetVMsFromManifest(manifest consul.Manifest) []bosh.VM {
 
 	return vms
 }
+
+func GetVMsFromManifestV2(manifest consul.ManifestV2) []bosh.VM {
+	var vms []bosh.VM
+
+	for _, ig := range manifest.InstanceGroups {
+		for i := 0; i < ig.Instances; i++ {
+			vms = append(vms, bosh.VM{JobName: ig.Name, Index: i, State: "running"})
+
+		}
+	}
+
+	return vms
+}

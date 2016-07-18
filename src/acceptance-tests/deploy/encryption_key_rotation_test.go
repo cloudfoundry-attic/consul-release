@@ -35,7 +35,7 @@ var _ = Describe("Encryption key rotation", func() {
 			return client.DeploymentVMs(manifest.Name)
 		}, "1m", "10s").Should(ConsistOf(helpers.GetVMsFromManifest(manifest)))
 
-		spammer = helpers.NewSpammer(kv, 1*time.Second)
+		spammer = helpers.NewSpammer(kv, 1*time.Second, "test-consumer-0")
 	})
 
 	AfterEach(func() {

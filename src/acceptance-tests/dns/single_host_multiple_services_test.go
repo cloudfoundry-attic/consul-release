@@ -43,7 +43,7 @@ var _ = Describe("Single host multiple services", func() {
 		By("registering services", func() {
 			healthCheck := fmt.Sprintf("curl -f http://%s:6769/health_check", manifest.Jobs[1].Networks[0].StaticIPs[0])
 			manifest.Jobs[1].Properties = &core.JobProperties{
-				Consul: core.JobPropertiesConsul{
+				Consul: &core.JobPropertiesConsul{
 					Agent: core.JobPropertiesConsulAgent{
 						Mode: "client",
 						Services: core.JobPropertiesConsulAgentServices{

@@ -3,6 +3,7 @@ package helpers_test
 import (
 	"errors"
 	"fmt"
+	"math/rand"
 	"sync"
 	"time"
 
@@ -16,14 +17,16 @@ var _ = Describe("Spammer", func() {
 	var (
 		kv      *fakeKV
 		spammer *helpers.Spammer
+		prefix  string
 	)
 
 	Context("Check", func() {
 		BeforeEach(func() {
+			prefix = fmt.Sprintf("some-prefix-%v", rand.Int())
 			kv = newFakeKV()
 			kv.AddressCall.Returns.Address = "http://some-address/consul"
 
-			spammer = helpers.NewSpammer(kv, time.Duration(0))
+			spammer = helpers.NewSpammer(kv, time.Duration(0), prefix)
 			spammer.Spam()
 
 			Eventually(func() int {
@@ -39,30 +42,30 @@ var _ = Describe("Spammer", func() {
 		})
 
 		It("returns an error when a key doesn't exist", func() {
-			kv.GetCall.Returns.Error = errors.New("could not find key: some-key-0")
+			kv.GetCall.Returns.Error = fmt.Errorf("could not find key: %s-some-key-0", prefix)
 
 			err := spammer.Check()
-			Expect(err).To(MatchError(ContainSubstring("could not find key: some-key-0")))
+			Expect(err).To(MatchError(ContainSubstring(fmt.Sprintf("could not find key: %v-some-key-0", prefix))))
 		})
 
 		It("returns an error when a key doesn't match it's value", func() {
-			Expect(kv.KeyVals).To(HaveKeyWithValue("some-key-0", "some-value-0"))
-			kv.KeyVals["some-key-0"] = "banana"
+			Expect(kv.KeyVals).To(HaveKeyWithValue(fmt.Sprintf("%v-some-key-0", prefix), fmt.Sprintf("%v-some-value-0", prefix)))
+			kv.KeyVals[fmt.Sprintf("%v-some-key-0", prefix)] = "banana"
 
 			err := spammer.Check()
-			Expect(err).To(MatchError(ContainSubstring("value for key \"some-key-0\" does not match: expected \"some-value-0\", got \"banana\"")))
+			Expect(err).To(MatchError(ContainSubstring(fmt.Sprintf("value for key \"%[1]v-some-key-0\" does not match: expected \"%[1]v-some-value-0\", got \"banana\"", prefix))))
 		})
 
 		Context("error tolerance", func() {
 			BeforeEach(func() {
 				kv = newFakeKV()
-				kv.AddressCall.Returns.Address = "http://some-address/consul"
+				kv.AddressCall.Returns.Address = "http://some-prefix-some-address/consul"
 			})
 
 			It("returns an error if no keys were written", func() {
-				kv.SetCall.Returns.Error = errors.New("dial tcp some-address: getsockopt: connection refused")
+				kv.SetCall.Returns.Error = errors.New("dial tcp some-prefix-some-address: getsockopt: connection refused")
 
-				spammer = helpers.NewSpammer(kv, time.Duration(0))
+				spammer = helpers.NewSpammer(kv, time.Duration(0), prefix)
 				spammer.Spam()
 
 				Eventually(func() int {
@@ -78,12 +81,12 @@ var _ = Describe("Spammer", func() {
 			It("does not return an error when an underlying consul api client error occurs", func() {
 				kv.SetCall.Stub = func(string, string) error {
 					if kv.SetCall.CallCount.Value() < 10 {
-						return errors.New("dial tcp some-address: getsockopt: connection refused")
+						return errors.New("dial tcp some-prefix-some-address: getsockopt: connection refused")
 					}
 					return nil
 				}
 
-				spammer = helpers.NewSpammer(kv, time.Duration(0))
+				spammer = helpers.NewSpammer(kv, time.Duration(0), prefix)
 				spammer.Spam()
 
 				Eventually(func() int {
@@ -104,7 +107,7 @@ var _ = Describe("Spammer", func() {
 					return nil
 				}
 
-				spammer = helpers.NewSpammer(kv, time.Duration(0))
+				spammer = helpers.NewSpammer(kv, time.Duration(0), prefix)
 				spammer.Spam()
 
 				Eventually(func() int {
@@ -136,7 +139,7 @@ var _ = Describe("Spammer", func() {
 						return nil
 					}
 
-					spammer = helpers.NewSpammer(kv, time.Duration(0))
+					spammer = helpers.NewSpammer(kv, time.Duration(0), prefix)
 					spammer.Spam()
 
 					Eventually(func() int {
@@ -159,7 +162,7 @@ var _ = Describe("Spammer", func() {
 							return nil
 						}
 
-						spammer = helpers.NewSpammer(kv, time.Duration(0))
+						spammer = helpers.NewSpammer(kv, time.Duration(0), prefix)
 						spammer.Spam()
 
 						Eventually(func() int {
@@ -177,7 +180,7 @@ var _ = Describe("Spammer", func() {
 					It("returns an error", func() {
 						kv.SetCall.Returns.Error = errors.New("rpc error:")
 
-						spammer = helpers.NewSpammer(kv, time.Duration(0))
+						spammer = helpers.NewSpammer(kv, time.Duration(0), prefix)
 						spammer.Spam()
 
 						Eventually(func() int {
@@ -202,7 +205,7 @@ var _ = Describe("Spammer", func() {
 					return nil
 				}
 
-				spammer = helpers.NewSpammer(kv, time.Duration(0))
+				spammer = helpers.NewSpammer(kv, time.Duration(0), prefix)
 				spammer.Spam()
 
 				Eventually(func() int {
@@ -221,7 +224,7 @@ var _ = Describe("Spammer", func() {
 		Context("failure cases", func() {
 			BeforeEach(func() {
 				kv = newFakeKV()
-				kv.AddressCall.Returns.Address = "http://some-address/consul"
+				kv.AddressCall.Returns.Address = "http://some-prefix-some-address/consul"
 			})
 
 			It("returns all underlying communication errors during the spam", func() {
@@ -237,7 +240,7 @@ var _ = Describe("Spammer", func() {
 					}
 				}
 
-				spammer = helpers.NewSpammer(kv, time.Duration(0))
+				spammer = helpers.NewSpammer(kv, time.Duration(0), prefix)
 				spammer.Spam()
 
 				Eventually(func() int {

@@ -104,7 +104,7 @@ var _ = Describe("Health Check", func() {
 		It("deregisters a service if the health check fails", func() {
 			By("registering a service", func() {
 				manifest.Jobs[1].Properties = &core.JobProperties{
-					Consul: core.JobPropertiesConsul{
+					Consul: &core.JobPropertiesConsul{
 						Agent: core.JobPropertiesConsulAgent{
 							Mode: "client",
 							Services: core.JobPropertiesConsulAgentServices{
@@ -144,7 +144,7 @@ var _ = Describe("Health Check", func() {
 			By("the service should be deregistered", func() {
 				Eventually(func() ([]string, error) {
 					return tcClient.DNS("consul-test-consumer.service.cf.internal")
-				}, "1m", "10s").Should(BeEmpty())
+				}, "1m", "10s").Should(HaveLen(2))
 			})
 
 			By("causing the health check to succeed", func() {
