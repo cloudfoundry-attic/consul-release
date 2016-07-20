@@ -65,23 +65,29 @@ var _ = BeforeSuite(func() {
 		var iaasConfig iaas.Config
 		switch info.CPI {
 		case "aws_cpi":
-			if config.AWS.Subnet == "" {
-				Fail("aws.subnet is required for AWS IAAS deployment")
-			}
-
-			manifestConfig.IPRange = "10.0.4.0/24"
-			iaasConfig = iaas.AWSConfig{
+			awsConfig := iaas.AWSConfig{
 				AccessKeyID:           config.AWS.AccessKeyID,
 				SecretAccessKey:       config.AWS.SecretAccessKey,
 				DefaultKeyName:        config.AWS.DefaultKeyName,
 				DefaultSecurityGroups: config.AWS.DefaultSecurityGroups,
 				Region:                config.AWS.Region,
-				Subnet:                config.AWS.Subnet,
 				RegistryHost:          config.Registry.Host,
 				RegistryPassword:      config.Registry.Password,
 				RegistryPort:          config.Registry.Port,
 				RegistryUsername:      config.Registry.Username,
 			}
+
+			if len(config.AWS.Subnets) > 0 {
+				subnet := config.AWS.Subnets[0]
+
+				awsConfig.Subnets = append(awsConfig.Subnets, iaas.AWSConfigSubnet{ID: subnet.ID, Range: subnet.Range, AZ: subnet.AZ})
+				manifestConfig.IPRange = subnet.Range
+			} else {
+				Fail("aws.subnet is required for AWS IAAS deployment")
+				return
+			}
+
+			iaasConfig = awsConfig
 		case "warden_cpi":
 			manifestConfig.IPRange = "10.244.4.0/24"
 			iaasConfig = iaas.NewWardenConfig()

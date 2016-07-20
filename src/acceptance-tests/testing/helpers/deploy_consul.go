@@ -30,26 +30,28 @@ func DeployConsulWithInstanceCount(count int, client bosh.Client, config Config)
 	var iaasConfig iaas.Config
 	switch info.CPI {
 	case "aws_cpi":
-		iaasConfig = iaas.AWSConfig{
+		awsConfig := iaas.AWSConfig{
 			AccessKeyID:           config.AWS.AccessKeyID,
 			SecretAccessKey:       config.AWS.SecretAccessKey,
 			DefaultKeyName:        config.AWS.DefaultKeyName,
 			DefaultSecurityGroups: config.AWS.DefaultSecurityGroups,
 			Region:                config.AWS.Region,
-			Subnet:                config.AWS.Subnet,
 			RegistryHost:          config.Registry.Host,
 			RegistryPassword:      config.Registry.Password,
 			RegistryPort:          config.Registry.Port,
 			RegistryUsername:      config.Registry.Username,
 		}
-		if config.AWS.Subnet != "" {
-			manifestConfig.Networks = []consul.ConfigNetwork{
-				{IPRange: "10.0.4.0/24", Nodes: count},
-			}
+		if len(config.AWS.Subnets) > 0 {
+			subnet := config.AWS.Subnets[0]
+
+			awsConfig.Subnets = append(awsConfig.Subnets, iaas.AWSConfigSubnet{ID: subnet.ID, Range: subnet.Range, AZ: subnet.AZ})
+			manifestConfig.Networks = append(manifestConfig.Networks, consul.ConfigNetwork{IPRange: subnet.Range, Nodes: count})
 		} else {
 			err = errors.New("AWSSubnet is required for AWS IAAS deployment")
 			return
 		}
+
+		iaasConfig = awsConfig
 	case "warden_cpi":
 		iaasConfig = iaas.NewWardenConfig()
 		manifestConfig.Networks = []consul.ConfigNetwork{
@@ -108,27 +110,31 @@ func DeployMultiAZConsul(client bosh.Client, config Config) (manifest consul.Man
 	var iaasConfig iaas.Config
 	switch info.CPI {
 	case "aws_cpi":
-		iaasConfig = iaas.AWSConfig{
+		awsConfig := iaas.AWSConfig{
 			AccessKeyID:           config.AWS.AccessKeyID,
 			SecretAccessKey:       config.AWS.SecretAccessKey,
 			DefaultKeyName:        config.AWS.DefaultKeyName,
 			DefaultSecurityGroups: config.AWS.DefaultSecurityGroups,
 			Region:                config.AWS.Region,
-			Subnet:                config.AWS.Subnet,
 			RegistryHost:          config.Registry.Host,
 			RegistryPassword:      config.Registry.Password,
 			RegistryPort:          config.Registry.Port,
 			RegistryUsername:      config.Registry.Username,
 		}
-		if config.AWS.Subnet != "" {
-			manifestConfig.Networks = []consul.ConfigNetwork{
-				{IPRange: "10.0.20.0/24", Nodes: 2},
-				{IPRange: "10.0.21.0/24", Nodes: 1},
-			}
+		if len(config.AWS.Subnets) >= 2 {
+			subnet := config.AWS.Subnets[0]
+			awsConfig.Subnets = append(awsConfig.Subnets, iaas.AWSConfigSubnet{ID: subnet.ID, Range: subnet.Range, AZ: subnet.AZ})
+			manifestConfig.Networks = append(manifestConfig.Networks, consul.ConfigNetwork{IPRange: subnet.Range, Nodes: 2})
+
+			subnet = config.AWS.Subnets[1]
+			awsConfig.Subnets = append(awsConfig.Subnets, iaas.AWSConfigSubnet{ID: subnet.ID, Range: subnet.Range, AZ: subnet.AZ})
+			manifestConfig.Networks = append(manifestConfig.Networks, consul.ConfigNetwork{IPRange: subnet.Range, Nodes: 1})
 		} else {
 			err = errors.New("AWSSubnet is required for AWS IAAS deployment")
 			return
 		}
+
+		iaasConfig = awsConfig
 	case "warden_cpi":
 		iaasConfig = iaas.NewWardenConfig()
 		manifestConfig.Networks = []consul.ConfigNetwork{
@@ -174,7 +180,38 @@ func DeployMultiAZConsulMigration(client bosh.Client, config Config, deploymentN
 	manifestConfig := consul.ConfigV2{
 		DirectorUUID: info.UUID,
 		Name:         deploymentName,
-		AZs: []consul.ConfigAZ{
+	}
+
+	var iaasConfig iaas.Config
+	switch info.CPI {
+	case "aws_cpi":
+		awsConfig := iaas.AWSConfig{
+			AccessKeyID:           config.AWS.AccessKeyID,
+			SecretAccessKey:       config.AWS.SecretAccessKey,
+			DefaultKeyName:        config.AWS.DefaultKeyName,
+			DefaultSecurityGroups: config.AWS.DefaultSecurityGroups,
+			Region:                config.AWS.Region,
+			RegistryHost:          config.Registry.Host,
+			RegistryPassword:      config.Registry.Password,
+			RegistryPort:          config.Registry.Port,
+			RegistryUsername:      config.Registry.Username,
+		}
+		if len(config.AWS.Subnets) >= 2 {
+			subnet := config.AWS.Subnets[0]
+			awsConfig.Subnets = append(awsConfig.Subnets, iaas.AWSConfigSubnet{ID: subnet.ID, Range: subnet.Range, AZ: subnet.AZ})
+			manifestConfig.AZs = append(manifestConfig.AZs, consul.ConfigAZ{Name: "z1", IPRange: subnet.Range, Nodes: 2})
+
+			subnet = config.AWS.Subnets[1]
+			awsConfig.Subnets = append(awsConfig.Subnets, iaas.AWSConfigSubnet{ID: subnet.ID, Range: subnet.Range, AZ: subnet.AZ})
+			manifestConfig.AZs = append(manifestConfig.AZs, consul.ConfigAZ{Name: "z2", IPRange: subnet.Range, Nodes: 1})
+		} else {
+			return consul.ManifestV2{}, errors.New("AWSSubnet is required for AWS IAAS deployment")
+		}
+
+		iaasConfig = awsConfig
+	case "warden_cpi":
+		iaasConfig = iaas.NewWardenConfig()
+		manifestConfig.AZs = []consul.ConfigAZ{
 			{
 				Name:    "z1",
 				IPRange: "10.244.4.0/24",
@@ -185,13 +222,7 @@ func DeployMultiAZConsulMigration(client bosh.Client, config Config, deploymentN
 				IPRange: "10.244.5.0/24",
 				Nodes:   1,
 			},
-		},
-	}
-
-	var iaasConfig iaas.Config
-	switch info.CPI {
-	case "warden_cpi":
-		iaasConfig = iaas.NewWardenConfig()
+		}
 	default:
 		return consul.ManifestV2{}, errors.New("unknown infrastructure type")
 	}
@@ -220,6 +251,8 @@ func UpdateCloudConfig(client bosh.Client, config Config) error {
 	}
 
 	switch info.CPI {
+	case "aws_cpi":
+		return nil
 	case "warden_cpi":
 		cloudConfigOptions.AZs = []cloudconfig.ConfigAZ{
 			{IPRange: "10.244.4.0/24", StaticIPs: 11},

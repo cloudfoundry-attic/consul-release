@@ -25,7 +25,7 @@ properties:
    description: "BOSH Director CA Cert"
    default: ""
 
-  consul.acceptance_tests.aws.subnet:
+  consul.acceptance_tests.aws.subnets:
    description: "Subnet ID for AWS deployments"
    default: ""
 

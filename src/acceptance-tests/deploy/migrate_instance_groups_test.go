@@ -16,10 +16,12 @@ import (
 )
 
 const (
-	TIMEOUT_ERROR_COUNT_THRESHOLD = 1
+	OPERATION_TIMEOUT_ERROR_COUNT_THRESHOLD = 1
+	IO_TIMEOUT_ERROR_COUNT_THRESHOLD        = 5
+	NO_ROUTE_ERROR_COUNT_THRESHOLD          = 10
 )
 
-var _ = PDescribe("Migrate instance groups", func() {
+var _ = Describe("Migrate instance groups", func() {
 	var (
 		manifest consul.Manifest
 		kv       consulclient.HTTPKV
@@ -85,6 +87,8 @@ var _ = PDescribe("Migrate instance groups", func() {
 					}
 
 					timeoutErrCount := 0
+					norouteErrCount := 0
+					ioErrCount := 0
 					otherErrors := helpers.ErrorSet{}
 
 					for err, occurrences := range errorSet {
@@ -92,13 +96,21 @@ var _ = PDescribe("Migrate instance groups", func() {
 						// This happens when the testconsumer gets rolled when a connection is alive
 						case strings.Contains(err, "getsockopt: operation timed out"):
 							timeoutErrCount += occurrences
+						// This happens when the vm has been destroyed and has not been recreated yet
+						case strings.Contains(err, "getsockopt: no route to host"):
+							norouteErrCount += occurrences
+						// This happens when the vm is being recreated
+						case strings.Contains(err, "i/o timeout"):
+							ioErrCount += occurrences
 						default:
 							otherErrors.Add(errors.New(err))
 						}
 					}
 
 					Expect(otherErrors).To(HaveLen(0))
-					Expect(timeoutErrCount).To(BeNumerically("<=", TIMEOUT_ERROR_COUNT_THRESHOLD))
+					Expect(timeoutErrCount).To(BeNumerically("<=", OPERATION_TIMEOUT_ERROR_COUNT_THRESHOLD))
+					Expect(norouteErrCount).To(BeNumerically("<=", NO_ROUTE_ERROR_COUNT_THRESHOLD))
+					Expect(ioErrCount).To(BeNumerically("<=", IO_TIMEOUT_ERROR_COUNT_THRESHOLD))
 				}
 			})
 		})

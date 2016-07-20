@@ -40,7 +40,10 @@ var _ = Describe("configuration", func() {
 						"director_ca_cert": "some-ca-cert"
 					},
 					"aws": {
-						"subnet": "some-awssubnet",
+						"subnets": [
+						{"id":"some-awssubnet-1", "range": "10.0.1.0/24", "az":"some-az-1"},
+						{"id":"some-awssubnet-2", "range": "10.0.2.0/24", "az":"some-az-2"}
+						],
 						"access_key_id": "some-access-key-id",
 						"secret_access_key": "some-secret-access-key",
 						"default_key_name": "some-default-key-name",
@@ -73,7 +76,10 @@ var _ = Describe("configuration", func() {
 						DirectorCACert: "some-ca-cert",
 					},
 					AWS: helpers.ConfigAWS{
-						Subnet:                "some-awssubnet",
+						Subnets: []helpers.ConfigSubnet{
+							{ID: "some-awssubnet-1", Range: "10.0.1.0/24", AZ: "some-az-1"},
+							{ID: "some-awssubnet-2", Range: "10.0.2.0/24", AZ: "some-az-2"},
+						},
 						AccessKeyID:           "some-access-key-id",
 						SecretAccessKey:       "some-secret-access-key",
 						DefaultKeyName:        "some-default-key-name",
