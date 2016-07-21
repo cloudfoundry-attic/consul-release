@@ -11,6 +11,75 @@ import (
 	"github.com/pivotal-cf-experimental/destiny/iaas"
 )
 
+func DeployConsulWithJobLevelConsulProperties(client bosh.Client, config Config) (manifest consul.Manifest, err error) {
+	guid, err := NewGUID()
+	if err != nil {
+		return
+	}
+
+	info, err := client.Info()
+	if err != nil {
+		return
+	}
+
+	manifestConfig := consul.Config{
+		DirectorUUID: info.UUID,
+		Name:         fmt.Sprintf("consul-%s", guid),
+	}
+
+	var iaasConfig iaas.Config
+	switch info.CPI {
+	case "aws_cpi":
+		awsConfig := buildAWSConfig(config)
+		if len(config.AWS.Subnets) > 0 {
+			subnet := config.AWS.Subnets[0]
+
+			awsConfig.Subnets = append(awsConfig.Subnets, iaas.AWSConfigSubnet{ID: subnet.ID, Range: subnet.Range, AZ: subnet.AZ})
+			manifestConfig.Networks = append(manifestConfig.Networks, consul.ConfigNetwork{IPRange: subnet.Range, Nodes: 1})
+		} else {
+			err = errors.New("AWSSubnet is required for AWS IAAS deployment")
+			return
+		}
+
+		iaasConfig = awsConfig
+	case "warden_cpi":
+		iaasConfig = iaas.NewWardenConfig()
+		manifestConfig.Networks = []consul.ConfigNetwork{
+			{
+				IPRange: "10.244.4.0/24",
+				Nodes:   1,
+			},
+		}
+	default:
+		err = errors.New("unknown infrastructure type")
+		return
+	}
+
+	manifest = consul.NewManifestWithJobLevelProperties(manifestConfig, iaasConfig)
+
+	yaml, err := manifest.ToYAML()
+	if err != nil {
+		return
+	}
+
+	yaml, err = client.ResolveManifestVersions(yaml)
+	if err != nil {
+		return
+	}
+
+	err = consul.FromYAML(yaml, &manifest)
+	if err != nil {
+		return
+	}
+
+	_, err = client.Deploy(yaml)
+	if err != nil {
+		return
+	}
+
+	return
+}
+
 func DeployConsulWithInstanceCount(count int, client bosh.Client, config Config) (manifest consul.Manifest, kv consulclient.HTTPKV, err error) {
 	guid, err := NewGUID()
 	if err != nil {
@@ -30,17 +99,7 @@ func DeployConsulWithInstanceCount(count int, client bosh.Client, config Config)
 	var iaasConfig iaas.Config
 	switch info.CPI {
 	case "aws_cpi":
-		awsConfig := iaas.AWSConfig{
-			AccessKeyID:           config.AWS.AccessKeyID,
-			SecretAccessKey:       config.AWS.SecretAccessKey,
-			DefaultKeyName:        config.AWS.DefaultKeyName,
-			DefaultSecurityGroups: config.AWS.DefaultSecurityGroups,
-			Region:                config.AWS.Region,
-			RegistryHost:          config.Registry.Host,
-			RegistryPassword:      config.Registry.Password,
-			RegistryPort:          config.Registry.Port,
-			RegistryUsername:      config.Registry.Username,
-		}
+		awsConfig := buildAWSConfig(config)
 		if len(config.AWS.Subnets) > 0 {
 			subnet := config.AWS.Subnets[0]
 
@@ -110,17 +169,7 @@ func DeployMultiAZConsul(client bosh.Client, config Config) (manifest consul.Man
 	var iaasConfig iaas.Config
 	switch info.CPI {
 	case "aws_cpi":
-		awsConfig := iaas.AWSConfig{
-			AccessKeyID:           config.AWS.AccessKeyID,
-			SecretAccessKey:       config.AWS.SecretAccessKey,
-			DefaultKeyName:        config.AWS.DefaultKeyName,
-			DefaultSecurityGroups: config.AWS.DefaultSecurityGroups,
-			Region:                config.AWS.Region,
-			RegistryHost:          config.Registry.Host,
-			RegistryPassword:      config.Registry.Password,
-			RegistryPort:          config.Registry.Port,
-			RegistryUsername:      config.Registry.Username,
-		}
+		awsConfig := buildAWSConfig(config)
 		if len(config.AWS.Subnets) >= 2 {
 			subnet := config.AWS.Subnets[0]
 			awsConfig.Subnets = append(awsConfig.Subnets, iaas.AWSConfigSubnet{ID: subnet.ID, Range: subnet.Range, AZ: subnet.AZ})
@@ -185,17 +234,7 @@ func DeployMultiAZConsulMigration(client bosh.Client, config Config, deploymentN
 	var iaasConfig iaas.Config
 	switch info.CPI {
 	case "aws_cpi":
-		awsConfig := iaas.AWSConfig{
-			AccessKeyID:           config.AWS.AccessKeyID,
-			SecretAccessKey:       config.AWS.SecretAccessKey,
-			DefaultKeyName:        config.AWS.DefaultKeyName,
-			DefaultSecurityGroups: config.AWS.DefaultSecurityGroups,
-			Region:                config.AWS.Region,
-			RegistryHost:          config.Registry.Host,
-			RegistryPassword:      config.Registry.Password,
-			RegistryPort:          config.Registry.Port,
-			RegistryUsername:      config.Registry.Username,
-		}
+		awsConfig := buildAWSConfig(config)
 		if len(config.AWS.Subnets) >= 2 {
 			subnet := config.AWS.Subnets[0]
 			awsConfig.Subnets = append(awsConfig.Subnets, iaas.AWSConfigSubnet{ID: subnet.ID, Range: subnet.Range, AZ: subnet.AZ})
@@ -275,4 +314,18 @@ func UpdateCloudConfig(client bosh.Client, config Config) error {
 	}
 
 	return nil
+}
+
+func buildAWSConfig(config Config) iaas.AWSConfig {
+	return iaas.AWSConfig{
+		AccessKeyID:           config.AWS.AccessKeyID,
+		SecretAccessKey:       config.AWS.SecretAccessKey,
+		DefaultKeyName:        config.AWS.DefaultKeyName,
+		DefaultSecurityGroups: config.AWS.DefaultSecurityGroups,
+		Region:                config.AWS.Region,
+		RegistryHost:          config.Registry.Host,
+		RegistryPassword:      config.Registry.Password,
+		RegistryPort:          config.Registry.Port,
+		RegistryUsername:      config.Registry.Username,
+	}
 }
