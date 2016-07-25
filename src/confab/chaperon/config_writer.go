@@ -9,8 +9,9 @@ import (
 	"path/filepath"
 	"strings"
 
+	"code.cloudfoundry.org/lager"
+
 	"github.com/cloudfoundry-incubator/consul-release/src/confab/config"
-	"github.com/pivotal-golang/lager"
 )
 
 type ConfigWriter struct {

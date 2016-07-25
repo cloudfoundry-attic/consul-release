@@ -5,10 +5,11 @@ import (
 	"encoding/base64"
 	"errors"
 
+	"code.cloudfoundry.org/lager"
+
 	"golang.org/x/crypto/pbkdf2"
 
 	"github.com/hashicorp/consul/api"
-	"github.com/pivotal-golang/lager"
 )
 
 type logger interface {

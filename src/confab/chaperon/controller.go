@@ -4,11 +4,12 @@ import (
 	"errors"
 	"time"
 
+	"code.cloudfoundry.org/lager"
+
 	"github.com/cloudfoundry-incubator/consul-release/src/confab"
 	"github.com/cloudfoundry-incubator/consul-release/src/confab/agent"
 	"github.com/cloudfoundry-incubator/consul-release/src/confab/config"
 	consulagent "github.com/hashicorp/consul/command/agent"
-	"github.com/pivotal-golang/lager"
 )
 
 type stopper interface {

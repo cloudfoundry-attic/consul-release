@@ -4,7 +4,7 @@ import (
 	"errors"
 	"os"
 
-	"github.com/pivotal-golang/lager"
+	"code.cloudfoundry.org/lager"
 )
 
 type KeyringRemover struct {

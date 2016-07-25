@@ -22,12 +22,6 @@
 [submodule "src/confab/vendor/golang.org/x/crypto"]
 	path = src/confab/vendor/golang.org/x/crypto
 	url = https://go.googlesource.com/crypto
-[submodule "src/confab/vendor/github.com/pivotal-golang/clock"]
-	path = src/confab/vendor/github.com/pivotal-golang/clock
-	url = https://github.com/pivotal-golang/clock
-[submodule "src/confab/vendor/github.com/pivotal-golang/lager"]
-	path = src/confab/vendor/github.com/pivotal-golang/lager
-	url = https://github.com/pivotal-golang/lager
 [submodule "src/acceptance-tests/vendor/github.com/onsi/ginkgo"]
 	path = src/acceptance-tests/vendor/github.com/onsi/ginkgo
 	url = https://github.com/onsi/ginkgo
@@ -52,3 +46,9 @@
 [submodule "src/acceptance-tests/vendor/github.com/cloudfoundry-incubator/check-a-record"]
 	path = src/acceptance-tests/vendor/github.com/cloudfoundry-incubator/check-a-record
 	url = https://github.com/cloudfoundry-incubator/check-a-record.git
+[submodule "src/confab/vendor/code.cloudfoundry.org/lager"]
+	path = src/confab/vendor/code.cloudfoundry.org/lager
+	url = https://github.com/cloudfoundry/lager
+[submodule "src/confab/vendor/code.cloudfoundry.org/clock"]
+	path = src/confab/vendor/code.cloudfoundry.org/clock
+	url = https://github.com/cloudfoundry/clock

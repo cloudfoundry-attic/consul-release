@@ -9,14 +9,15 @@ import (
 	"os/exec"
 	"time"
 
+	"code.cloudfoundry.org/clock"
+	"code.cloudfoundry.org/lager"
+
 	"github.com/cloudfoundry-incubator/consul-release/src/confab"
 	"github.com/cloudfoundry-incubator/consul-release/src/confab/agent"
 	"github.com/cloudfoundry-incubator/consul-release/src/confab/chaperon"
 	"github.com/cloudfoundry-incubator/consul-release/src/confab/config"
 	"github.com/hashicorp/consul/api"
 	consulagent "github.com/hashicorp/consul/command/agent"
-	"github.com/pivotal-golang/clock"
-	"github.com/pivotal-golang/lager"
 )
 
 type runner interface {

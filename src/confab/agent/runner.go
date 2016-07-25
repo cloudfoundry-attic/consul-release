@@ -11,7 +11,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/pivotal-golang/lager"
+	"code.cloudfoundry.org/lager"
 )
 
 type Runner struct {

@@ -3,7 +3,7 @@ package fakes
 import (
 	"sync"
 
-	"github.com/pivotal-golang/lager"
+	"code.cloudfoundry.org/lager"
 )
 
 type LoggerMessage struct {
