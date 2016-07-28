@@ -9,6 +9,8 @@ import (
 	"github.com/pivotal-cf-experimental/destiny/cloudconfig"
 	"github.com/pivotal-cf-experimental/destiny/consul"
 	"github.com/pivotal-cf-experimental/destiny/iaas"
+
+	ginkgoConfig "github.com/onsi/ginkgo/config"
 )
 
 func DeployConsulWithJobLevelConsulProperties(client bosh.Client, config Config) (manifest consul.Manifest, err error) {
@@ -44,9 +46,17 @@ func DeployConsulWithJobLevelConsulProperties(client bosh.Client, config Config)
 		iaasConfig = awsConfig
 	case "warden_cpi":
 		iaasConfig = iaas.NewWardenConfig()
+
+		var cidrBlock string
+		cidrPool := NewCIDRPool("10.244.4.0", 24, 26)
+		cidrBlock, err = cidrPool.Get(ginkgoConfig.GinkgoConfig.ParallelNode - 1)
+		if err != nil {
+			return
+		}
+
 		manifestConfig.Networks = []consul.ConfigNetwork{
 			{
-				IPRange: "10.244.4.0/24",
+				IPRange: cidrBlock,
 				Nodes:   1,
 			},
 		}
@@ -55,7 +65,10 @@ func DeployConsulWithJobLevelConsulProperties(client bosh.Client, config Config)
 		return
 	}
 
-	manifest = consul.NewManifestWithJobLevelProperties(manifestConfig, iaasConfig)
+	manifest, err = consul.NewManifestWithJobLevelProperties(manifestConfig, iaasConfig)
+	if err != nil {
+		return
+	}
 
 	yaml, err := manifest.ToYAML()
 	if err != nil {
@@ -113,9 +126,17 @@ func DeployConsulWithInstanceCount(count int, client bosh.Client, config Config)
 		iaasConfig = awsConfig
 	case "warden_cpi":
 		iaasConfig = iaas.NewWardenConfig()
+
+		var cidrBlock string
+		cidrPool := NewCIDRPool("10.244.4.0", 24, 26)
+		cidrBlock, err = cidrPool.Get(ginkgoConfig.GinkgoConfig.ParallelNode - 1)
+		if err != nil {
+			return
+		}
+
 		manifestConfig.Networks = []consul.ConfigNetwork{
 			{
-				IPRange: "10.244.4.0/24",
+				IPRange: cidrBlock,
 				Nodes:   count,
 			},
 		}
@@ -124,7 +145,10 @@ func DeployConsulWithInstanceCount(count int, client bosh.Client, config Config)
 		return
 	}
 
-	manifest = consul.NewManifest(manifestConfig, iaasConfig)
+	manifest, err = consul.NewManifest(manifestConfig, iaasConfig)
+	if err != nil {
+		return
+	}
 
 	yaml, err := manifest.ToYAML()
 	if err != nil {
@@ -186,16 +210,34 @@ func DeployMultiAZConsul(client bosh.Client, config Config) (manifest consul.Man
 		iaasConfig = awsConfig
 	case "warden_cpi":
 		iaasConfig = iaas.NewWardenConfig()
+
+		var cidrBlock string
+		cidrPool := NewCIDRPool("10.244.4.0", 24, 26)
+		cidrBlock, err = cidrPool.Get(ginkgoConfig.GinkgoConfig.ParallelNode - 1)
+		if err != nil {
+			return
+		}
+
+		var cidrBlock2 string
+		cidrPool2 := NewCIDRPool("10.244.5.0", 24, 26)
+		cidrBlock2, err = cidrPool2.Get(ginkgoConfig.GinkgoConfig.ParallelNode - 1)
+		if err != nil {
+			return
+		}
+
 		manifestConfig.Networks = []consul.ConfigNetwork{
-			{IPRange: "10.244.4.0/24", Nodes: 2},
-			{IPRange: "10.244.5.0/24", Nodes: 1},
+			{IPRange: cidrBlock, Nodes: 2},
+			{IPRange: cidrBlock2, Nodes: 1},
 		}
 	default:
 		err = errors.New("unknown infrastructure type")
 		return
 	}
 
-	manifest = consul.NewManifest(manifestConfig, iaasConfig)
+	manifest, err = consul.NewManifest(manifestConfig, iaasConfig)
+	if err != nil {
+		return
+	}
 
 	yaml, err := manifest.ToYAML()
 	if err != nil {
@@ -250,15 +292,30 @@ func DeployMultiAZConsulMigration(client bosh.Client, config Config, deploymentN
 		iaasConfig = awsConfig
 	case "warden_cpi":
 		iaasConfig = iaas.NewWardenConfig()
+
+		var cidrBlock string
+		cidrPool := NewCIDRPool("10.244.4.0", 24, 26)
+		cidrBlock, err = cidrPool.Get(ginkgoConfig.GinkgoConfig.ParallelNode - 1)
+		if err != nil {
+			return consul.ManifestV2{}, err
+		}
+
+		var cidrBlock2 string
+		cidrPool2 := NewCIDRPool("10.244.5.0", 24, 26)
+		cidrBlock2, err = cidrPool2.Get(ginkgoConfig.GinkgoConfig.ParallelNode - 1)
+		if err != nil {
+			return consul.ManifestV2{}, err
+		}
+
 		manifestConfig.AZs = []consul.ConfigAZ{
 			{
 				Name:    "z1",
-				IPRange: "10.244.4.0/24",
+				IPRange: cidrBlock,
 				Nodes:   2,
 			},
 			{
 				Name:    "z2",
-				IPRange: "10.244.5.0/24",
+				IPRange: cidrBlock2,
 				Nodes:   1,
 			},
 		}

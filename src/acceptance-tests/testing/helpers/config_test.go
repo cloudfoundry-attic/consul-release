@@ -55,7 +55,8 @@ var _ = Describe("configuration", func() {
 						"port": 12345,
 						"username": "some-registry-username",
 						"password": "some-registry-password"
-					}
+					},
+					"parallel_nodes": 4
 				}`)
 				Expect(err).NotTo(HaveOccurred())
 			})
@@ -93,6 +94,7 @@ var _ = Describe("configuration", func() {
 						Password: "some-registry-password",
 					},
 					TurbulenceReleaseName: "turbulence",
+					ParallelNodes:         4,
 				}))
 			})
 		})
@@ -227,6 +229,7 @@ var _ = Describe("configuration", func() {
 						Region:         "us-east-1",
 					},
 					TurbulenceReleaseName: "turbulence",
+					ParallelNodes:         1,
 				}))
 			})
 		})
@@ -265,6 +268,7 @@ var _ = Describe("configuration", func() {
 						Region:         "us-east-1",
 					},
 					TurbulenceReleaseName: "turbulence",
+					ParallelNodes:         1,
 				}))
 			})
 		})
@@ -303,6 +307,46 @@ var _ = Describe("configuration", func() {
 						Region:         "us-east-1",
 					},
 					TurbulenceReleaseName: "turbulence",
+					ParallelNodes:         1,
+				}))
+			})
+		})
+
+		Context("when parallel_nodes is missing", func() {
+			var configFilePath string
+
+			BeforeEach(func() {
+				var err error
+				configFilePath, err = writeConfigJSON(`{
+					"bosh": {
+						"target": "some-bosh-target",
+						"username": "some-bosh-username",
+						"password": "some-bosh-password"
+					}
+				}`)
+				Expect(err).NotTo(HaveOccurred())
+			})
+
+			AfterEach(func() {
+				err := os.Remove(configFilePath)
+				Expect(err).NotTo(HaveOccurred())
+			})
+
+			It("uses parallel_nodes: 1", func() {
+				config, err := helpers.LoadConfig(configFilePath)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(config).To(Equal(helpers.Config{
+					BOSH: helpers.ConfigBOSH{
+						Target:   "some-bosh-target",
+						Username: "some-bosh-username",
+						Password: "some-bosh-password",
+					},
+					AWS: helpers.ConfigAWS{
+						DefaultKeyName: "bosh",
+						Region:         "us-east-1",
+					},
+					TurbulenceReleaseName: "turbulence",
+					ParallelNodes:         1,
 				}))
 			})
 		})

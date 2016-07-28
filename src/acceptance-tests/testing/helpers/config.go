@@ -12,6 +12,7 @@ type Config struct {
 	BOSH                  ConfigBOSH     `json:"bosh"`
 	AWS                   ConfigAWS      `json:"aws"`
 	Registry              ConfigRegistry `json:"registry"`
+	ParallelNodes         int            `json:"parallel_nodes"`
 	TurbulenceReleaseName string
 }
 
@@ -77,6 +78,10 @@ func LoadConfig(configFilePath string) (Config, error) {
 
 	if config.AWS.Region == "" {
 		config.AWS.Region = "us-east-1"
+	}
+
+	if config.ParallelNodes == 0 {
+		config.ParallelNodes = 1
 	}
 
 	return config, nil

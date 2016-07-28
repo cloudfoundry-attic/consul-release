@@ -34,7 +34,8 @@ function main() {
   scripts_dir=$(cd "$(dirname "${0}")" && pwd)
 
   upload_releases "${scripts_dir}"
-  bash -c "${scripts_dir}/../src/acceptance-tests/scripts/test $@"
+  force_compilation "${scripts_dir}"
+  bash -c "${scripts_dir}/../src/acceptance-tests/scripts/test -nodes ${PARALLEL_NODES} $@"
 }
 
 function parse_config() {
@@ -42,6 +43,7 @@ function parse_config() {
   export BOSH_DIRECTOR="$(jq --raw-output '.bosh.target' "${CONSATS_CONFIG}")"
   export BOSH_USER="$(jq --raw-output '.bosh.username' "${CONSATS_CONFIG}")"
   export BOSH_PASSWORD="$(jq --raw-output '.bosh.password' "${CONSATS_CONFIG}")"
+  export PARALLEL_NODES="$(jq --raw-output '.parallel_nodes' "${CONSATS_CONFIG}")"
   set -x
 }
 
@@ -67,6 +69,22 @@ function upload_releases() {
     wget -O "${releases_dir}/turbulence-release-${turbulence_version}.tgz" "http://bosh.io/d/github.com/cppforlife/turbulence-release?v=${turbulence_version}"
   fi
   bosh -t "${BOSH_DIRECTOR}" upload release "${releases_dir}/turbulence-release-${turbulence_version}.tgz" --skip-if-exists
+}
+
+function force_compilation() {
+  local scripts_dir
+  scripts_dir="${1}"
+
+  local stemcell_version
+  stemcell_version=$(curl -k https://${BOSH_USER}:${BOSH_PASSWORD}@${BOSH_DIRECTOR}:25555/stemcells | jq -r .[0].version)
+
+  pushd /tmp > /dev/null
+	sed "s/REPLACE_ME_DIRECTOR_UUID/$(bosh status --uuid)/g" "${scripts_dir}/fixtures/consul_compilation.yml" > "consul_compilation.yml"
+
+    bosh -t "${BOSH_DIRECTOR}" -d "consul_compilation.yml" -n deploy
+    bosh -t "${BOSH_DIRECTOR}" -d "consul_compilation.yml" export release "consul/${consul_release_version}" "ubuntu-trusty/${stemcell_version}"
+    bosh -t "${BOSH_DIRECTOR}" -d "consul_compilation.yml" -n delete deployment compilation
+  popd > /dev/null
 }
 
 function cleanup_releases() {
