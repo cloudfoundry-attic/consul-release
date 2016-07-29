@@ -16,5 +16,5 @@ EOF
 
 chown -R vcap:vcap "/var/vcap/data/"
 pushd "/var/vcap/data/tmp" > /dev/null
-	chpst -u vcap:vcap bash -c "${GOPATH}/src/github.com/cloudfoundry-incubator/consul-release/src/acceptance-tests/scripts/test"
+  chpst -u vcap:vcap bash -c "${GOPATH}/src/github.com/cloudfoundry-incubator/consul-release/src/acceptance-tests/scripts/test -nodes <%= p('consul.acceptance_tests.parallel_nodes') %>"
 popd > /dev/null

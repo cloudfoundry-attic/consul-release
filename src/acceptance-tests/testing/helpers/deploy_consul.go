@@ -36,8 +36,15 @@ func DeployConsulWithJobLevelConsulProperties(client bosh.Client, config Config)
 		if len(config.AWS.Subnets) > 0 {
 			subnet := config.AWS.Subnets[0]
 
-			awsConfig.Subnets = append(awsConfig.Subnets, iaas.AWSConfigSubnet{ID: subnet.ID, Range: subnet.Range, AZ: subnet.AZ})
-			manifestConfig.Networks = append(manifestConfig.Networks, consul.ConfigNetwork{IPRange: subnet.Range, Nodes: 1})
+			var cidrBlock string
+			cidrPool := NewCIDRPool(subnet.Range, 24, 26)
+			cidrBlock, err = cidrPool.Get(ginkgoConfig.GinkgoConfig.ParallelNode - 1)
+			if err != nil {
+				return
+			}
+
+			awsConfig.Subnets = append(awsConfig.Subnets, iaas.AWSConfigSubnet{ID: subnet.ID, Range: cidrBlock, AZ: subnet.AZ})
+			manifestConfig.Networks = append(manifestConfig.Networks, consul.ConfigNetwork{IPRange: cidrBlock, Nodes: 1})
 		} else {
 			err = errors.New("AWSSubnet is required for AWS IAAS deployment")
 			return
@@ -116,8 +123,15 @@ func DeployConsulWithInstanceCount(count int, client bosh.Client, config Config)
 		if len(config.AWS.Subnets) > 0 {
 			subnet := config.AWS.Subnets[0]
 
-			awsConfig.Subnets = append(awsConfig.Subnets, iaas.AWSConfigSubnet{ID: subnet.ID, Range: subnet.Range, AZ: subnet.AZ})
-			manifestConfig.Networks = append(manifestConfig.Networks, consul.ConfigNetwork{IPRange: subnet.Range, Nodes: count})
+			var cidrBlock string
+			cidrPool := NewCIDRPool(subnet.Range, 24, 26)
+			cidrBlock, err = cidrPool.Get(ginkgoConfig.GinkgoConfig.ParallelNode - 1)
+			if err != nil {
+				return
+			}
+
+			awsConfig.Subnets = append(awsConfig.Subnets, iaas.AWSConfigSubnet{ID: subnet.ID, Range: cidrBlock, AZ: subnet.AZ})
+			manifestConfig.Networks = append(manifestConfig.Networks, consul.ConfigNetwork{IPRange: cidrBlock, Nodes: count})
 		} else {
 			err = errors.New("AWSSubnet is required for AWS IAAS deployment")
 			return
@@ -196,12 +210,27 @@ func DeployMultiAZConsul(client bosh.Client, config Config) (manifest consul.Man
 		awsConfig := buildAWSConfig(config)
 		if len(config.AWS.Subnets) >= 2 {
 			subnet := config.AWS.Subnets[0]
-			awsConfig.Subnets = append(awsConfig.Subnets, iaas.AWSConfigSubnet{ID: subnet.ID, Range: subnet.Range, AZ: subnet.AZ})
-			manifestConfig.Networks = append(manifestConfig.Networks, consul.ConfigNetwork{IPRange: subnet.Range, Nodes: 2})
+
+			var cidrBlock string
+			cidrPool := NewCIDRPool(subnet.Range, 24, 26)
+			cidrBlock, err = cidrPool.Get(ginkgoConfig.GinkgoConfig.ParallelNode - 1)
+			if err != nil {
+				return
+			}
+
+			awsConfig.Subnets = append(awsConfig.Subnets, iaas.AWSConfigSubnet{ID: subnet.ID, Range: cidrBlock, AZ: subnet.AZ})
+			manifestConfig.Networks = append(manifestConfig.Networks, consul.ConfigNetwork{IPRange: cidrBlock, Nodes: 2})
 
 			subnet = config.AWS.Subnets[1]
-			awsConfig.Subnets = append(awsConfig.Subnets, iaas.AWSConfigSubnet{ID: subnet.ID, Range: subnet.Range, AZ: subnet.AZ})
-			manifestConfig.Networks = append(manifestConfig.Networks, consul.ConfigNetwork{IPRange: subnet.Range, Nodes: 1})
+
+			cidrPool = NewCIDRPool(subnet.Range, 24, 26)
+			cidrBlock, err = cidrPool.Get(ginkgoConfig.GinkgoConfig.ParallelNode - 1)
+			if err != nil {
+				return
+			}
+
+			awsConfig.Subnets = append(awsConfig.Subnets, iaas.AWSConfigSubnet{ID: subnet.ID, Range: cidrBlock, AZ: subnet.AZ})
+			manifestConfig.Networks = append(manifestConfig.Networks, consul.ConfigNetwork{IPRange: cidrBlock, Nodes: 1})
 		} else {
 			err = errors.New("AWSSubnet is required for AWS IAAS deployment")
 			return
@@ -279,12 +308,27 @@ func DeployMultiAZConsulMigration(client bosh.Client, config Config, deploymentN
 		awsConfig := buildAWSConfig(config)
 		if len(config.AWS.Subnets) >= 2 {
 			subnet := config.AWS.Subnets[0]
-			awsConfig.Subnets = append(awsConfig.Subnets, iaas.AWSConfigSubnet{ID: subnet.ID, Range: subnet.Range, AZ: subnet.AZ})
-			manifestConfig.AZs = append(manifestConfig.AZs, consul.ConfigAZ{Name: "z1", IPRange: subnet.Range, Nodes: 2})
+
+			var cidrBlock string
+			cidrPool := NewCIDRPool(subnet.Range, 24, 26)
+			cidrBlock, err = cidrPool.Get(ginkgoConfig.GinkgoConfig.ParallelNode - 1)
+			if err != nil {
+				return consul.ManifestV2{}, err
+			}
+
+			awsConfig.Subnets = append(awsConfig.Subnets, iaas.AWSConfigSubnet{ID: subnet.ID, Range: cidrBlock, AZ: subnet.AZ})
+			manifestConfig.AZs = append(manifestConfig.AZs, consul.ConfigAZ{Name: "z1", IPRange: cidrBlock, Nodes: 2})
 
 			subnet = config.AWS.Subnets[1]
-			awsConfig.Subnets = append(awsConfig.Subnets, iaas.AWSConfigSubnet{ID: subnet.ID, Range: subnet.Range, AZ: subnet.AZ})
-			manifestConfig.AZs = append(manifestConfig.AZs, consul.ConfigAZ{Name: "z2", IPRange: subnet.Range, Nodes: 1})
+
+			cidrPool = NewCIDRPool(subnet.Range, 24, 26)
+			cidrBlock, err = cidrPool.Get(ginkgoConfig.GinkgoConfig.ParallelNode - 1)
+			if err != nil {
+				return consul.ManifestV2{}, err
+			}
+
+			awsConfig.Subnets = append(awsConfig.Subnets, iaas.AWSConfigSubnet{ID: subnet.ID, Range: cidrBlock, AZ: subnet.AZ})
+			manifestConfig.AZs = append(manifestConfig.AZs, consul.ConfigAZ{Name: "z2", IPRange: cidrBlock, Nodes: 1})
 		} else {
 			return consul.ManifestV2{}, errors.New("AWSSubnet is required for AWS IAAS deployment")
 		}

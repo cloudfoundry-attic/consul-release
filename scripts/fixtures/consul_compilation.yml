@@ -6,6 +6,10 @@ name: compilation
 releases:
 - name: consul
   version: latest
+- name: turbulence
+  version: latest
+- name: bosh-warden-cpi
+  version: latest
 
 update:
   canaries: 1

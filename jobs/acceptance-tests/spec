@@ -64,3 +64,7 @@ properties:
   consul.acceptance_tests.registry.password:
    description: "Password for the BOSH registry"
    default: "password"
+
+  consul.acceptance_tests.parallel_nodes:
+   description: "Number of parallel nodes to use for tests"
+   default: 1
