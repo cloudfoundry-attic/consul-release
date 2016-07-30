@@ -75,7 +75,11 @@ var _ = Describe("ConfigWriter", func() {
 				"verify_server_hostname": true,
 				"ca_file": "%[2]s/certs/ca.crt",
 				"key_file": "%[2]s/certs/agent.key",
-				"cert_file": "%[2]s/certs/agent.crt"
+				"cert_file": "%[2]s/certs/agent.crt",
+				"dns_config": {
+				  "allow_stale": false,
+				  "max_stale": "5s"
+				}
 			}`, dataDir, configDir)))
 
 			Expect(logger.Messages()).To(ContainSequence([]fakes.LoggerMessage{
