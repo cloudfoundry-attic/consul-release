@@ -83,6 +83,8 @@ function force_compilation() {
 
     bosh -t "${BOSH_DIRECTOR}" -d "consul_compilation.yml" -n deploy
     bosh -t "${BOSH_DIRECTOR}" -d "consul_compilation.yml" export release "consul/${consul_release_version}" "ubuntu-trusty/${stemcell_version}"
+    bosh -t "${BOSH_DIRECTOR}" -d "consul_compilation.yml" export release "turbulence/${turbulence_version}" "ubuntu-trusty/${stemcell_version}"
+    bosh -t "${BOSH_DIRECTOR}" -d "consul_compilation.yml" export release "bosh-warden-cpi/${warden_cpi_version}" "ubuntu-trusty/${stemcell_version}"
     bosh -t "${BOSH_DIRECTOR}" -d "consul_compilation.yml" -n delete deployment compilation
   popd > /dev/null
 }

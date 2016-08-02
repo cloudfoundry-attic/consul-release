@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/cloudfoundry-incubator/consul-release/src/acceptance-tests/testing/helpers"
+	ginkgoConfig "github.com/onsi/ginkgo/config"
 	"github.com/pivotal-cf-experimental/bosh-test/bosh"
 	turbulenceclient "github.com/pivotal-cf-experimental/bosh-test/turbulence"
 	"github.com/pivotal-cf-experimental/destiny/iaas"
@@ -80,8 +81,15 @@ var _ = BeforeSuite(func() {
 			if len(config.AWS.Subnets) > 0 {
 				subnet := config.AWS.Subnets[0]
 
-				awsConfig.Subnets = append(awsConfig.Subnets, iaas.AWSConfigSubnet{ID: subnet.ID, Range: subnet.Range, AZ: subnet.AZ})
-				manifestConfig.IPRange = subnet.Range
+				var cidrBlock string
+				cidrPool := helpers.NewCIDRPool(subnet.Range, 24, 26)
+				cidrBlock, err = cidrPool.Get(ginkgoConfig.GinkgoConfig.ParallelNode - 1)
+				if err != nil {
+					return
+				}
+
+				awsConfig.Subnets = append(awsConfig.Subnets, iaas.AWSConfigSubnet{ID: subnet.ID, Range: cidrBlock, AZ: subnet.AZ})
+				manifestConfig.IPRange = cidrBlock
 			} else {
 				Fail("aws.subnet is required for AWS IAAS deployment")
 				return
@@ -89,13 +97,22 @@ var _ = BeforeSuite(func() {
 
 			iaasConfig = awsConfig
 		case "warden_cpi":
-			manifestConfig.IPRange = "10.244.4.0/24"
+
+			var cidrBlock string
+			cidrPool := helpers.NewCIDRPool("10.244.4.0", 24, 26)
+			cidrBlock, err = cidrPool.Get(ginkgoConfig.GinkgoConfig.ParallelNode - 1)
+			if err != nil {
+				return
+			}
+
+			manifestConfig.IPRange = cidrBlock
 			iaasConfig = iaas.NewWardenConfig()
 		default:
 			Fail("unknown infrastructure type")
 		}
 
-		turbulenceManifest = turbulence.NewManifest(manifestConfig, iaasConfig)
+		turbulenceManifest, err = turbulence.NewManifest(manifestConfig, iaasConfig)
+		Expect(err).NotTo(HaveOccurred())
 
 		yaml, err := turbulenceManifest.ToYAML()
 		Expect(err).NotTo(HaveOccurred())
