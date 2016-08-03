@@ -38,7 +38,7 @@ func DeployConsulWithJobLevelConsulProperties(client bosh.Client, config Config)
 
 			var cidrBlock string
 			cidrPool := NewCIDRPool(subnet.Range, 24, 26)
-			cidrBlock, err = cidrPool.Get(ginkgoConfig.GinkgoConfig.ParallelNode - 1)
+			cidrBlock, err = cidrPool.Get(ginkgoConfig.GinkgoConfig.ParallelNode)
 			if err != nil {
 				return
 			}
@@ -56,7 +56,7 @@ func DeployConsulWithJobLevelConsulProperties(client bosh.Client, config Config)
 
 		var cidrBlock string
 		cidrPool := NewCIDRPool("10.244.4.0", 24, 26)
-		cidrBlock, err = cidrPool.Get(ginkgoConfig.GinkgoConfig.ParallelNode - 1)
+		cidrBlock, err = cidrPool.Get(ginkgoConfig.GinkgoConfig.ParallelNode)
 		if err != nil {
 			return
 		}
@@ -125,7 +125,7 @@ func DeployConsulWithInstanceCount(count int, client bosh.Client, config Config)
 
 			var cidrBlock string
 			cidrPool := NewCIDRPool(subnet.Range, 24, 26)
-			cidrBlock, err = cidrPool.Get(ginkgoConfig.GinkgoConfig.ParallelNode - 1)
+			cidrBlock, err = cidrPool.Get(ginkgoConfig.GinkgoConfig.ParallelNode)
 			if err != nil {
 				return
 			}
@@ -143,7 +143,7 @@ func DeployConsulWithInstanceCount(count int, client bosh.Client, config Config)
 
 		var cidrBlock string
 		cidrPool := NewCIDRPool("10.244.4.0", 24, 26)
-		cidrBlock, err = cidrPool.Get(ginkgoConfig.GinkgoConfig.ParallelNode - 1)
+		cidrBlock, err = cidrPool.Get(ginkgoConfig.GinkgoConfig.ParallelNode)
 		if err != nil {
 			return
 		}
@@ -213,7 +213,7 @@ func DeployMultiAZConsul(client bosh.Client, config Config) (manifest consul.Man
 
 			var cidrBlock string
 			cidrPool := NewCIDRPool(subnet.Range, 24, 26)
-			cidrBlock, err = cidrPool.Get(ginkgoConfig.GinkgoConfig.ParallelNode - 1)
+			cidrBlock, err = cidrPool.Get(0)
 			if err != nil {
 				return
 			}
@@ -224,7 +224,7 @@ func DeployMultiAZConsul(client bosh.Client, config Config) (manifest consul.Man
 			subnet = config.AWS.Subnets[1]
 
 			cidrPool = NewCIDRPool(subnet.Range, 24, 26)
-			cidrBlock, err = cidrPool.Get(ginkgoConfig.GinkgoConfig.ParallelNode - 1)
+			cidrBlock, err = cidrPool.Get(0)
 			if err != nil {
 				return
 			}
@@ -242,14 +242,14 @@ func DeployMultiAZConsul(client bosh.Client, config Config) (manifest consul.Man
 
 		var cidrBlock string
 		cidrPool := NewCIDRPool("10.244.4.0", 24, 26)
-		cidrBlock, err = cidrPool.Get(ginkgoConfig.GinkgoConfig.ParallelNode - 1)
+		cidrBlock, err = cidrPool.Get(0)
 		if err != nil {
 			return
 		}
 
 		var cidrBlock2 string
 		cidrPool2 := NewCIDRPool("10.244.5.0", 24, 26)
-		cidrBlock2, err = cidrPool2.Get(ginkgoConfig.GinkgoConfig.ParallelNode - 1)
+		cidrBlock2, err = cidrPool2.Get(0)
 		if err != nil {
 			return
 		}
@@ -311,7 +311,7 @@ func DeployMultiAZConsulMigration(client bosh.Client, config Config, deploymentN
 
 			var cidrBlock string
 			cidrPool := NewCIDRPool(subnet.Range, 24, 26)
-			cidrBlock, err = cidrPool.Get(ginkgoConfig.GinkgoConfig.ParallelNode - 1)
+			cidrBlock, err = cidrPool.Get(0)
 			if err != nil {
 				return consul.ManifestV2{}, err
 			}
@@ -322,7 +322,7 @@ func DeployMultiAZConsulMigration(client bosh.Client, config Config, deploymentN
 			subnet = config.AWS.Subnets[1]
 
 			cidrPool = NewCIDRPool(subnet.Range, 24, 26)
-			cidrBlock, err = cidrPool.Get(ginkgoConfig.GinkgoConfig.ParallelNode - 1)
+			cidrBlock, err = cidrPool.Get(0)
 			if err != nil {
 				return consul.ManifestV2{}, err
 			}
@@ -339,14 +339,14 @@ func DeployMultiAZConsulMigration(client bosh.Client, config Config, deploymentN
 
 		var cidrBlock string
 		cidrPool := NewCIDRPool("10.244.4.0", 24, 26)
-		cidrBlock, err = cidrPool.Get(ginkgoConfig.GinkgoConfig.ParallelNode - 1)
+		cidrBlock, err = cidrPool.Get(0)
 		if err != nil {
 			return consul.ManifestV2{}, err
 		}
 
 		var cidrBlock2 string
 		cidrPool2 := NewCIDRPool("10.244.5.0", 24, 26)
-		cidrBlock2, err = cidrPool2.Get(ginkgoConfig.GinkgoConfig.ParallelNode - 1)
+		cidrBlock2, err = cidrPool2.Get(0)
 		if err != nil {
 			return consul.ManifestV2{}, err
 		}
