@@ -83,6 +83,12 @@ function force_compilation() {
   pushd /tmp > /dev/null
 	sed "s/REPLACE_ME_DIRECTOR_UUID/$(bosh status --uuid)/g" "${scripts_dir}/fixtures/consul_compilation.yml" > "consul_compilation.yml"
 
+    if [[ -n $(bosh cloud-config) ]]; then
+      echo "cloud config exists...skipping update cloud-config"
+    else
+      bosh -t "${BOSH_DIRECTOR}" -n update cloud-config "${scripts_dir}/fixtures/cloud_config.yml"
+    fi
+
     bosh -t "${BOSH_DIRECTOR}" -d "consul_compilation.yml" -n deploy
     bosh -t "${BOSH_DIRECTOR}" -d "consul_compilation.yml" export release "consul/${consul_release_version}" "ubuntu-trusty/${stemcell_version}"
     bosh -t "${BOSH_DIRECTOR}" -d "consul_compilation.yml" export release "turbulence/${turbulence_version}" "ubuntu-trusty/${stemcell_version}"
