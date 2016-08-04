@@ -61,6 +61,51 @@ var _ = Describe("ConsulConfigDefiner", func() {
 			})
 		})
 
+		Describe("dns_config", func() {
+			It("defaults to consul defaults", func() {
+				Expect(config.Default().Consul.Agent.DnsConfig).To(Equal(config.ConfigConsulAgentDnsConfig{
+					// https://www.consul.io/docs/agent/options.html#allow_stale
+					AllowStale: false,
+					// https://www.consul.io/docs/agent/options.html#max_stale
+					MaxStale: "5s",
+				}))
+			})
+
+			Describe("allow_stale", func() {
+				Context("when the `consul.agent.dns_config.allow_stale` property is true", func() {
+					It("uses that value", func() {
+						consulConfig = config.GenerateConfiguration(config.Config{
+							Consul: config.ConfigConsul{
+								Agent: config.ConfigConsulAgent{
+									DnsConfig: config.ConfigConsulAgentDnsConfig{
+										AllowStale: true,
+									},
+								},
+							},
+						}, configDir, "")
+						Expect(consulConfig.DnsConfig.AllowStale).To(BeTrue())
+					})
+				})
+			})
+
+			Describe("max_stale", func() {
+				Context("when the `consul.agent.dns_config.max_stale` property is set", func() {
+					It("uses that value", func() {
+						consulConfig = config.GenerateConfiguration(config.Config{
+							Consul: config.ConfigConsul{
+								Agent: config.ConfigConsulAgent{
+									DnsConfig: config.ConfigConsulAgentDnsConfig{
+										MaxStale: "15s",
+									},
+								},
+							},
+						}, configDir, "")
+						Expect(consulConfig.DnsConfig.MaxStale).To(Equal("15s"))
+					})
+				})
+			})
+		})
+
 		Describe("log_level", func() {
 			It("defaults to empty string", func() {
 				Expect(consulConfig.LogLevel).To(Equal(""))

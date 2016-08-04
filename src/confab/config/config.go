@@ -40,6 +40,12 @@ type ConfigConsulAgent struct {
 	Datacenter      string                       `json:"datacenter"`
 	LogLevel        string                       `json:"log_level"`
 	ProtocolVersion int                          `json:"protocol_version"`
+	DnsConfig       ConfigConsulAgentDnsConfig   `json:"dns_config"`
+}
+
+type ConfigConsulAgentDnsConfig struct {
+	AllowStale bool   `json:"allow_stale"`
+	MaxStale   string `json:"max_stale"`
 }
 
 type ConfigConsulAgentServers struct {
@@ -58,6 +64,10 @@ func Default() Config {
 		},
 		Consul: ConfigConsul{
 			Agent: ConfigConsulAgent{
+				DnsConfig: ConfigConsulAgentDnsConfig{
+					AllowStale: false,
+					MaxStale:   "5s",
+				},
 				Servers: ConfigConsulAgentServers{
 					LAN: []string{},
 					WAN: []string{},

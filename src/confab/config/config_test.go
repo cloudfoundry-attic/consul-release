@@ -17,6 +17,10 @@ var _ = Describe("Config", func() {
 							LAN: []string{},
 							WAN: []string{},
 						},
+						DnsConfig: config.ConfigConsulAgentDnsConfig{
+							AllowStale: false,
+							MaxStale:   "5s",
+						},
 					},
 				},
 				Path: config.ConfigPath{
@@ -62,6 +66,10 @@ var _ = Describe("Config", func() {
 						"servers": {
 							"lan": ["server1", "server2", "server3"],
 							"wan": ["wan-server1", "wan-server2", "wan-server3"]
+						},
+						"dns_config": {
+							"allow_stale": true,
+							"max_stale": "15s"
 						}
 					},
 					"encrypt_keys": ["key-1", "key-2"]
@@ -101,6 +109,10 @@ var _ = Describe("Config", func() {
 							LAN: []string{"server1", "server2", "server3"},
 							WAN: []string{"wan-server1", "wan-server2", "wan-server3"},
 						},
+						DnsConfig: config.ConfigConsulAgentDnsConfig{
+							AllowStale: true,
+							MaxStale:   "15s",
+						},
 					},
 					EncryptKeys: []string{"key-1", "key-2"},
 				},
@@ -127,6 +139,10 @@ var _ = Describe("Config", func() {
 						Servers: config.ConfigConsulAgentServers{
 							LAN: []string{},
 							WAN: []string{},
+						},
+						DnsConfig: config.ConfigConsulAgentDnsConfig{
+							AllowStale: false,
+							MaxStale:   "5s",
 						},
 					},
 				},

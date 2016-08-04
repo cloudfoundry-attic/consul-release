@@ -212,7 +212,11 @@ var _ = Describe("confab", func() {
 				"ca_file": "%[2]s/certs/ca.crt",
 				"key_file": "%[2]s/certs/agent.key",
 				"cert_file": "%[2]s/certs/agent.crt",
-				"encrypt": "enqzXBmgKOy13WIGsmUk+g=="
+				"encrypt": "enqzXBmgKOy13WIGsmUk+g==",
+				"dns_config": {
+					"allow_stale": false,
+					"max_stale": "5s"
+				}
 			}`, dataDir, consulConfigDir)))
 		})
 	})
