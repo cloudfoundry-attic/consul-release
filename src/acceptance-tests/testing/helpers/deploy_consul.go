@@ -395,14 +395,17 @@ func UpdateCloudConfig(client bosh.Client, config Config) error {
 		return nil
 	case "warden_cpi":
 		cloudConfigOptions.AZs = []cloudconfig.ConfigAZ{
-			{IPRange: "10.244.4.0/24", StaticIPs: 11},
-			{IPRange: "10.244.5.0/24", StaticIPs: 5},
+			{IPRange: "10.244.4.0/26", StaticIPs: 11},
+			{IPRange: "10.244.5.0/26", StaticIPs: 5},
 		}
 	default:
 		return errors.New("unknown infrastructure type")
 	}
 
-	cloudConfig := cloudconfig.NewWardenCloudConfig(cloudConfigOptions)
+	cloudConfig, err := cloudconfig.NewWardenCloudConfig(cloudConfigOptions)
+	if err != nil {
+		return err
+	}
 
 	cloudConfigYAML, err := cloudConfig.ToYAML()
 	if err != nil {
