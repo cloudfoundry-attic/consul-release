@@ -77,8 +77,9 @@ var _ = Describe("KillVm", func() {
 				yaml, err := consulManifest.ToYAML()
 				Expect(err).NotTo(HaveOccurred())
 
-				err = client.ScanAndFix(yaml)
-				Expect(err).NotTo(HaveOccurred())
+				Eventually(func() error {
+					return client.ScanAndFix(yaml)
+				}, "5m", "1m").ShouldNot(HaveOccurred())
 
 				Eventually(func() ([]bosh.VM, error) {
 					return client.DeploymentVMs(consulManifest.Name)
