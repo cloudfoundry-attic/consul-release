@@ -158,11 +158,11 @@ var _ = Describe("TLS key rotation", func() {
 
 	BeforeEach(func() {
 		var err error
-		manifest, kv, err = helpers.DeployConsulWithInstanceCount(3, client, config)
+		manifest, kv, err = helpers.DeployConsulWithInstanceCount(3, boshClient, config)
 		Expect(err).NotTo(HaveOccurred())
 
 		Eventually(func() ([]bosh.VM, error) {
-			return client.DeploymentVMs(manifest.Name)
+			return boshClient.DeploymentVMs(manifest.Name)
 		}, "1m", "10s").Should(ConsistOf(helpers.GetVMsFromManifest(manifest)))
 
 		spammer = helpers.NewSpammer(kv, 1*time.Second, "test-consumer-0")
@@ -170,7 +170,7 @@ var _ = Describe("TLS key rotation", func() {
 
 	AfterEach(func() {
 		if !CurrentGinkgoTestDescription().Failed {
-			err := client.DeleteDeployment(manifest.Name)
+			err := boshClient.DeleteDeployment(manifest.Name)
 			Expect(err).NotTo(HaveOccurred())
 		}
 	})
@@ -188,14 +188,14 @@ var _ = Describe("TLS key rotation", func() {
 			yaml, err := manifest.ToYAML()
 			Expect(err).NotTo(HaveOccurred())
 
-			yaml, err = client.ResolveManifestVersions(yaml)
+			yaml, err = boshClient.ResolveManifestVersions(yaml)
 			Expect(err).NotTo(HaveOccurred())
 
-			_, err = client.Deploy(yaml)
+			_, err = boshClient.Deploy(yaml)
 			Expect(err).NotTo(HaveOccurred())
 
 			Eventually(func() ([]bosh.VM, error) {
-				return client.DeploymentVMs(manifest.Name)
+				return boshClient.DeploymentVMs(manifest.Name)
 			}, "1m", "10s").Should(ConsistOf(helpers.GetVMsFromManifest(manifest)))
 		})
 
@@ -210,14 +210,14 @@ var _ = Describe("TLS key rotation", func() {
 			yaml, err := manifest.ToYAML()
 			Expect(err).NotTo(HaveOccurred())
 
-			yaml, err = client.ResolveManifestVersions(yaml)
+			yaml, err = boshClient.ResolveManifestVersions(yaml)
 			Expect(err).NotTo(HaveOccurred())
 
-			_, err = client.Deploy(yaml)
+			_, err = boshClient.Deploy(yaml)
 			Expect(err).NotTo(HaveOccurred())
 
 			Eventually(func() ([]bosh.VM, error) {
-				return client.DeploymentVMs(manifest.Name)
+				return boshClient.DeploymentVMs(manifest.Name)
 			}, "1m", "10s").Should(ConsistOf(helpers.GetVMsFromManifest(manifest)))
 		})
 
@@ -229,14 +229,14 @@ var _ = Describe("TLS key rotation", func() {
 			yaml, err := manifest.ToYAML()
 			Expect(err).NotTo(HaveOccurred())
 
-			yaml, err = client.ResolveManifestVersions(yaml)
+			yaml, err = boshClient.ResolveManifestVersions(yaml)
 			Expect(err).NotTo(HaveOccurred())
 
-			_, err = client.Deploy(yaml)
+			_, err = boshClient.Deploy(yaml)
 			Expect(err).NotTo(HaveOccurred())
 
 			Eventually(func() ([]bosh.VM, error) {
-				return client.DeploymentVMs(manifest.Name)
+				return boshClient.DeploymentVMs(manifest.Name)
 			}, "1m", "10s").Should(ConsistOf(helpers.GetVMsFromManifest(manifest)))
 		})
 

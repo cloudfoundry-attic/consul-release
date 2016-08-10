@@ -25,17 +25,17 @@ var _ = Describe("Single instance rolling deploys", func() {
 		testKey = "consul-key-" + guid
 		testValue = "consul-value-" + guid
 
-		manifest, kv, err = helpers.DeployConsulWithInstanceCount(1, client, config)
+		manifest, kv, err = helpers.DeployConsulWithInstanceCount(1, boshClient, config)
 		Expect(err).NotTo(HaveOccurred())
 
 		Eventually(func() ([]bosh.VM, error) {
-			return client.DeploymentVMs(manifest.Name)
+			return boshClient.DeploymentVMs(manifest.Name)
 		}, "1m", "10s").Should(ConsistOf(helpers.GetVMsFromManifest(manifest)))
 	})
 
 	AfterEach(func() {
 		if !CurrentGinkgoTestDescription().Failed {
-			err := client.DeleteDeployment(manifest.Name)
+			err := boshClient.DeleteDeployment(manifest.Name)
 			Expect(err).NotTo(HaveOccurred())
 		}
 	})
@@ -52,14 +52,14 @@ var _ = Describe("Single instance rolling deploys", func() {
 			yaml, err := manifest.ToYAML()
 			Expect(err).NotTo(HaveOccurred())
 
-			yaml, err = client.ResolveManifestVersions(yaml)
+			yaml, err = boshClient.ResolveManifestVersions(yaml)
 			Expect(err).NotTo(HaveOccurred())
 
-			_, err = client.Deploy(yaml)
+			_, err = boshClient.Deploy(yaml)
 			Expect(err).NotTo(HaveOccurred())
 
 			Eventually(func() ([]bosh.VM, error) {
-				return client.DeploymentVMs(manifest.Name)
+				return boshClient.DeploymentVMs(manifest.Name)
 			}, "1m", "10s").Should(ConsistOf(helpers.GetVMsFromManifest(manifest)))
 		})
 

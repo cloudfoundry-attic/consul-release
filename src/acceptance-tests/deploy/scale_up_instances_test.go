@@ -23,7 +23,7 @@ var _ = Describe("Scaling up Instances", func() {
 
 	AfterEach(func() {
 		if !CurrentGinkgoTestDescription().Failed {
-			err := client.DeleteDeployment(manifest.Name)
+			err := boshClient.DeleteDeployment(manifest.Name)
 			Expect(err).NotTo(HaveOccurred())
 		}
 	})
@@ -36,11 +36,11 @@ var _ = Describe("Scaling up Instances", func() {
 			testKey = "consul-key-" + guid
 			testValue = "consul-value-" + guid
 
-			manifest, kv, err = helpers.DeployConsulWithInstanceCount(1, client, config)
+			manifest, kv, err = helpers.DeployConsulWithInstanceCount(1, boshClient, config)
 			Expect(err).NotTo(HaveOccurred())
 
 			Eventually(func() ([]bosh.VM, error) {
-				return client.DeploymentVMs(manifest.Name)
+				return boshClient.DeploymentVMs(manifest.Name)
 			}, "1m", "10s").Should(ConsistOf(helpers.GetVMsFromManifest(manifest)))
 		})
 
@@ -61,11 +61,11 @@ var _ = Describe("Scaling up Instances", func() {
 				yaml, err := manifest.ToYAML()
 				Expect(err).NotTo(HaveOccurred())
 
-				_, err = client.Deploy(yaml)
+				_, err = boshClient.Deploy(yaml)
 				Expect(err).NotTo(HaveOccurred())
 
 				Eventually(func() ([]bosh.VM, error) {
-					return client.DeploymentVMs(manifest.Name)
+					return boshClient.DeploymentVMs(manifest.Name)
 				}, "1m", "10s").Should(ConsistOf(helpers.GetVMsFromManifest(manifest)))
 			})
 
@@ -84,11 +84,11 @@ var _ = Describe("Scaling up Instances", func() {
 			testKey = "consul-key-" + guid
 			testValue = "consul-value-" + guid
 
-			manifest, kv, err = helpers.DeployConsulWithInstanceCount(3, client, config)
+			manifest, kv, err = helpers.DeployConsulWithInstanceCount(3, boshClient, config)
 			Expect(err).NotTo(HaveOccurred())
 
 			Eventually(func() ([]bosh.VM, error) {
-				return client.DeploymentVMs(manifest.Name)
+				return boshClient.DeploymentVMs(manifest.Name)
 			}, "1m", "10s").Should(ConsistOf(helpers.GetVMsFromManifest(manifest)))
 
 			spammer = helpers.NewSpammer(kv, 1*time.Second, "test-consumer-0")
@@ -112,11 +112,11 @@ var _ = Describe("Scaling up Instances", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				spammer.Spam()
-				_, err = client.Deploy(yaml)
+				_, err = boshClient.Deploy(yaml)
 				Expect(err).NotTo(HaveOccurred())
 
 				Eventually(func() ([]bosh.VM, error) {
-					return client.DeploymentVMs(manifest.Name)
+					return boshClient.DeploymentVMs(manifest.Name)
 				}, "1m", "10s").Should(ConsistOf(helpers.GetVMsFromManifest(manifest)))
 
 				spammer.Stop()

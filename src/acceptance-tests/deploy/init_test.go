@@ -1,4 +1,4 @@
-package dns_test
+package deploy_test
 
 import (
 	"fmt"
@@ -16,9 +16,9 @@ var (
 	boshClient bosh.Client
 )
 
-func TestDNS(t *testing.T) {
+func TestDeploy(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "dns")
+	RunSpecs(t, "deploy")
 }
 
 var _ = BeforeSuite(func() {

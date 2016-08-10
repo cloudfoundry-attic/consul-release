@@ -30,7 +30,7 @@ var _ = Describe("Migrate instance groups", func() {
 
 	AfterEach(func() {
 		if !CurrentGinkgoTestDescription().Failed {
-			err := client.DeleteDeployment(manifest.Name)
+			err := boshClient.DeleteDeployment(manifest.Name)
 			Expect(err).NotTo(HaveOccurred())
 		}
 	})
@@ -39,11 +39,11 @@ var _ = Describe("Migrate instance groups", func() {
 		It("deploys successfully with minimal interruption", func() {
 			By("deploying 3 node cluster across two AZs with BOSH 1.0 manifest", func() {
 				var err error
-				manifest, err = helpers.DeployMultiAZConsul(client, config)
+				manifest, err = helpers.DeployMultiAZConsul(boshClient, config)
 				Expect(err).NotTo(HaveOccurred())
 
 				Eventually(func() ([]bosh.VM, error) {
-					return client.DeploymentVMs(manifest.Name)
+					return boshClient.DeploymentVMs(manifest.Name)
 				}, "1m", "10s").Should(ConsistOf(helpers.GetVMsFromManifest(manifest)))
 
 				for i, ip := range manifest.Jobs[2].Networks[0].StaticIPs {
@@ -59,14 +59,14 @@ var _ = Describe("Migrate instance groups", func() {
 			})
 
 			By("deploying 3 node cluster across two AZs with BOSH 2.0 manifest", func() {
-				err := helpers.UpdateCloudConfig(client, config)
+				err := helpers.UpdateCloudConfig(boshClient, config)
 				Expect(err).NotTo(HaveOccurred())
 
-				manifestv2, err := helpers.DeployMultiAZConsulMigration(client, config, manifest.Name)
+				manifestv2, err := helpers.DeployMultiAZConsulMigration(boshClient, config, manifest.Name)
 				Expect(err).NotTo(HaveOccurred())
 
 				Eventually(func() ([]bosh.VM, error) {
-					return client.DeploymentVMs(manifestv2.Name)
+					return boshClient.DeploymentVMs(manifestv2.Name)
 				}, "1m", "10s").Should(ConsistOf(helpers.GetVMsFromManifestV2(manifestv2)))
 			})
 
