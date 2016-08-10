@@ -37,7 +37,7 @@ func DeployConsulWithJobLevelConsulProperties(client bosh.Client, config Config)
 			subnet := config.AWS.Subnets[0]
 
 			var cidrBlock string
-			cidrPool := NewCIDRPool(subnet.Range, 24, 26)
+			cidrPool := NewCIDRPool(subnet.Range, 24, 27)
 			cidrBlock, err = cidrPool.Get(ginkgoConfig.GinkgoConfig.ParallelNode)
 			if err != nil {
 				return
@@ -55,7 +55,7 @@ func DeployConsulWithJobLevelConsulProperties(client bosh.Client, config Config)
 		iaasConfig = iaas.NewWardenConfig()
 
 		var cidrBlock string
-		cidrPool := NewCIDRPool("10.244.4.0", 24, 26)
+		cidrPool := NewCIDRPool("10.244.4.0", 24, 27)
 		cidrBlock, err = cidrPool.Get(ginkgoConfig.GinkgoConfig.ParallelNode)
 		if err != nil {
 			return
@@ -124,7 +124,7 @@ func DeployConsulWithInstanceCount(count int, client bosh.Client, config Config)
 			subnet := config.AWS.Subnets[0]
 
 			var cidrBlock string
-			cidrPool := NewCIDRPool(subnet.Range, 24, 26)
+			cidrPool := NewCIDRPool(subnet.Range, 24, 27)
 			cidrBlock, err = cidrPool.Get(ginkgoConfig.GinkgoConfig.ParallelNode)
 			if err != nil {
 				return
@@ -142,7 +142,7 @@ func DeployConsulWithInstanceCount(count int, client bosh.Client, config Config)
 		iaasConfig = iaas.NewWardenConfig()
 
 		var cidrBlock string
-		cidrPool := NewCIDRPool("10.244.4.0", 24, 26)
+		cidrPool := NewCIDRPool("10.244.4.0", 24, 27)
 		cidrBlock, err = cidrPool.Get(ginkgoConfig.GinkgoConfig.ParallelNode)
 		if err != nil {
 			return
@@ -212,7 +212,7 @@ func DeployMultiAZConsul(client bosh.Client, config Config) (manifest consul.Man
 			subnet := config.AWS.Subnets[0]
 
 			var cidrBlock string
-			cidrPool := NewCIDRPool(subnet.Range, 24, 26)
+			cidrPool := NewCIDRPool(subnet.Range, 24, 27)
 			cidrBlock, err = cidrPool.Get(0)
 			if err != nil {
 				return
@@ -223,7 +223,7 @@ func DeployMultiAZConsul(client bosh.Client, config Config) (manifest consul.Man
 
 			subnet = config.AWS.Subnets[1]
 
-			cidrPool = NewCIDRPool(subnet.Range, 24, 26)
+			cidrPool = NewCIDRPool(subnet.Range, 24, 27)
 			cidrBlock, err = cidrPool.Get(0)
 			if err != nil {
 				return
@@ -241,14 +241,14 @@ func DeployMultiAZConsul(client bosh.Client, config Config) (manifest consul.Man
 		iaasConfig = iaas.NewWardenConfig()
 
 		var cidrBlock string
-		cidrPool := NewCIDRPool("10.244.4.0", 24, 26)
+		cidrPool := NewCIDRPool("10.244.4.0", 24, 27)
 		cidrBlock, err = cidrPool.Get(0)
 		if err != nil {
 			return
 		}
 
 		var cidrBlock2 string
-		cidrPool2 := NewCIDRPool("10.244.5.0", 24, 26)
+		cidrPool2 := NewCIDRPool("10.244.5.0", 24, 27)
 		cidrBlock2, err = cidrPool2.Get(0)
 		if err != nil {
 			return
@@ -310,7 +310,7 @@ func DeployMultiAZConsulMigration(client bosh.Client, config Config, deploymentN
 			subnet := config.AWS.Subnets[0]
 
 			var cidrBlock string
-			cidrPool := NewCIDRPool(subnet.Range, 24, 26)
+			cidrPool := NewCIDRPool(subnet.Range, 24, 27)
 			cidrBlock, err = cidrPool.Get(0)
 			if err != nil {
 				return consul.ManifestV2{}, err
@@ -321,7 +321,7 @@ func DeployMultiAZConsulMigration(client bosh.Client, config Config, deploymentN
 
 			subnet = config.AWS.Subnets[1]
 
-			cidrPool = NewCIDRPool(subnet.Range, 24, 26)
+			cidrPool = NewCIDRPool(subnet.Range, 24, 27)
 			cidrBlock, err = cidrPool.Get(0)
 			if err != nil {
 				return consul.ManifestV2{}, err
@@ -338,14 +338,14 @@ func DeployMultiAZConsulMigration(client bosh.Client, config Config, deploymentN
 		iaasConfig = iaas.NewWardenConfig()
 
 		var cidrBlock string
-		cidrPool := NewCIDRPool("10.244.4.0", 24, 26)
+		cidrPool := NewCIDRPool("10.244.4.0", 24, 27)
 		cidrBlock, err = cidrPool.Get(0)
 		if err != nil {
 			return consul.ManifestV2{}, err
 		}
 
 		var cidrBlock2 string
-		cidrPool2 := NewCIDRPool("10.244.5.0", 24, 26)
+		cidrPool2 := NewCIDRPool("10.244.5.0", 24, 27)
 		cidrBlock2, err = cidrPool2.Get(0)
 		if err != nil {
 			return consul.ManifestV2{}, err
@@ -395,8 +395,8 @@ func UpdateCloudConfig(client bosh.Client, config Config) error {
 		return nil
 	case "warden_cpi":
 		cloudConfigOptions.AZs = []cloudconfig.ConfigAZ{
-			{IPRange: "10.244.4.0/26", StaticIPs: 11},
-			{IPRange: "10.244.5.0/26", StaticIPs: 5},
+			{IPRange: "10.244.4.0/27", StaticIPs: 11},
+			{IPRange: "10.244.5.0/27", StaticIPs: 5},
 		}
 	default:
 		return errors.New("unknown infrastructure type")

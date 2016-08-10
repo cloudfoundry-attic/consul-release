@@ -82,7 +82,7 @@ var _ = BeforeSuite(func() {
 				subnet := config.AWS.Subnets[0]
 
 				var cidrBlock string
-				cidrPool := helpers.NewCIDRPool(subnet.Range, 24, 26)
+				cidrPool := helpers.NewCIDRPool(subnet.Range, 24, 27)
 				cidrBlock, err = cidrPool.Get(ginkgoConfig.GinkgoConfig.ParallelNode - 1)
 				if err != nil {
 					return
@@ -99,7 +99,7 @@ var _ = BeforeSuite(func() {
 		case "warden_cpi":
 
 			var cidrBlock string
-			cidrPool := helpers.NewCIDRPool("10.244.4.0", 24, 26)
+			cidrPool := helpers.NewCIDRPool("10.244.4.0", 24, 27)
 			cidrBlock, err = cidrPool.Get(ginkgoConfig.GinkgoConfig.ParallelNode - 1)
 			if err != nil {
 				return

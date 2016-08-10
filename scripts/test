@@ -7,8 +7,8 @@ turbulence_version="0.4"
 function check_dependencies() {
   test -n "${CONSATS_CONFIG?"CONSATS_CONFIG is a required environment variable"}"
   if [[ ! -f "${CONSATS_CONFIG}" ]]; then
-	  echo "Could not locate CONSATS_CONFIG file at ${CONSATS_CONFIG}"
-	  exit 1
+    echo "Could not locate CONSATS_CONFIG file at ${CONSATS_CONFIG}"
+    exit 1
   fi
 
   require jq
@@ -43,7 +43,7 @@ function parse_config() {
   export BOSH_DIRECTOR="$(jq --raw-output '.bosh.target' "${CONSATS_CONFIG}")"
   export BOSH_USER="$(jq --raw-output '.bosh.username' "${CONSATS_CONFIG}")"
   export BOSH_PASSWORD="$(jq --raw-output '.bosh.password' "${CONSATS_CONFIG}")"
-  export PARALLEL_NODES="$(jq --raw-output '.parallel_nodes' "${CONSATS_CONFIG}")"
+  export PARALLEL_NODES="$(jq --raw-output 'if .bosh.parallel_nodes == null then 1 else .bosh.parallel_nodes end' "${CONSATS_CONFIG}")"
   set -x
 }
 
@@ -81,7 +81,7 @@ function force_compilation() {
   set -x
 
   pushd /tmp > /dev/null
-	sed "s/REPLACE_ME_DIRECTOR_UUID/$(bosh status --uuid)/g" "${scripts_dir}/fixtures/consul_compilation.yml" > "consul_compilation.yml"
+    sed "s/REPLACE_ME_DIRECTOR_UUID/$(bosh status --uuid)/g" "${scripts_dir}/fixtures/consul_compilation.yml" > "consul_compilation.yml"
 
     if [[ -n $(bosh cloud-config) ]]; then
       echo "cloud config exists...skipping update cloud-config"
