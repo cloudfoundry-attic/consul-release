@@ -7,7 +7,9 @@ import (
 	"github.com/cloudfoundry-incubator/consul-release/src/acceptance-tests/testing/consulclient"
 	"github.com/cloudfoundry-incubator/consul-release/src/acceptance-tests/testing/helpers"
 	"github.com/pivotal-cf-experimental/bosh-test/bosh"
+	turbulenceclient "github.com/pivotal-cf-experimental/bosh-test/turbulence"
 	"github.com/pivotal-cf-experimental/destiny/consul"
+	"github.com/pivotal-cf-experimental/destiny/turbulence"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -15,6 +17,9 @@ import (
 
 var _ = Describe("KillVm", func() {
 	var (
+		turbulenceManifest turbulence.Manifest
+		turbulenceClient   turbulenceclient.Client
+
 		consulManifest consul.Manifest
 		kv             consulclient.HTTPKV
 
@@ -24,6 +29,9 @@ var _ = Describe("KillVm", func() {
 	)
 
 	BeforeEach(func() {
+		turbulenceManifest = deployTurbulence()
+		turbulenceClient = newTurbulenceClient(turbulenceManifest)
+
 		guid, err := helpers.NewGUID()
 		Expect(err).NotTo(HaveOccurred())
 
@@ -59,8 +67,14 @@ var _ = Describe("KillVm", func() {
 				Expect(err).NotTo(HaveOccurred())
 			}
 		})
-	})
 
+		By("deleting the turbulence deployment", func() {
+			if !CurrentGinkgoTestDescription().Failed {
+				err := client.DeleteDeployment(turbulenceManifest.Name)
+				Expect(err).NotTo(HaveOccurred())
+			}
+		})
+	})
 	Context("when a consul node is killed", func() {
 		It("is still able to function on healthy vms", func() {
 			By("setting a persistent value", func() {
