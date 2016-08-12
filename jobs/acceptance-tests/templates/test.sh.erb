@@ -9,6 +9,7 @@ export PATH="${GOROOT}/bin:${PATH}"
 export GO15VENDOREXPERIMENT=1
 
 export CONSATS_CONFIG=/tmp/config.json
+export CONSUL_RELEASE_VERSION="<%= p('consul.acceptance_tests.consul_release_version') %>"
 
 cat > $CONSATS_CONFIG <<EOF
 <%= p('consul.acceptance_tests').to_json %>

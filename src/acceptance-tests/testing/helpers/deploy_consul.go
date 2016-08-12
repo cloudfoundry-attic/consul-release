@@ -13,94 +13,22 @@ import (
 	ginkgoConfig "github.com/onsi/ginkgo/config"
 )
 
+type ManifestGenerator func(consul.Config, iaas.Config) (consul.Manifest, error)
+
+func DeployConsulWithInstanceCount(count int, client bosh.Client, config Config) (manifest consul.Manifest, kv consulclient.HTTPKV, err error) {
+	return DeployConsulWithInstanceCountAndReleaseVersion(count, client, config, ConsulReleaseVersion())
+}
+
 func DeployConsulWithJobLevelConsulProperties(client bosh.Client, config Config) (manifest consul.Manifest, err error) {
-	guid, err := NewGUID()
-	if err != nil {
-		return
-	}
-
-	info, err := client.Info()
-	if err != nil {
-		return
-	}
-
-	manifestConfig := consul.Config{
-		DirectorUUID: info.UUID,
-		Name:         fmt.Sprintf("consul-%s", guid),
-	}
-
-	var iaasConfig iaas.Config
-	switch info.CPI {
-	case "aws_cpi":
-		awsConfig := buildAWSConfig(config)
-		if len(config.AWS.Subnets) > 0 {
-			subnet := config.AWS.Subnets[0]
-
-			var cidrBlock string
-			cidrPool := NewCIDRPool(subnet.Range, 24, 27)
-			cidrBlock, err = cidrPool.Get(ginkgoConfig.GinkgoConfig.ParallelNode)
-			if err != nil {
-				return
-			}
-
-			awsConfig.Subnets = append(awsConfig.Subnets, iaas.AWSConfigSubnet{ID: subnet.ID, Range: cidrBlock, AZ: subnet.AZ})
-			manifestConfig.Networks = append(manifestConfig.Networks, consul.ConfigNetwork{IPRange: cidrBlock, Nodes: 1})
-		} else {
-			err = errors.New("AWSSubnet is required for AWS IAAS deployment")
-			return
-		}
-
-		iaasConfig = awsConfig
-	case "warden_cpi":
-		iaasConfig = iaas.NewWardenConfig()
-
-		var cidrBlock string
-		cidrPool := NewCIDRPool("10.244.4.0", 24, 27)
-		cidrBlock, err = cidrPool.Get(ginkgoConfig.GinkgoConfig.ParallelNode)
-		if err != nil {
-			return
-		}
-
-		manifestConfig.Networks = []consul.ConfigNetwork{
-			{
-				IPRange: cidrBlock,
-				Nodes:   1,
-			},
-		}
-	default:
-		err = errors.New("unknown infrastructure type")
-		return
-	}
-
-	manifest, err = consul.NewManifestWithJobLevelProperties(manifestConfig, iaasConfig)
-	if err != nil {
-		return
-	}
-
-	yaml, err := manifest.ToYAML()
-	if err != nil {
-		return
-	}
-
-	yaml, err = client.ResolveManifestVersions(yaml)
-	if err != nil {
-		return
-	}
-
-	err = consul.FromYAML(yaml, &manifest)
-	if err != nil {
-		return
-	}
-
-	_, err = client.Deploy(yaml)
-	if err != nil {
-		return
-	}
-
+	manifest, _, err = deployConsul(1, client, config, ConsulReleaseVersion(), consul.NewManifestWithJobLevelProperties)
 	return
 }
 
-func DeployConsulWithInstanceCount(count int, client bosh.Client, config Config) (manifest consul.Manifest, kv consulclient.HTTPKV, err error) {
+func DeployConsulWithInstanceCountAndReleaseVersion(count int, client bosh.Client, config Config, releaseVersion string) (manifest consul.Manifest, kv consulclient.HTTPKV, err error) {
+	return deployConsul(count, client, config, releaseVersion, consul.NewManifest)
+}
+
+func deployConsul(count int, client bosh.Client, config Config, releaseVersion string, manifestGenerator ManifestGenerator) (manifest consul.Manifest, kv consulclient.HTTPKV, err error) {
 	guid, err := NewGUID()
 	if err != nil {
 		return
@@ -159,9 +87,15 @@ func DeployConsulWithInstanceCount(count int, client bosh.Client, config Config)
 		return
 	}
 
-	manifest, err = consul.NewManifest(manifestConfig, iaasConfig)
+	manifest, err = manifestGenerator(manifestConfig, iaasConfig)
 	if err != nil {
 		return
+	}
+
+	for i := range manifest.Releases {
+		if manifest.Releases[i].Name == "consul" {
+			manifest.Releases[i].Version = releaseVersion
+		}
 	}
 
 	yaml, err := manifest.ToYAML()
@@ -180,6 +114,11 @@ func DeployConsulWithInstanceCount(count int, client bosh.Client, config Config)
 	}
 
 	_, err = client.Deploy(yaml)
+	if err != nil {
+		return
+	}
+
+	err = VerifyDeploymentRelease(client, manifestConfig.Name, releaseVersion)
 	if err != nil {
 		return
 	}
@@ -268,6 +207,12 @@ func DeployMultiAZConsul(client bosh.Client, config Config) (manifest consul.Man
 		return
 	}
 
+	for i := range manifest.Releases {
+		if manifest.Releases[i].Name == "consul" {
+			manifest.Releases[i].Version = ConsulReleaseVersion()
+		}
+	}
+
 	yaml, err := manifest.ToYAML()
 	if err != nil {
 		return
@@ -284,6 +229,11 @@ func DeployMultiAZConsul(client bosh.Client, config Config) (manifest consul.Man
 	}
 
 	_, err = client.Deploy(yaml)
+	if err != nil {
+		return
+	}
+
+	err = VerifyDeploymentRelease(client, manifestConfig.Name, ConsulReleaseVersion())
 	if err != nil {
 		return
 	}
@@ -369,6 +319,12 @@ func DeployMultiAZConsulMigration(client bosh.Client, config Config, deploymentN
 
 	manifest := consul.NewManifestV2(manifestConfig, iaasConfig)
 
+	for i := range manifest.Releases {
+		if manifest.Releases[i].Name == "consul" {
+			manifest.Releases[i].Version = ConsulReleaseVersion()
+		}
+	}
+
 	manifestYAML, err := manifest.ToYAML()
 	if err != nil {
 		return consul.ManifestV2{}, err
@@ -379,7 +335,35 @@ func DeployMultiAZConsulMigration(client bosh.Client, config Config, deploymentN
 		return consul.ManifestV2{}, err
 	}
 
+	if err := VerifyDeploymentRelease(client, manifestConfig.Name, ConsulReleaseVersion()); err != nil {
+		return consul.ManifestV2{}, err
+	}
+
 	return manifest, nil
+}
+
+func VerifyDeploymentRelease(client bosh.Client, deploymentName string, releaseVersion string) (err error) {
+	deployments, err := client.Deployments()
+	if err != nil {
+		return
+	}
+
+	for _, deployment := range deployments {
+		if deployment.Name == deploymentName {
+			for _, release := range deployment.Releases {
+				if release.Name == "consul" {
+					switch {
+					case len(release.Versions) > 1:
+						err = errors.New("too many releases")
+					case len(release.Versions) == 1 && release.Versions[0] != releaseVersion:
+						err = fmt.Errorf("expected consul-release version %q but got %q", releaseVersion, release.Versions[0])
+					}
+				}
+			}
+		}
+	}
+
+	return
 }
 
 func UpdateCloudConfig(client bosh.Client, config Config) error {

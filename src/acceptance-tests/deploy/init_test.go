@@ -12,8 +12,9 @@ import (
 )
 
 var (
-	config     helpers.Config
-	boshClient bosh.Client
+	config               helpers.Config
+	boshClient           bosh.Client
+	consulReleaseVersion string
 )
 
 func TestDeploy(t *testing.T) {
@@ -27,6 +28,8 @@ var _ = BeforeSuite(func() {
 
 	config, err = helpers.LoadConfig(configPath)
 	Expect(err).NotTo(HaveOccurred())
+
+	consulReleaseVersion = helpers.ConsulReleaseVersion()
 
 	boshClient = bosh.NewClient(bosh.Config{
 		URL:              fmt.Sprintf("https://%s:25555", config.BOSH.Target),

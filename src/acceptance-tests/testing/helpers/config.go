@@ -101,6 +101,15 @@ func loadConfigJsonFromPath(configFilePath string) (Config, error) {
 	return config, nil
 }
 
+func ConsulReleaseVersion() string {
+	version := os.Getenv("CONSUL_RELEASE_VERSION")
+	if version == "" {
+		version = "latest"
+	}
+
+	return version
+}
+
 func ConfigPath() (string, error) {
 	path := os.Getenv("CONSATS_CONFIG")
 	if path == "" || !strings.HasPrefix(path, "/") {

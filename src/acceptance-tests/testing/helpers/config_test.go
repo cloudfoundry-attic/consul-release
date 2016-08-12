@@ -352,6 +352,30 @@ var _ = Describe("configuration", func() {
 		})
 	})
 
+	Describe("ConsulReleaseVersion", func() {
+		var releaseVersion string
+
+		BeforeEach(func() {
+			releaseVersion = os.Getenv("CONSUL_RELEASE_VERSION")
+		})
+
+		AfterEach(func() {
+			os.Setenv("CONSUL_RELEASE_VERSION", releaseVersion)
+		})
+
+		It("retrieves the consul release version number from the env", func() {
+			os.Setenv("CONSUL_RELEASE_VERSION", "some-release-number")
+			version := helpers.ConsulReleaseVersion()
+			Expect(version).To(Equal("some-release-number"))
+		})
+
+		It("returns 'latest' if the env is not set", func() {
+			os.Setenv("CONSUL_RELEASE_VERSION", "")
+			version := helpers.ConsulReleaseVersion()
+			Expect(version).To(Equal("latest"))
+		})
+	})
+
 	Describe("ConfigPath", func() {
 		var configPath string
 

@@ -1,6 +1,7 @@
 #!/bin/bash -exu
 
-consul_release_version="99999+dev.$(date +%s)"
+export CONSUL_RELEASE_VERSION="99999+dev.$(date +%s)"
+
 warden_cpi_version="29"
 turbulence_version="0.4"
 
@@ -52,7 +53,7 @@ function upload_releases() {
   scripts_dir="${1}"
 
   pushd "${scripts_dir}/.." > /dev/null
-    bosh -t "${BOSH_DIRECTOR}" create release --force --version "${consul_release_version}"
+    bosh -t "${BOSH_DIRECTOR}" create release --force --version "${CONSUL_RELEASE_VERSION}"
     bosh -t "${BOSH_DIRECTOR}" upload release
   popd > /dev/null
 
@@ -90,7 +91,7 @@ function force_compilation() {
     fi
 
     bosh -t "${BOSH_DIRECTOR}" -d "consul_compilation.yml" -n deploy
-    bosh -t "${BOSH_DIRECTOR}" -d "consul_compilation.yml" export release "consul/${consul_release_version}" "ubuntu-trusty/${stemcell_version}"
+    bosh -t "${BOSH_DIRECTOR}" -d "consul_compilation.yml" export release "consul/${CONSUL_RELEASE_VERSION}" "ubuntu-trusty/${stemcell_version}"
     bosh -t "${BOSH_DIRECTOR}" -d "consul_compilation.yml" export release "turbulence/${turbulence_version}" "ubuntu-trusty/${stemcell_version}"
     bosh -t "${BOSH_DIRECTOR}" -d "consul_compilation.yml" export release "bosh-warden-cpi/${warden_cpi_version}" "ubuntu-trusty/${stemcell_version}"
     bosh -t "${BOSH_DIRECTOR}" -d "consul_compilation.yml" -n delete deployment compilation
@@ -101,7 +102,7 @@ function cleanup_releases() {
   set +e
   bosh -t "${BOSH_DIRECTOR}" -n delete release turbulence "${turbulence_version}"
   bosh -t "${BOSH_DIRECTOR}" -n delete release bosh-warden-cpi "${warden_cpi_version}"
-  bosh -t "${BOSH_DIRECTOR}" -n delete release consul "${consul_release_version}"
+  bosh -t "${BOSH_DIRECTOR}" -n delete release consul "${CONSUL_RELEASE_VERSION}"
   set -e
 }
 
