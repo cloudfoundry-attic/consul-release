@@ -1,4 +1,4 @@
-package turbulence_test
+package deploy_test
 
 import (
 	"math/rand"
@@ -29,8 +29,15 @@ var _ = Describe("KillVm", func() {
 	)
 
 	BeforeEach(func() {
-		turbulenceManifest = deployTurbulence()
-		turbulenceClient = newTurbulenceClient(turbulenceManifest)
+		var err error
+		turbulenceManifest, err = helpers.DeployTurbulence(boshClient, config)
+		Expect(err).NotTo(HaveOccurred())
+
+		Eventually(func() ([]bosh.VM, error) {
+			return boshClient.DeploymentVMs(turbulenceManifest.Name)
+		}, "1m", "10s").Should(ConsistOf(helpers.GetTurbulenceVMsFromManifest(turbulenceManifest)))
+
+		turbulenceClient = helpers.NewTurbulenceClient(turbulenceManifest)
 
 		guid, err := helpers.NewGUID()
 		Expect(err).NotTo(HaveOccurred())
@@ -38,11 +45,11 @@ var _ = Describe("KillVm", func() {
 		testKey = "consul-key-" + guid
 		testValue = "consul-value-" + guid
 
-		consulManifest, kv, err = helpers.DeployConsulWithInstanceCount(3, client, config)
+		consulManifest, kv, err = helpers.DeployConsulWithInstanceCount(3, boshClient, config)
 		Expect(err).NotTo(HaveOccurred())
 
 		Eventually(func() ([]bosh.VM, error) {
-			return client.DeploymentVMs(consulManifest.Name)
+			return boshClient.DeploymentVMs(consulManifest.Name)
 		}, "1m", "10s").Should(ConsistOf(helpers.GetVMsFromManifest(consulManifest)))
 
 		spammer = helpers.NewSpammer(kv, 1*time.Second, "test-consumer-0")
@@ -53,24 +60,24 @@ var _ = Describe("KillVm", func() {
 			yaml, err := consulManifest.ToYAML()
 			Expect(err).NotTo(HaveOccurred())
 
-			err = client.ScanAndFix(yaml)
+			err = boshClient.ScanAndFix(yaml)
 			Expect(err).NotTo(HaveOccurred())
 
 			Eventually(func() ([]bosh.VM, error) {
-				return client.DeploymentVMs(consulManifest.Name)
+				return boshClient.DeploymentVMs(consulManifest.Name)
 			}, "1m", "10s").Should(ConsistOf(helpers.GetVMsFromManifest(consulManifest)))
 		})
 
 		By("deleting the deployment", func() {
 			if !CurrentGinkgoTestDescription().Failed {
-				err := client.DeleteDeployment(consulManifest.Name)
+				err := boshClient.DeleteDeployment(consulManifest.Name)
 				Expect(err).NotTo(HaveOccurred())
 			}
 		})
 
 		By("deleting the turbulence deployment", func() {
 			if !CurrentGinkgoTestDescription().Failed {
-				err := client.DeleteDeployment(turbulenceManifest.Name)
+				err := boshClient.DeleteDeployment(turbulenceManifest.Name)
 				Expect(err).NotTo(HaveOccurred())
 			}
 		})
@@ -92,11 +99,11 @@ var _ = Describe("KillVm", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				Eventually(func() error {
-					return client.ScanAndFix(yaml)
+					return boshClient.ScanAndFix(yaml)
 				}, "5m", "1m").ShouldNot(HaveOccurred())
 
 				Eventually(func() ([]bosh.VM, error) {
-					return client.DeploymentVMs(consulManifest.Name)
+					return boshClient.DeploymentVMs(consulManifest.Name)
 				}, "1m", "10s").Should(ConsistOf(helpers.GetVMsFromManifest(consulManifest)))
 
 				spammer.Stop()

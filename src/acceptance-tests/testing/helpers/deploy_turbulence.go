@@ -1,49 +1,19 @@
-package turbulence_test
+package helpers
 
 import (
+	"errors"
+	"fmt"
 	"time"
 
-	"github.com/cloudfoundry-incubator/consul-release/src/acceptance-tests/testing/helpers"
-	ginkgoConfig "github.com/onsi/ginkgo/config"
 	"github.com/pivotal-cf-experimental/bosh-test/bosh"
-	turbulenceclient "github.com/pivotal-cf-experimental/bosh-test/turbulence"
 	"github.com/pivotal-cf-experimental/destiny/iaas"
 	"github.com/pivotal-cf-experimental/destiny/turbulence"
 
-	"fmt"
-
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
-
-	"testing"
+	ginkgoConfig "github.com/onsi/ginkgo/config"
+	turbulenceclient "github.com/pivotal-cf-experimental/bosh-test/turbulence"
 )
 
-func TestTurbulence(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "turbulence")
-}
-
-var (
-	config helpers.Config
-	client bosh.Client
-)
-
-var _ = BeforeSuite(func() {
-	configPath, err := helpers.ConfigPath()
-	Expect(err).NotTo(HaveOccurred())
-
-	config, err = helpers.LoadConfig(configPath)
-	Expect(err).NotTo(HaveOccurred())
-
-	client = bosh.NewClient(bosh.Config{
-		URL:              fmt.Sprintf("https://%s:25555", config.BOSH.Target),
-		Username:         config.BOSH.Username,
-		Password:         config.BOSH.Password,
-		AllowInsecureSSL: true,
-	})
-})
-
-func getVMsFromManifest(manifest turbulence.Manifest) []bosh.VM {
+func GetTurbulenceVMsFromManifest(manifest turbulence.Manifest) []bosh.VM {
 	var vms []bosh.VM
 
 	for _, job := range manifest.Jobs {
@@ -56,7 +26,7 @@ func getVMsFromManifest(manifest turbulence.Manifest) []bosh.VM {
 	return vms
 }
 
-func newTurbulenceClient(manifest turbulence.Manifest) turbulenceclient.Client {
+func NewTurbulenceClient(manifest turbulence.Manifest) turbulenceclient.Client {
 	turbulenceUrl := fmt.Sprintf("https://turbulence:%s@%s:8080",
 		manifest.Properties.TurbulenceAPI.Password,
 		manifest.Jobs[0].Networks[0].StaticIPs[0])
@@ -64,12 +34,16 @@ func newTurbulenceClient(manifest turbulence.Manifest) turbulenceclient.Client {
 	return turbulenceclient.NewClient(turbulenceUrl, 5*time.Minute, 2*time.Second)
 }
 
-func deployTurbulence() turbulence.Manifest {
+func DeployTurbulence(client bosh.Client, config Config) (turbulence.Manifest, error) {
 	info, err := client.Info()
-	Expect(err).NotTo(HaveOccurred())
+	if err != nil {
+		return turbulence.Manifest{}, err
+	}
 
-	guid, err := helpers.NewGUID()
-	Expect(err).NotTo(HaveOccurred())
+	guid, err := NewGUID()
+	if err != nil {
+		return turbulence.Manifest{}, err
+	}
 
 	manifestConfig := turbulence.Config{
 		DirectorUUID: info.UUID,
@@ -101,51 +75,57 @@ func deployTurbulence() turbulence.Manifest {
 			subnet := config.AWS.Subnets[0]
 
 			var cidrBlock string
-			cidrPool := helpers.NewCIDRPool(subnet.Range, 24, 27)
+			cidrPool := NewCIDRPool(subnet.Range, 24, 27)
 			cidrBlock, err = cidrPool.Get(ginkgoConfig.GinkgoConfig.ParallelNode - 1)
 			if err != nil {
-				Fail(err.Error())
+				return turbulence.Manifest{}, err
 			}
 
 			awsConfig.Subnets = append(awsConfig.Subnets, iaas.AWSConfigSubnet{ID: subnet.ID, Range: cidrBlock, AZ: subnet.AZ})
 			manifestConfig.IPRange = cidrBlock
 		} else {
-			Fail("aws.subnet is required for AWS IAAS deployment")
+			return turbulence.Manifest{}, errors.New("aws.subnet is required for AWS IAAS deployment")
 		}
 
 		iaasConfig = awsConfig
 	case "warden_cpi":
 		var cidrBlock string
-		cidrPool := helpers.NewCIDRPool("10.244.4.0", 24, 27)
+		cidrPool := NewCIDRPool("10.244.4.0", 24, 27)
 		cidrBlock, err = cidrPool.Get(ginkgoConfig.GinkgoConfig.ParallelNode - 1)
 		if err != nil {
-			Fail(err.Error())
+			return turbulence.Manifest{}, err
 		}
 
 		manifestConfig.IPRange = cidrBlock
 		iaasConfig = iaas.NewWardenConfig()
 	default:
-		Fail("unknown infrastructure type")
+		return turbulence.Manifest{}, errors.New("unknown infrastructure type")
 	}
 
 	turbulenceManifest, err := turbulence.NewManifest(manifestConfig, iaasConfig)
-	Expect(err).NotTo(HaveOccurred())
+	if err != nil {
+		return turbulence.Manifest{}, err
+	}
 
 	yaml, err := turbulenceManifest.ToYAML()
-	Expect(err).NotTo(HaveOccurred())
+	if err != nil {
+		return turbulence.Manifest{}, err
+	}
 
 	yaml, err = client.ResolveManifestVersions(yaml)
-	Expect(err).NotTo(HaveOccurred())
+	if err != nil {
+		return turbulence.Manifest{}, err
+	}
 
 	turbulenceManifest, err = turbulence.FromYAML(yaml)
-	Expect(err).NotTo(HaveOccurred())
+	if err != nil {
+		return turbulence.Manifest{}, err
+	}
 
 	_, err = client.Deploy(yaml)
-	Expect(err).NotTo(HaveOccurred())
+	if err != nil {
+		return turbulence.Manifest{}, err
+	}
 
-	Eventually(func() ([]bosh.VM, error) {
-		return client.DeploymentVMs(turbulenceManifest.Name)
-	}, "1m", "10s").Should(ConsistOf(getVMsFromManifest(turbulenceManifest)))
-
-	return turbulenceManifest
+	return turbulenceManifest, nil
 }
