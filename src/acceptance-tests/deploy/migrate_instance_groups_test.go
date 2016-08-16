@@ -17,6 +17,7 @@ import (
 
 const (
 	OPERATION_TIMEOUT_ERROR_COUNT_THRESHOLD = 1
+	RESET_ERROR_COUNT_THRESHOLD             = 3
 	IO_TIMEOUT_ERROR_COUNT_THRESHOLD        = 5
 	NO_ROUTE_ERROR_COUNT_THRESHOLD          = 10
 )
@@ -89,6 +90,7 @@ var _ = Describe("Migrate instance groups", func() {
 					timeoutErrCount := 0
 					norouteErrCount := 0
 					ioErrCount := 0
+					resetErrCount := 0
 					otherErrors := helpers.ErrorSet{}
 
 					for err, occurrences := range errorSet {
@@ -102,6 +104,9 @@ var _ = Describe("Migrate instance groups", func() {
 						// This happens when the vm is being recreated
 						case strings.Contains(err, "i/o timeout"):
 							ioErrCount += occurrences
+						// This happens when the testconsumer gets destroyed during a migration
+						case strings.Contains(err, "read: connection reset by peer"):
+							resetErrCount += occurrences
 						default:
 							otherErrors.Add(errors.New(err))
 						}
@@ -111,6 +116,7 @@ var _ = Describe("Migrate instance groups", func() {
 					Expect(timeoutErrCount).To(BeNumerically("<=", OPERATION_TIMEOUT_ERROR_COUNT_THRESHOLD))
 					Expect(norouteErrCount).To(BeNumerically("<=", NO_ROUTE_ERROR_COUNT_THRESHOLD))
 					Expect(ioErrCount).To(BeNumerically("<=", IO_TIMEOUT_ERROR_COUNT_THRESHOLD))
+					Expect(resetErrCount).To(BeNumerically("<=", RESET_ERROR_COUNT_THRESHOLD))
 				}
 			})
 		})
