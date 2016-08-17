@@ -1,7 +1,8 @@
 #!/bin/bash -exu
 
 LOG_DIR=/var/vcap/sys/log/consul_agent
-DATA_DIR=/var/vcap/store/consul_agent
+DATA_DIR=<%= p('consul.agent.mode') == 'server' ? '/var/vcap/store/consul_agent' :
+  '/var/vcap/data/consul_agent' %>
 CONF_DIR=/var/vcap/jobs/consul_agent/config
 CERT_DIR=$CONF_DIR/certs
 PKG=/var/vcap/packages/consul

@@ -39,7 +39,8 @@ var _ = Describe("ConfigWriter", func() {
 			dataDir, err = ioutil.TempDir("", "")
 			Expect(err).NotTo(HaveOccurred())
 
-			cfg = config.Default()
+			cfg = config.Config{}
+			cfg.Consul.Agent.DnsConfig.MaxStale = "5s"
 			cfg.Node = config.ConfigNode{Name: "node", Index: 0}
 			cfg.Path.ConsulConfigDir = configDir
 			cfg.Path.DataDir = dataDir

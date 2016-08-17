@@ -41,7 +41,7 @@ var _ = Describe("Controller", func() {
 
 		serviceDefiner = &fakes.ServiceDefiner{}
 
-		confabConfig := config.Default()
+		confabConfig := config.Config{}
 		confabConfig.Node = config.ConfigNode{Name: "node", Index: 0}
 
 		controller = chaperon.Controller{

@@ -63,7 +63,9 @@ var _ = Describe("ConsulConfigDefiner", func() {
 
 		Describe("dns_config", func() {
 			It("defaults to consul defaults", func() {
-				Expect(config.Default().Consul.Agent.DnsConfig).To(Equal(config.ConfigConsulAgentDnsConfig{
+				cfg := config.Config{}
+				cfg.Consul.Agent.DnsConfig.MaxStale = "5s"
+				Expect(cfg.Consul.Agent.DnsConfig).To(Equal(config.ConfigConsulAgentDnsConfig{
 					// https://www.consul.io/docs/agent/options.html#allow_stale
 					AllowStale: false,
 					// https://www.consul.io/docs/agent/options.html#max_stale

@@ -53,14 +53,12 @@ type ConfigConsulAgentServers struct {
 	WAN []string `json:"wan"`
 }
 
-func Default() Config {
+func defaultConfig() Config {
 	return Config{
 		Path: ConfigPath{
 			AgentPath:       "/var/vcap/packages/consul/bin/consul",
 			ConsulConfigDir: "/var/vcap/jobs/consul_agent/config",
 			PIDFile:         "/var/vcap/sys/run/consul_agent/consul_agent.pid",
-			KeyringFile:     "/var/vcap/store/consul_agent/serf/local.keyring",
-			DataDir:         "/var/vcap/store/consul_agent",
 		},
 		Consul: ConfigConsul{
 			Agent: ConfigConsulAgent{
@@ -81,10 +79,28 @@ func Default() Config {
 }
 
 func ConfigFromJSON(configData []byte) (Config, error) {
-	config := Default()
+	config := defaultConfig()
+
 	if err := json.Unmarshal(configData, &config); err != nil {
 		return Config{}, err
 	}
 
+	if config.Path.KeyringFile == "" {
+		if config.Consul.Agent.Mode == "server" {
+			config.Path.KeyringFile = "/var/vcap/store/consul_agent/serf/local.keyring"
+		} else {
+			config.Path.KeyringFile = "/var/vcap/data/consul_agent/serf/local.keyring"
+		}
+	}
+
+	if config.Path.DataDir == "" {
+		if config.Consul.Agent.Mode == "server" {
+			config.Path.DataDir = "/var/vcap/store/consul_agent"
+		} else {
+			config.Path.DataDir = "/var/vcap/data/consul_agent"
+		}
+	}
+
 	return config, nil
+
 }
