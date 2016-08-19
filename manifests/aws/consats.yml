@@ -5,46 +5,31 @@ director_uuid: BOSH_DIRECTOR_UUID # REPLACE ME
 
 releases:
 - name: consul
-  version: latest
+  version: CONSUL_RELEASE_VERSION # REPLACE ME
 
-jobs:
+stemcells:
+- alias: default
+  os: ubuntu-trusty
+  version: STEMCELL_VERSION # REPLACE ME
+
+instance_groups:
 - name: acceptance-tests
   instances: 1
   lifecycle: errand
-  resource_pool: consats
+  azs: [BOSH_ERRAND_CLOUD_CONFIG_NETWORK_AZ] # REPLACE ME
+  vm_type: m3.medium
+  vm_extensions: [10GB_ephemeral_disk]
+  stemcell: default
   networks:
-  - name: consats
-  templates:
+  - name: BOSH_ERRAND_CLOUD_CONFIG_NETWORK_NAME # REPLACE ME
+    static_ips: [BOSH_ERRAND_CLOUD_CONFIG_NETWORK_STATIC_IP] # REPLACE ME
+  jobs:
   - name: acceptance-tests
     release: consul
-
-compilation:
-  workers: 3
-  network: consats
-  reuse_compilation_vms: true
-  cloud_properties:
-    availability_zone: AWS_AVAILABILITY_ZONE # REPLACE ME
-    ephemeral_disk:
-      size: 10240
-      type: gp2
-    instance_type: c3.large
-
-networks:
-- name: consats
-  type: manual
-  subnets:
-  - cloud_properties:
-      subnet: AWS_SUBNET_ID # REPLACE ME
-    gateway: 10.0.4.1
-    range: 10.0.4.0/24
-    reserved:
-    - 10.0.4.2-10.0.4.240
-    static: []
 
 properties:
   consul:
     acceptance_tests:
-      consul_release_version: latest # REPLACE ME
       aws:
         access_key_id: AWS_ACCESS_KEY_ID # REPLACE ME
         secret_access_key: AWS_SECRET_ACCESS_KEY # REPLACE ME
@@ -56,29 +41,24 @@ properties:
         - id: AWS_SUBNET_ID # REPLACE ME
           range: AWS_SUBNET_RANGE # REPLACE ME
           az: AWS_SUBNET_AZ # REPLACE ME
+          security_group: AWS_SUBNET_SECURITY_GROUP # REPLACE ME
       bosh:
-        target: BOSH_TARGET # REPLACE ME
-        username: BOSH_USERNAME # REPLACE ME
+        target: BOSH_DIRECTOR # REPLACE ME
+        username: BOSH_USER # REPLACE ME
         password: BOSH_PASSWORD # REPLACE ME
         director_ca_cert: BOSH_DIRECTOR_CA_CERT # REPLACE ME
+        errand:
+         network:
+           name: BOSH_ERRAND_CLOUD_CONFIG_NETWORK_NAME # REPLACE ME
+           static_ip: BOSH_ERRAND_CLOUD_CONFIG_NETWORK_STATIC_IP # REPLACE ME
+           az: BOSH_ERRAND_CLOUD_CONFIG_NETWORK_AZ # REPLACE ME
       registry:
         username: REGISTRY_USERNAME # REPLACE ME
         password: REGISTRY_PASSWORD # REPLACE ME
-        host: 10.0.0.6
+        host: REGISTRY_HOST # REPLACE ME
         port: 25777
-
-resource_pools:
-- name: consats
-  network: consats
-  stemcell:
-    name: bosh-aws-xen-hvm-ubuntu-trusty-go_agent
-    version: latest
-  cloud_properties:
-    availability_zone: AWS_AVAILABILITY_ZONE # REPLACE ME
-    ephemeral_disk:
-      size: 10240
-      type: gp2
-    instance_type: m3.medium
+      parallel_nodes: 1
+      consul_release_version: CONSUL_RELEASE_VERSION # REPLACE ME
 
 update:
   serial: true
