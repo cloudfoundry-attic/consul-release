@@ -2,11 +2,11 @@ package chaperon_test
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"runtime"
 
 	"code.cloudfoundry.org/lager"
 
@@ -59,9 +59,9 @@ var _ = Describe("ConfigWriter", func() {
 				"server":     false,
 				"domain":     "",
 				"datacenter": "",
-				"data_dir": dataDir,
-				"log_level": "",
-				"node_name": "node-0",
+				"data_dir":   dataDir,
+				"log_level":  "",
+				"node_name":  "node-0",
 				"ports": map[string]interface{}{
 					"dns": 53,
 				},
@@ -79,9 +79,9 @@ var _ = Describe("ConfigWriter", func() {
 				"key_file":               filepath.Join(configDir, "certs", "agent.key"),
 				"cert_file":              filepath.Join(configDir, "certs", "agent.crt"),
 				"dns_config": map[string]interface{}{
-				  "allow_stale": false,
-				  "max_stale": "5s"
-				}
+					"allow_stale": false,
+					"max_stale":   "5s",
+				},
 			}
 			body, err := json.Marshal(conf)
 			Expect(err).To(BeNil())
@@ -164,19 +164,20 @@ var _ = Describe("ConfigWriter", func() {
 					cfg.Path.DataDir = "/some/fake/path"
 					writer.Write(cfg)
 
-					Expect(logger.Messages()).To(ContainSequence([]fakes.LoggerMessage{
-						{
-							Action: "config-writer.write.determine-node-name.failed",
-							Error:  errors.New("stat /some/fake/path: no such file or directory"),
-						},
-					}))
+					var expected fakes.LoggerMessage
+					for _, msg := range logger.Messages() {
+						if msg.Action == "config-writer.write.determine-node-name.failed" {
+							expected = msg
+						}
+					}
+					Expect(expected.Error).To(BeAnOsIsNotExistError())
 				})
 
 				It("returns an error when the data dir does not exist", func() {
 					cfg.Path.DataDir = "/some/fake/path"
 
 					err := writer.Write(cfg)
-					Expect(err).To(MatchError("stat /some/fake/path: no such file or directory"))
+					Expect(err).To(BeAnOsIsNotExistError())
 				})
 
 				It("returns an error when node-name.json has malformed json", func() {
@@ -189,6 +190,9 @@ var _ = Describe("ConfigWriter", func() {
 				})
 
 				It("returns an error when node-name.json cannot be written to", func() {
+					if runtime.GOOS == "windows" {
+						Skip("Test doesn't work on Windows")
+					}
 					err := os.Chmod(dataDir, 0555)
 					Expect(err).NotTo(HaveOccurred())
 
@@ -197,6 +201,9 @@ var _ = Describe("ConfigWriter", func() {
 				})
 
 				It("returns an error when node-name.json cannot be read", func() {
+					if runtime.GOOS == "windows" {
+						Skip("Test doesn't work on Windows")
+					}
 					err := ioutil.WriteFile(filepath.Join(dataDir, "node-name.json"),
 						[]byte(`%%%%%`), 0)
 					Expect(err).NotTo(HaveOccurred())

@@ -677,7 +677,7 @@ var _ = Describe("ServiceDefiner", func() {
 					ContainSubstring("The system cannot find the path specified."),
 				)))
 
-				Expect(logger.Messages).To(ContainSequence([]fakes.LoggerMessage{
+				Expect(logger.Messages()).To(ContainSequence([]fakes.LoggerMessage{
 					{
 						Action: "service-definer.write-definitions.write",
 						Data: []lager.Data{{
@@ -727,7 +727,7 @@ var _ = Describe("ServiceDefiner", func() {
 				Expect(err).To(MatchError(ContainSubstring(errMsg)))
 
 				errPath := filepath.Join(tempDir, "service-cloud_controller.json")
-				Expect(logger.Messages).To(ContainSequence([]fakes.LoggerMessage{
+				Expect(logger.Messages()).To(ContainSequence([]fakes.LoggerMessage{
 					{
 						Action: "service-definer.write-definitions.write",
 						Data: []lager.Data{{

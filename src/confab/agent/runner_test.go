@@ -89,7 +89,7 @@ var _ = Describe("Runner", func() {
 			It("returns the error", func() {
 				err := runner.Cleanup()
 				Expect(err).To(BeAnOsIsNotExistError())
-				Expect(logger.Messages).To(ContainSequence([]fakes.LoggerMessage{
+				Expect(logger.Messages()).To(ContainSequence([]fakes.LoggerMessage{
 					{
 						Action: "agent-runner.cleanup.remove",
 						Data: []lager.Data{{
@@ -160,7 +160,7 @@ var _ = Describe("Runner", func() {
 				runner.PIDFile = "/tmp/nope-i-do-not-exist"
 				err := runner.Stop()
 				Expect(err).To(BeAnOsIsNotExistError())
-				Expect(logger.Messages).To(ContainSequence([]fakes.LoggerMessage{
+				Expect(logger.Messages()).To(ContainSequence([]fakes.LoggerMessage{
 					{
 						Action: "agent-runner.stop.get-process",
 					},
@@ -260,7 +260,7 @@ var _ = Describe("Runner", func() {
 				runner.PIDFile = "/tmp/nope-i-do-not-exist"
 				err := runner.Wait()
 				Expect(err).To(BeAnOsIsNotExistError())
-				Expect(logger.Messages).To(ContainSequence([]fakes.LoggerMessage{
+				Expect(logger.Messages()).To(ContainSequence([]fakes.LoggerMessage{
 					{
 						Action: "agent-runner.wait.get-process",
 					},

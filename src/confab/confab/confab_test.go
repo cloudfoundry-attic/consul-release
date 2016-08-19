@@ -193,9 +193,9 @@ var _ = Describe("confab", func() {
 				"server":     false,
 				"domain":     "some-domain",
 				"datacenter": "dc1",
-				"data_dir": dataDir,
-				"log_level": "debug",
-				"node_name": "my-node-3",
+				"data_dir":   dataDir,
+				"log_level":  "debug",
+				"node_name":  "my-node-3",
 				"ports": map[string]interface{}{
 					"dns": 53,
 				},
@@ -222,9 +222,9 @@ var _ = Describe("confab", func() {
 				"cert_file":              filepath.Join(consulConfigDir, "certs", "agent.crt"),
 				"encrypt":                "enqzXBmgKOy13WIGsmUk+g==",
 				"dns_config": map[string]interface{}{
-				  "allow_stale": false,
-				  "max_stale": "5s"
-				}
+					"allow_stale": false,
+					"max_stale":   "5s",
+				},
 			}
 			body, err := json.Marshal(conf)
 			Expect(err).To(BeNil())
