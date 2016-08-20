@@ -33,9 +33,10 @@ type ConfigAWS struct {
 }
 
 type ConfigSubnet struct {
-	ID    string `json:"id"`
-	Range string `json:"range"`
-	AZ    string `json:"az"`
+	ID            string `json:"id"`
+	Range         string `json:"range"`
+	AZ            string `json:"az"`
+	SecurityGroup string `json:"security_group"`
 }
 
 type ConfigRegistry struct {

@@ -58,7 +58,7 @@ func deployConsul(count int, client bosh.Client, config Config, releaseVersion s
 				return
 			}
 
-			awsConfig.Subnets = append(awsConfig.Subnets, iaas.AWSConfigSubnet{ID: subnet.ID, Range: cidrBlock, AZ: subnet.AZ})
+			awsConfig.Subnets = append(awsConfig.Subnets, iaas.AWSConfigSubnet{ID: subnet.ID, Range: cidrBlock, AZ: subnet.AZ, SecurityGroup: subnet.SecurityGroup})
 			manifestConfig.Networks = append(manifestConfig.Networks, consul.ConfigNetwork{IPRange: cidrBlock, Nodes: count})
 		} else {
 			err = errors.New("AWSSubnet is required for AWS IAAS deployment")
@@ -157,7 +157,7 @@ func DeployMultiAZConsul(client bosh.Client, config Config) (manifest consul.Man
 				return
 			}
 
-			awsConfig.Subnets = append(awsConfig.Subnets, iaas.AWSConfigSubnet{ID: subnet.ID, Range: cidrBlock, AZ: subnet.AZ})
+			awsConfig.Subnets = append(awsConfig.Subnets, iaas.AWSConfigSubnet{ID: subnet.ID, Range: cidrBlock, AZ: subnet.AZ, SecurityGroup: subnet.SecurityGroup})
 			manifestConfig.Networks = append(manifestConfig.Networks, consul.ConfigNetwork{IPRange: cidrBlock, Nodes: 2})
 
 			subnet = config.AWS.Subnets[1]
@@ -168,7 +168,7 @@ func DeployMultiAZConsul(client bosh.Client, config Config) (manifest consul.Man
 				return
 			}
 
-			awsConfig.Subnets = append(awsConfig.Subnets, iaas.AWSConfigSubnet{ID: subnet.ID, Range: cidrBlock, AZ: subnet.AZ})
+			awsConfig.Subnets = append(awsConfig.Subnets, iaas.AWSConfigSubnet{ID: subnet.ID, Range: cidrBlock, AZ: subnet.AZ, SecurityGroup: subnet.SecurityGroup})
 			manifestConfig.Networks = append(manifestConfig.Networks, consul.ConfigNetwork{IPRange: cidrBlock, Nodes: 1})
 		} else {
 			err = errors.New("AWSSubnet is required for AWS IAAS deployment")
@@ -266,7 +266,7 @@ func DeployMultiAZConsulMigration(client bosh.Client, config Config, deploymentN
 				return consul.ManifestV2{}, err
 			}
 
-			awsConfig.Subnets = append(awsConfig.Subnets, iaas.AWSConfigSubnet{ID: subnet.ID, Range: cidrBlock, AZ: subnet.AZ})
+			awsConfig.Subnets = append(awsConfig.Subnets, iaas.AWSConfigSubnet{ID: subnet.ID, Range: cidrBlock, AZ: subnet.AZ, SecurityGroup: subnet.SecurityGroup})
 			manifestConfig.AZs = append(manifestConfig.AZs, consul.ConfigAZ{Name: "z1", IPRange: cidrBlock, Nodes: 2})
 
 			subnet = config.AWS.Subnets[1]
@@ -277,7 +277,7 @@ func DeployMultiAZConsulMigration(client bosh.Client, config Config, deploymentN
 				return consul.ManifestV2{}, err
 			}
 
-			awsConfig.Subnets = append(awsConfig.Subnets, iaas.AWSConfigSubnet{ID: subnet.ID, Range: cidrBlock, AZ: subnet.AZ})
+			awsConfig.Subnets = append(awsConfig.Subnets, iaas.AWSConfigSubnet{ID: subnet.ID, Range: cidrBlock, AZ: subnet.AZ, SecurityGroup: subnet.SecurityGroup})
 			manifestConfig.AZs = append(manifestConfig.AZs, consul.ConfigAZ{Name: "z2", IPRange: cidrBlock, Nodes: 1})
 		} else {
 			return consul.ManifestV2{}, errors.New("AWSSubnet is required for AWS IAAS deployment")
