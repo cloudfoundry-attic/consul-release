@@ -3,6 +3,7 @@ package helpers
 import (
 	"errors"
 	"fmt"
+	"log"
 
 	"github.com/cloudfoundry-incubator/consul-release/src/acceptance-tests/testing/consulclient"
 	"github.com/pivotal-cf-experimental/bosh-test/bosh"
@@ -113,6 +114,7 @@ func deployConsul(count int, client bosh.Client, config Config, releaseVersion s
 		return
 	}
 
+	log.Printf("Deploying %s\n", manifestConfig.Name)
 	_, err = client.Deploy(yaml)
 	if err != nil {
 		return
