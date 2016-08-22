@@ -8,8 +8,9 @@ import (
 	"os"
 	"os/exec"
 	"strconv"
+	"sync"
+	"sync/atomic"
 	"syscall"
-	"time"
 
 	"code.cloudfoundry.org/lager"
 )
@@ -23,6 +24,8 @@ type Runner struct {
 	Recursors []string
 	Logger    logger
 	cmd       *exec.Cmd
+	wg        sync.WaitGroup
+	exited    int32
 }
 
 func (r *Runner) Run() error {
@@ -58,11 +61,18 @@ func (r *Runner) Run() error {
 		return err
 	}
 
-	go r.cmd.Wait() // reap child process if it dies
+	r.wg.Add(1)
+	go func() {
+		r.cmd.Wait()
+		atomic.StoreInt32(&r.exited, 1)
+		r.wg.Done()
+	}()
 
 	r.Logger.Info("agent-runner.run.success")
 	return nil
 }
+
+func (r *Runner) Exited() bool { return atomic.LoadInt32(&r.exited) == 1 }
 
 func (r *Runner) WritePID() error {
 	r.Logger.Info("agent-runner.run.write-pidfile", lager.Data{
@@ -122,15 +132,7 @@ func (r *Runner) Wait() error {
 		"pid": process.Pid,
 	})
 
-	for {
-		err = process.Signal(syscall.Signal(0))
-		if err == nil {
-			time.Sleep(10 * time.Millisecond)
-			continue
-		}
-
-		break
-	}
+	r.wg.Wait()
 
 	r.Logger.Info("agent-runner.wait.success")
 	return nil
@@ -169,8 +171,7 @@ func (r *Runner) Cleanup() error {
 	})
 
 	if err := os.Remove(r.PIDFile); err != nil {
-		err = errors.New(err.Error())
-		r.Logger.Error("agent-runner.cleanup.remove.failed", err, lager.Data{
+		r.Logger.Error("agent-runner.cleanup.remove.failed", errors.New(err.Error()), lager.Data{
 			"pidfile": r.PIDFile,
 		})
 		return err

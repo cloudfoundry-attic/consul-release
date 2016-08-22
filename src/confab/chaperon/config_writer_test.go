@@ -2,11 +2,11 @@ package chaperon_test
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"runtime"
 
 	"code.cloudfoundry.org/lager"
 
@@ -54,34 +54,38 @@ var _ = Describe("ConfigWriter", func() {
 
 			buf, err := ioutil.ReadFile(filepath.Join(configDir, "config.json"))
 			Expect(err).NotTo(HaveOccurred())
-			Expect(buf).To(MatchJSON(fmt.Sprintf(`{
-				"server": false,
-				"domain": "",
+
+			conf := map[string]interface{}{
+				"server":     false,
+				"domain":     "",
 				"datacenter": "",
-				"data_dir": %q,
-				"log_level": "",
-				"node_name": "node-0",
-				"ports": {
-					"dns": 53
+				"data_dir":   dataDir,
+				"log_level":  "",
+				"node_name":  "node-0",
+				"ports": map[string]interface{}{
+					"dns": 53,
 				},
-				"rejoin_after_leave": true,
-				"retry_join": [],
-				"retry_join_wan": [],
-				"bind_addr": "",
-				"disable_remote_exec": true,
-				"disable_update_check": true,
-				"protocol": 0,
-				"verify_outgoing": true,
-				"verify_incoming": true,
+				"rejoin_after_leave":     true,
+				"retry_join":             []string{},
+				"retry_join_wan":         []string{},
+				"bind_addr":              "",
+				"disable_remote_exec":    true,
+				"disable_update_check":   true,
+				"protocol":               0,
+				"verify_outgoing":        true,
+				"verify_incoming":        true,
 				"verify_server_hostname": true,
-				"ca_file": "%[2]s/certs/ca.crt",
-				"key_file": "%[2]s/certs/agent.key",
-				"cert_file": "%[2]s/certs/agent.crt",
-				"dns_config": {
-				  "allow_stale": false,
-				  "max_stale": "5s"
-				}
-			}`, dataDir, configDir)))
+				"ca_file":                filepath.Join(configDir, "certs", "ca.crt"),
+				"key_file":               filepath.Join(configDir, "certs", "agent.key"),
+				"cert_file":              filepath.Join(configDir, "certs", "agent.crt"),
+				"dns_config": map[string]interface{}{
+					"allow_stale": false,
+					"max_stale":   "5s",
+				},
+			}
+			body, err := json.Marshal(conf)
+			Expect(err).To(BeNil())
+			Expect(buf).To(MatchJSON(body))
 
 			Expect(logger.Messages()).To(ContainSequence([]fakes.LoggerMessage{
 				{
@@ -160,19 +164,20 @@ var _ = Describe("ConfigWriter", func() {
 					cfg.Path.DataDir = "/some/fake/path"
 					writer.Write(cfg)
 
-					Expect(logger.Messages()).To(ContainSequence([]fakes.LoggerMessage{
-						{
-							Action: "config-writer.write.determine-node-name.failed",
-							Error:  errors.New("stat /some/fake/path: no such file or directory"),
-						},
-					}))
+					var expected fakes.LoggerMessage
+					for _, msg := range logger.Messages() {
+						if msg.Action == "config-writer.write.determine-node-name.failed" {
+							expected = msg
+						}
+					}
+					Expect(expected.Error).To(BeAnOsIsNotExistError())
 				})
 
 				It("returns an error when the data dir does not exist", func() {
 					cfg.Path.DataDir = "/some/fake/path"
 
 					err := writer.Write(cfg)
-					Expect(err).To(MatchError("stat /some/fake/path: no such file or directory"))
+					Expect(err).To(BeAnOsIsNotExistError())
 				})
 
 				It("returns an error when node-name.json has malformed json", func() {
@@ -185,6 +190,9 @@ var _ = Describe("ConfigWriter", func() {
 				})
 
 				It("returns an error when node-name.json cannot be written to", func() {
+					if runtime.GOOS == "windows" {
+						Skip("Test doesn't work on Windows")
+					}
 					err := os.Chmod(dataDir, 0555)
 					Expect(err).NotTo(HaveOccurred())
 
@@ -193,6 +201,9 @@ var _ = Describe("ConfigWriter", func() {
 				})
 
 				It("returns an error when node-name.json cannot be read", func() {
+					if runtime.GOOS == "windows" {
+						Skip("Test doesn't work on Windows")
+					}
 					err := ioutil.WriteFile(filepath.Join(dataDir, "node-name.json"),
 						[]byte(`%%%%%`), 0)
 					Expect(err).NotTo(HaveOccurred())
@@ -205,11 +216,11 @@ var _ = Describe("ConfigWriter", func() {
 
 		Context("failure cases", func() {
 			It("returns an error when the config file can't be written to", func() {
-				err := os.Chmod(configDir, 0000)
-				Expect(err).NotTo(HaveOccurred())
+				configFile := filepath.Join(configDir, "config.json")
+				Expect(os.Mkdir(configFile, os.ModeDir)).To(Succeed())
 
-				err = writer.Write(cfg)
-				Expect(err).To(MatchError(ContainSubstring("permission denied")))
+				err := writer.Write(cfg)
+				Expect(err).To(MatchError(ContainSubstring("is a directory")))
 
 				Expect(logger.Messages()).To(ContainSequence([]fakes.LoggerMessage{
 					{
@@ -223,7 +234,7 @@ var _ = Describe("ConfigWriter", func() {
 					},
 					{
 						Action: "config-writer.write.write-file.failed",
-						Error:  fmt.Errorf("open %s: permission denied", filepath.Join(configDir, "config.json")),
+						Error:  fmt.Errorf("open %s: is a directory", filepath.Join(configDir, "config.json")),
 					},
 				}))
 			})

@@ -2,6 +2,7 @@ package main_test
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net"
@@ -10,11 +11,14 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/cloudfoundry-incubator/consul-release/src/confab/utils"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
 
-const COMMAND_TIMEOUT = "15s"
+const COMMAND_TIMEOUT = time.Second * 15
+const POLL_INTERVAL = time.Millisecond * 250
 
 var _ = Describe("confab", func() {
 	var (
@@ -38,6 +42,8 @@ var _ = Describe("confab", func() {
 
 		pidFile, err = ioutil.TempFile(tempDir, "fake-pid-file")
 		Expect(err).NotTo(HaveOccurred())
+
+		Expect(pidFile.Close()).To(Succeed())
 
 		err = os.Remove(pidFile.Name())
 		Expect(err).NotTo(HaveOccurred())
@@ -122,7 +128,7 @@ var _ = Describe("confab", func() {
 
 			pid, err := getPID(pidFile.Name())
 			Expect(err).NotTo(HaveOccurred())
-			Expect(isPIDRunning(pid)).To(BeTrue())
+			Expect(utils.IsPIDRunning(pid)).To(BeTrue())
 
 			stop := exec.Command(pathToConfab,
 				"stop",
@@ -130,8 +136,9 @@ var _ = Describe("confab", func() {
 			)
 			Eventually(stop.Run, COMMAND_TIMEOUT, COMMAND_TIMEOUT).Should(Succeed())
 
-			_, err = isPIDRunning(pid)
-			Expect(err).To(MatchError(ContainSubstring("process already finished")))
+			Eventually(func() bool {
+				return utils.IsPIDRunning(pid)
+			}, COMMAND_TIMEOUT, time.Millisecond*250).Should(BeFalse())
 
 			Expect(fakeAgentOutput(consulConfigDir)).To(Equal(FakeAgentOutputData{
 				PID: pid,
@@ -181,43 +188,47 @@ var _ = Describe("confab", func() {
 
 			consulConfig, err := ioutil.ReadFile(filepath.Join(consulConfigDir, "config.json"))
 			Expect(err).NotTo(HaveOccurred())
-			Expect(string(consulConfig)).To(MatchJSON(fmt.Sprintf(`{
-				"server": false,
-				"domain": "some-domain",
+
+			conf := map[string]interface{}{
+				"server":     false,
+				"domain":     "some-domain",
 				"datacenter": "dc1",
-				"data_dir": %q,
-				"log_level": "debug",
-				"node_name": "my-node-3",
-				"ports": {
-					"dns": 53
+				"data_dir":   dataDir,
+				"log_level":  "debug",
+				"node_name":  "my-node-3",
+				"ports": map[string]interface{}{
+					"dns": 53,
 				},
 				"rejoin_after_leave": true,
-				"retry_join": [
+				"retry_join": []string{
 					"member-1",
 					"member-2",
-					"member-3"
-				],
-				"retry_join_wan": [
+					"member-3",
+				},
+				"retry_join_wan": []string{
 					"wan-member-1",
 					"wan-member-2",
-					"wan-member-3"
-				],
-				"bind_addr": "10.0.0.1",
-				"disable_remote_exec": true,
-				"disable_update_check": true,
-				"protocol": 0,
-				"verify_outgoing": true,
-				"verify_incoming": true,
+					"wan-member-3",
+				},
+				"bind_addr":              "10.0.0.1",
+				"disable_remote_exec":    true,
+				"disable_update_check":   true,
+				"protocol":               0,
+				"verify_outgoing":        true,
+				"verify_incoming":        true,
 				"verify_server_hostname": true,
-				"ca_file": "%[2]s/certs/ca.crt",
-				"key_file": "%[2]s/certs/agent.key",
-				"cert_file": "%[2]s/certs/agent.crt",
-				"encrypt": "enqzXBmgKOy13WIGsmUk+g==",
-				"dns_config": {
+				"ca_file":                filepath.Join(consulConfigDir, "certs", "ca.crt"),
+				"key_file":               filepath.Join(consulConfigDir, "certs", "agent.key"),
+				"cert_file":              filepath.Join(consulConfigDir, "certs", "agent.crt"),
+				"encrypt":                "enqzXBmgKOy13WIGsmUk+g==",
+				"dns_config": map[string]interface{}{
 					"allow_stale": false,
-					"max_stale": "5s"
-				}
-			}`, dataDir, consulConfigDir)))
+					"max_stale":   "5s",
+				},
+			}
+			body, err := json.Marshal(conf)
+			Expect(err).To(BeNil())
+			Expect(string(consulConfig)).To(MatchJSON(body))
 		})
 	})
 
@@ -257,7 +268,7 @@ var _ = Describe("confab", func() {
 
 				pid, err := getPID(pidFile.Name())
 				Expect(err).NotTo(HaveOccurred())
-				Expect(isPIDRunning(pid)).To(BeTrue())
+				Expect(utils.IsPIDRunning(pid)).To(BeTrue())
 
 				Expect(fakeAgentOutput(consulConfigDir)).To(Equal(FakeAgentOutputData{
 					PID: pid,
@@ -305,7 +316,7 @@ var _ = Describe("confab", func() {
 
 				pid, err := getPID(pidFile.Name())
 				Expect(err).NotTo(HaveOccurred())
-				Expect(isPIDRunning(pid)).To(BeTrue())
+				Expect(utils.IsPIDRunning(pid)).To(BeTrue())
 
 				Eventually(func() (FakeAgentOutputData, error) {
 					return fakeAgentOutput(consulConfigDir)
@@ -322,6 +333,12 @@ var _ = Describe("confab", func() {
 			})
 
 			It("checks sync state up to the timeout", func() {
+				if Windows {
+					// On Windows the timeout works, but due to the
+					// overhead of shelling out the elapsed time
+					// regularly exceeds the 1 second tolerance.
+					Skip("Flaky on Windows due to the overhead of shelling out")
+				}
 				writeConfigurationFile(configFile.Name(), map[string]interface{}{
 					"path": map[string]interface{}{
 						"agent_path":        pathToFakeAgent,
@@ -393,6 +410,7 @@ var _ = Describe("confab", func() {
 				"--config-file", configFile.Name(),
 			)
 			Eventually(cmd.Run, COMMAND_TIMEOUT, COMMAND_TIMEOUT).Should(Succeed())
+
 			Eventually(func() error {
 				conn, err := net.Dial("tcp", "localhost:8400")
 				if err == nil {
@@ -411,10 +429,12 @@ var _ = Describe("confab", func() {
 			Eventually(cmd.Run, COMMAND_TIMEOUT, COMMAND_TIMEOUT).Should(Succeed())
 
 			Eventually(func() bool {
-				return pidIsForRunningProcess(pidFile.Name())
+				return utils.IsRunningProcess(pidFile.Name())
 			}, "5s").Should(BeFalse())
 
-			Expect(fakeAgentOutput(consulConfigDir)).To(Equal(FakeAgentOutputData{
+			Eventually(func() (FakeAgentOutputData, error) {
+				return fakeAgentOutput(consulConfigDir)
+			}, COMMAND_TIMEOUT, POLL_INTERVAL).Should(Equal(FakeAgentOutputData{
 				PID: pid,
 				Args: []string{
 					"agent",
@@ -629,7 +649,7 @@ var _ = Describe("confab", func() {
 
 				pid, err := getPID(pidFile.Name())
 				Expect(err).NotTo(HaveOccurred())
-				Expect(isPIDRunning(pid)).To(BeTrue())
+				Expect(utils.IsPIDRunning(pid)).To(BeTrue())
 			})
 		})
 
@@ -670,7 +690,10 @@ var _ = Describe("confab", func() {
 				cmd.Stderr = buffer
 				Eventually(cmd.Run, COMMAND_TIMEOUT, COMMAND_TIMEOUT).ShouldNot(Succeed())
 				Expect(buffer).To(ContainSubstring("error during start"))
-				Expect(buffer).To(ContainSubstring("connection refused"))
+				Expect(buffer).To(Or(
+					ContainSubstring("connection refused"),
+					ContainSubstring("No connection could be made"), // Windows
+				))
 			})
 		})
 
@@ -695,7 +718,10 @@ var _ = Describe("confab", func() {
 				buffer := bytes.NewBuffer([]byte{})
 				cmd.Stderr = buffer
 				Eventually(cmd.Run, COMMAND_TIMEOUT, COMMAND_TIMEOUT).ShouldNot(Succeed())
-				Expect(buffer).To(ContainSubstring("no such file or directory"))
+				Expect(buffer).To(Or(
+					ContainSubstring("no such file or directory"),
+					ContainSubstring("The system cannot find the file specified"), // Windows
+				))
 			})
 		})
 
@@ -703,6 +729,7 @@ var _ = Describe("confab", func() {
 			It("returns an error and exits with status 1", func() {
 				tmpFile, err := ioutil.TempFile(tempDir, "config")
 				Expect(err).NotTo(HaveOccurred())
+				defer tmpFile.Close()
 
 				_, err = tmpFile.Write([]byte(`%%%%%%%%%`))
 				Expect(err).NotTo(HaveOccurred())
@@ -748,6 +775,9 @@ var _ = Describe("confab", func() {
 			})
 
 			It("returns an error and exits with status 1", func() {
+				if Windows {
+					Skip("Not implemented on Windows")
+				}
 				err := os.Chmod(consulConfigDir, 0000)
 				Expect(err).NotTo(HaveOccurred())
 

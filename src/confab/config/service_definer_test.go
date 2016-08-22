@@ -1,10 +1,10 @@
 package config_test
 
 import (
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 
 	"code.cloudfoundry.org/lager"
 
@@ -493,25 +493,25 @@ var _ = Describe("ServiceDefiner", func() {
 				{
 					Action: "service-definer.write-definitions.write",
 					Data: []lager.Data{{
-						"path": fmt.Sprintf("%s/service-cloud_controller.json", tempDir),
+						"path": filepath.Join(tempDir, "service-cloud_controller.json"),
 					}},
 				},
 				{
 					Action: "service-definer.write-definitions.write.success",
 					Data: []lager.Data{{
-						"path": fmt.Sprintf("%s/service-cloud_controller.json", tempDir),
+						"path": filepath.Join(tempDir, "service-cloud_controller.json"),
 					}},
 				},
 				{
 					Action: "service-definer.write-definitions.write",
 					Data: []lager.Data{{
-						"path": fmt.Sprintf("%s/service-api.json", tempDir),
+						"path": filepath.Join(tempDir, "service-api.json"),
 					}},
 				},
 				{
 					Action: "service-definer.write-definitions.write.success",
 					Data: []lager.Data{{
-						"path": fmt.Sprintf("%s/service-api.json", tempDir),
+						"path": filepath.Join(tempDir, "service-api.json"),
 					}},
 				},
 			}))
@@ -657,25 +657,38 @@ var _ = Describe("ServiceDefiner", func() {
 
 		Context("failure cases", func() {
 			It("errors when the file cannot be created", func() {
-				err := definer.WriteDefinitions("/some/random/path", []config.ServiceDefinition{
+				const RandomPath = "/some/random/path"
+				var errFmt string
+				if Windows {
+					errFmt = "open %s: The system cannot find the path specified."
+				} else {
+					errFmt = "open %s: no such file or directory"
+				}
+				errMsg := fmt.Errorf(errFmt, filepath.Join(RandomPath, "service-cloud_controller.json"))
+
+				err := definer.WriteDefinitions(RandomPath, []config.ServiceDefinition{
 					{
 						ServiceName: "cloud_controller",
 					},
 				})
 
-				Expect(err).To(MatchError(ContainSubstring("no such file or directory")))
+				Expect(err).To(MatchError(Or(
+					ContainSubstring("no such file or directory"),
+					ContainSubstring("The system cannot find the path specified."),
+				)))
+
 				Expect(logger.Messages()).To(ContainSequence([]fakes.LoggerMessage{
 					{
 						Action: "service-definer.write-definitions.write",
 						Data: []lager.Data{{
-							"path": "/some/random/path/service-cloud_controller.json",
+							"path": filepath.FromSlash("/some/random/path/service-cloud_controller.json"),
 						}},
 					},
 					{
 						Action: "service-definer.write-definitions.write.failed",
-						Error:  errors.New("open /some/random/path/service-cloud_controller.json: no such file or directory"),
+						Error:  errMsg,
 						Data: []lager.Data{{
-							"path": "/some/random/path/service-cloud_controller.json",
+							"path": filepath.FromSlash("/some/random/path/service-cloud_controller.json"),
 						}},
 					},
 				}))
@@ -704,19 +717,28 @@ var _ = Describe("ServiceDefiner", func() {
 					},
 				})
 
-				Expect(err).To(MatchError(ContainSubstring("bad file descriptor")))
+				var errMsg string
+				if Windows {
+					errMsg = "The handle is invalid."
+				} else {
+					errMsg = "bad file descriptor"
+				}
+
+				Expect(err).To(MatchError(ContainSubstring(errMsg)))
+
+				errPath := filepath.Join(tempDir, "service-cloud_controller.json")
 				Expect(logger.Messages()).To(ContainSequence([]fakes.LoggerMessage{
 					{
 						Action: "service-definer.write-definitions.write",
 						Data: []lager.Data{{
-							"path": fmt.Sprintf("%s/service-cloud_controller.json", tempDir),
+							"path": errPath,
 						}},
 					},
 					{
 						Action: "service-definer.write-definitions.write.failed",
-						Error:  fmt.Errorf("write %s/service-cloud_controller.json: bad file descriptor", tempDir),
+						Error:  fmt.Errorf("write %s: %s", errPath, errMsg),
 						Data: []lager.Data{{
-							"path": fmt.Sprintf("%s/service-cloud_controller.json", tempDir),
+							"path": errPath,
 						}},
 					},
 				}))

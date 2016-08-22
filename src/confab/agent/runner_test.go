@@ -7,6 +7,7 @@ import (
 	"math/rand"
 	"os"
 	"path/filepath"
+	"runtime"
 
 	"code.cloudfoundry.org/lager"
 
@@ -20,7 +21,7 @@ import (
 
 var _ = Describe("Runner", func() {
 	var (
-		runner agent.Runner
+		runner *agent.Runner
 		logger *fakes.Logger
 	)
 
@@ -37,7 +38,7 @@ var _ = Describe("Runner", func() {
 
 		logger = &fakes.Logger{}
 
-		runner = agent.Runner{
+		runner = &agent.Runner{
 			Path:      pathToFakeProcess,
 			ConfigDir: configDir,
 			Recursors: []string{"8.8.8.8", "10.0.2.3"},
@@ -56,10 +57,11 @@ var _ = Describe("Runner", func() {
 	Describe("Cleanup", func() {
 		It("deletes the PID file for the consul agent", func() {
 			_, err := os.Stat(runner.PIDFile)
-			Expect(err).To(MatchError(ContainSubstring("no such file or directory")))
+			Expect(err).To(BeAnOsIsNotExistError())
 
-			_, err = os.Create(runner.PIDFile)
+			file, err := os.Create(runner.PIDFile)
 			Expect(err).NotTo(HaveOccurred())
+			file.Close()
 
 			_, err = os.Stat(runner.PIDFile)
 			Expect(err).NotTo(HaveOccurred())
@@ -68,7 +70,7 @@ var _ = Describe("Runner", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			_, err = os.Stat(runner.PIDFile)
-			Expect(err).To(MatchError(ContainSubstring("no such file or directory")))
+			Expect(err).To(BeAnOsIsNotExistError())
 
 			Expect(logger.Messages()).To(ContainSequence([]fakes.LoggerMessage{
 				{
@@ -85,11 +87,8 @@ var _ = Describe("Runner", func() {
 
 		Context("when the PIDFile does not exist", func() {
 			It("returns the error", func() {
-				expectedError := fmt.Errorf("remove %s: no such file or directory", runner.PIDFile)
-
 				err := runner.Cleanup()
-				Expect(err).To(MatchError(expectedError))
-
+				Expect(err).To(BeAnOsIsNotExistError())
 				Expect(logger.Messages()).To(ContainSequence([]fakes.LoggerMessage{
 					{
 						Action: "agent-runner.cleanup.remove",
@@ -99,7 +98,7 @@ var _ = Describe("Runner", func() {
 					},
 					{
 						Action: "agent-runner.cleanup.remove.failed",
-						Error:  expectedError,
+						Error:  errors.New(err.Error()),
 						Data: []lager.Data{{
 							"pidfile": runner.PIDFile,
 						}},
@@ -152,21 +151,22 @@ var _ = Describe("Runner", func() {
 			})
 
 			By("checking that the process no longer exists", func() {
-				Eventually(func() bool { return processIsRunning(runner) }).Should(BeFalse())
+				Eventually(runner.Exited).Should(BeTrue())
 			})
 		})
 
 		Context("when the PID file cannot be read", func() {
 			It("returns an error", func() {
 				runner.PIDFile = "/tmp/nope-i-do-not-exist"
-				Expect(runner.Stop()).To(MatchError(ContainSubstring("no such file or directory")))
+				err := runner.Stop()
+				Expect(err).To(BeAnOsIsNotExistError())
 				Expect(logger.Messages()).To(ContainSequence([]fakes.LoggerMessage{
 					{
 						Action: "agent-runner.stop.get-process",
 					},
 					{
 						Action: "agent-runner.stop.get-process.failed",
-						Error:  errors.New("open /tmp/nope-i-do-not-exist: no such file or directory"),
+						Error:  errors.New(err.Error()),
 					},
 				}))
 			})
@@ -202,15 +202,15 @@ var _ = Describe("Runner", func() {
 				}).Should(Succeed())
 			})
 
-			By("checking that the process is running", func() {
-				Expect(processIsRunning(runner)).To(BeTrue())
+			By("checking that the process has not exited", func() {
+				Expect(runner.Exited()).To(BeFalse())
 			})
 
 			done := make(chan struct{})
 			By("checking that Wait() blocks", func() {
 				go func() {
 					if err := runner.Wait(); err != nil {
-						panic(err)
+						panic(fmt.Sprintf("%#v\n", err))
 					}
 					done <- struct{}{}
 				}()
@@ -249,7 +249,7 @@ var _ = Describe("Runner", func() {
 			})
 
 			By("checking that the process no longer exists", func() {
-				Eventually(func() bool { return processIsRunning(runner) }).Should(BeFalse())
+				Eventually(runner.Exited).Should(BeTrue())
 			})
 
 			Eventually(done).Should(Receive())
@@ -258,14 +258,15 @@ var _ = Describe("Runner", func() {
 		Context("when the PID file cannot be read", func() {
 			It("returns an error", func() {
 				runner.PIDFile = "/tmp/nope-i-do-not-exist"
-				Expect(runner.Wait()).To(MatchError(ContainSubstring("no such file or directory")))
+				err := runner.Wait()
+				Expect(err).To(BeAnOsIsNotExistError())
 				Expect(logger.Messages()).To(ContainSequence([]fakes.LoggerMessage{
 					{
 						Action: "agent-runner.wait.get-process",
 					},
 					{
 						Action: "agent-runner.wait.get-process.failed",
-						Error:  errors.New("open /tmp/nope-i-do-not-exist: no such file or directory"),
+						Error:  errors.New(err.Error()),
 					},
 				}))
 			})
@@ -308,16 +309,22 @@ var _ = Describe("Runner", func() {
 
 			fileInfo, err := os.Stat(runner.PIDFile)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(fileInfo.Mode().Perm()).To(BeEquivalentTo(0644))
+			if runtime.GOOS == "windows" {
+				//Windows doesn't honor unix file permissions
+				Expect(fileInfo.Mode().Perm()).To(BeEquivalentTo(0666))
+			} else {
+				Expect(fileInfo.Mode().Perm()).To(BeEquivalentTo(0644))
+			}
 
 			Expect(runner.Wait()).To(Succeed())
 		})
 
 		Context("when writing the PID file errors", func() {
 			It("returns the error", func() {
-				Expect(ioutil.WriteFile(runner.PIDFile, []byte("some-pid"), 0100)).To(Succeed())
-				Expect(runner.WritePID()).To(MatchError(ContainSubstring("error writing PID file")))
-				Expect(runner.WritePID()).To(MatchError(ContainSubstring("permission denied")))
+				Expect(os.Mkdir(runner.PIDFile, os.ModeDir)).To(Succeed())
+				err := runner.WritePID()
+				Expect(err).To(MatchError(ContainSubstring("error writing PID file")))
+				Expect(runner.WritePID()).To(MatchError(ContainSubstring("is a directory")))
 			})
 		})
 	})
@@ -379,7 +386,7 @@ var _ = Describe("Runner", func() {
 			}()
 			Eventually(done, "1s").Should(Receive())
 
-			Eventually(func() bool { return processIsRunning(runner) }).Should(BeTrue())
+			Expect(runner.Exited()).To(BeFalse())
 
 			err := runner.Stop()
 			Expect(err).NotTo(HaveOccurred())
@@ -402,7 +409,10 @@ var _ = Describe("Runner", func() {
 		Context("when starting the process fails", func() {
 			It("returns the error", func() {
 				runner.Path = "/tmp/not-a-thing-we-can-launch"
-				Expect(runner.Run()).To(MatchError(ContainSubstring("no such file or directory")))
+				// If the command cannot start the
+				// returned error type is undefined.
+				err := runner.Run()
+				Expect(err).ToNot(BeNil())
 
 				Expect(logger.Messages()).To(ContainSequence([]fakes.LoggerMessage{
 					{
@@ -419,7 +429,7 @@ var _ = Describe("Runner", func() {
 					},
 					{
 						Action: "agent-runner.run.start.failed",
-						Error:  errors.New("fork/exec /tmp/not-a-thing-we-can-launch: no such file or directory"),
+						Error:  errors.New(err.Error()),
 						Data: []lager.Data{{
 							"cmd": runner.Path,
 							"args": []string{

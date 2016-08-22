@@ -1,10 +1,8 @@
-package chaperon
+package utils
 
 import (
 	"io/ioutil"
-	"os"
 	"strconv"
-	"syscall"
 )
 
 func IsRunningProcess(pidFilePath string) bool {
@@ -18,10 +16,5 @@ func IsRunningProcess(pidFilePath string) bool {
 		return false
 	}
 
-	proc, err := os.FindProcess(pid)
-	if err != nil {
-		return false // never returns an error according to the go docs
-	}
-
-	return proc.Signal(syscall.Signal(0)) == nil
+	return IsPIDRunning(pid)
 }
