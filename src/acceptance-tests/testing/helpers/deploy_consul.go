@@ -257,6 +257,9 @@ func DeployMultiAZConsulMigration(client bosh.Client, config Config, deploymentN
 	var iaasConfig iaas.Config
 	switch info.CPI {
 	case "aws_cpi":
+		manifestConfig.PersistentDiskType = "1GB"
+		manifestConfig.VMType = "m3.medium"
+
 		awsConfig := buildAWSConfig(config)
 		if len(config.AWS.Subnets) >= 2 {
 			subnet := config.AWS.Subnets[0]
