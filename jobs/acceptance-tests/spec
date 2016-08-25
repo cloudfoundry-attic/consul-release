@@ -29,6 +29,10 @@ properties:
    description: "Subnet ID for AWS deployments"
    default: ""
 
+  consul.acceptance_tests.aws.cloud_config_subnets:
+   description: "Subnet ID for AWS deployments utilizing the Cloud Config"
+   default: ""
+
   consul.acceptance_tests.aws.access_key_id:
    description: "Key ID for AWS deployments"
    default: ""

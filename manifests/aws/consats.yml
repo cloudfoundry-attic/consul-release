@@ -42,6 +42,11 @@ properties:
           range: AWS_SUBNET_RANGE # REPLACE ME
           az: AWS_SUBNET_AZ # REPLACE ME
           security_group: AWS_SUBNET_SECURITY_GROUP # REPLACE ME
+        cloud_config_subnets:
+        - id: AWS_CLOUD_CONFIG_SUBNET_ID # REPLACE ME
+          range: AWS_CLOUD_CONFIG_SUBNET_RANGE # REPLACE ME
+          az: AWS_CLOUD_CONFIG_SUBNET_AZ # REPLACE ME
+          security_group: AWS_CLOUD_CONFIG_SUBNET_SECURITY_GROUP # REPLACE ME
       bosh:
         target: BOSH_DIRECTOR # REPLACE ME
         username: BOSH_USER # REPLACE ME

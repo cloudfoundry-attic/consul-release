@@ -150,28 +150,15 @@ func DeployMultiAZConsul(client bosh.Client, config Config) (manifest consul.Man
 	case "aws_cpi":
 		awsConfig := buildAWSConfig(config)
 		if len(config.AWS.Subnets) >= 2 {
-			subnet := config.AWS.Subnets[0]
+			subnet := config.AWS.CloudConfigSubnets[0]
 
-			var cidrBlock string
-			cidrPool := NewCIDRPool(subnet.Range, 24, 27)
-			cidrBlock, err = cidrPool.Get(0)
-			if err != nil {
-				return
-			}
+			awsConfig.Subnets = append(awsConfig.Subnets, iaas.AWSConfigSubnet{ID: subnet.ID, Range: subnet.Range, AZ: subnet.AZ, SecurityGroup: subnet.SecurityGroup})
+			manifestConfig.Networks = append(manifestConfig.Networks, consul.ConfigNetwork{IPRange: subnet.Range, Nodes: 2})
 
-			awsConfig.Subnets = append(awsConfig.Subnets, iaas.AWSConfigSubnet{ID: subnet.ID, Range: cidrBlock, AZ: subnet.AZ, SecurityGroup: subnet.SecurityGroup})
-			manifestConfig.Networks = append(manifestConfig.Networks, consul.ConfigNetwork{IPRange: cidrBlock, Nodes: 2})
+			subnet = config.AWS.CloudConfigSubnets[1]
 
-			subnet = config.AWS.Subnets[1]
-
-			cidrPool = NewCIDRPool(subnet.Range, 24, 27)
-			cidrBlock, err = cidrPool.Get(0)
-			if err != nil {
-				return
-			}
-
-			awsConfig.Subnets = append(awsConfig.Subnets, iaas.AWSConfigSubnet{ID: subnet.ID, Range: cidrBlock, AZ: subnet.AZ, SecurityGroup: subnet.SecurityGroup})
-			manifestConfig.Networks = append(manifestConfig.Networks, consul.ConfigNetwork{IPRange: cidrBlock, Nodes: 1})
+			awsConfig.Subnets = append(awsConfig.Subnets, iaas.AWSConfigSubnet{ID: subnet.ID, Range: subnet.Range, AZ: subnet.AZ, SecurityGroup: subnet.SecurityGroup})
+			manifestConfig.Networks = append(manifestConfig.Networks, consul.ConfigNetwork{IPRange: subnet.Range, Nodes: 1})
 		} else {
 			err = errors.New("AWSSubnet is required for AWS IAAS deployment")
 			return
@@ -261,29 +248,16 @@ func DeployMultiAZConsulMigration(client bosh.Client, config Config, deploymentN
 		manifestConfig.VMType = "m3.medium"
 
 		awsConfig := buildAWSConfig(config)
-		if len(config.AWS.Subnets) >= 2 {
-			subnet := config.AWS.Subnets[0]
+		if len(config.AWS.CloudConfigSubnets) >= 2 {
+			subnet := config.AWS.CloudConfigSubnets[0]
 
-			var cidrBlock string
-			cidrPool := NewCIDRPool(subnet.Range, 24, 27)
-			cidrBlock, err = cidrPool.Get(0)
-			if err != nil {
-				return consul.ManifestV2{}, err
-			}
+			awsConfig.Subnets = append(awsConfig.Subnets, iaas.AWSConfigSubnet{ID: subnet.ID, Range: subnet.Range, AZ: subnet.AZ, SecurityGroup: subnet.SecurityGroup})
+			manifestConfig.AZs = append(manifestConfig.AZs, consul.ConfigAZ{Name: "z1", IPRange: subnet.Range, Nodes: 2})
 
-			awsConfig.Subnets = append(awsConfig.Subnets, iaas.AWSConfigSubnet{ID: subnet.ID, Range: cidrBlock, AZ: subnet.AZ, SecurityGroup: subnet.SecurityGroup})
-			manifestConfig.AZs = append(manifestConfig.AZs, consul.ConfigAZ{Name: "z1", IPRange: cidrBlock, Nodes: 2})
+			subnet = config.AWS.CloudConfigSubnets[1]
 
-			subnet = config.AWS.Subnets[1]
-
-			cidrPool = NewCIDRPool(subnet.Range, 24, 27)
-			cidrBlock, err = cidrPool.Get(0)
-			if err != nil {
-				return consul.ManifestV2{}, err
-			}
-
-			awsConfig.Subnets = append(awsConfig.Subnets, iaas.AWSConfigSubnet{ID: subnet.ID, Range: cidrBlock, AZ: subnet.AZ, SecurityGroup: subnet.SecurityGroup})
-			manifestConfig.AZs = append(manifestConfig.AZs, consul.ConfigAZ{Name: "z2", IPRange: cidrBlock, Nodes: 1})
+			awsConfig.Subnets = append(awsConfig.Subnets, iaas.AWSConfigSubnet{ID: subnet.ID, Range: subnet.Range, AZ: subnet.AZ, SecurityGroup: subnet.SecurityGroup})
+			manifestConfig.AZs = append(manifestConfig.AZs, consul.ConfigAZ{Name: "z2", IPRange: subnet.Range, Nodes: 1})
 		} else {
 			return consul.ManifestV2{}, errors.New("AWSSubnet is required for AWS IAAS deployment")
 		}
@@ -322,7 +296,10 @@ func DeployMultiAZConsulMigration(client bosh.Client, config Config, deploymentN
 		return consul.ManifestV2{}, errors.New("unknown infrastructure type")
 	}
 
-	manifest := consul.NewManifestV2(manifestConfig, iaasConfig)
+	manifest, err := consul.NewManifestV2(manifestConfig, iaasConfig)
+	if err != nil {
+		return consul.ManifestV2{}, err
+	}
 
 	for i := range manifest.Releases {
 		if manifest.Releases[i].Name == "consul" {

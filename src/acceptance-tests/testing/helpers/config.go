@@ -25,6 +25,7 @@ type ConfigBOSH struct {
 
 type ConfigAWS struct {
 	Subnets               []ConfigSubnet `json:"subnets"`
+	CloudConfigSubnets    []ConfigSubnet `json:"cloud_config_subnets"`
 	AccessKeyID           string         `json:"access_key_id"`
 	SecretAccessKey       string         `json:"secret_access_key"`
 	DefaultKeyName        string         `json:"default_key_name"`
