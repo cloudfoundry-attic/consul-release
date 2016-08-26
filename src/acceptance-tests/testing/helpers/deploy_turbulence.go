@@ -81,7 +81,7 @@ func DeployTurbulence(client bosh.Client, config Config) (turbulence.Manifest, e
 				return turbulence.Manifest{}, err
 			}
 
-			awsConfig.Subnets = append(awsConfig.Subnets, iaas.AWSConfigSubnet{ID: subnet.ID, Range: cidrBlock, AZ: subnet.AZ})
+			awsConfig.Subnets = append(awsConfig.Subnets, iaas.AWSConfigSubnet{ID: subnet.ID, Range: cidrBlock, AZ: subnet.AZ, SecurityGroup: subnet.SecurityGroup})
 			manifestConfig.IPRange = cidrBlock
 		} else {
 			return turbulence.Manifest{}, errors.New("aws.subnet is required for AWS IAAS deployment")
