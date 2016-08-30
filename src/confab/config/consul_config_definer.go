@@ -15,7 +15,7 @@ type ConsulConfig struct {
 	DataDir              string                `json:"data_dir"`
 	LogLevel             string                `json:"log_level"`
 	NodeName             string                `json:"node_name"`
-	Ports                ConsulConfigPorts     `json:"ports"`
+	Ports                *ConsulConfigPorts    `json:"ports,omitempty"`
 	RejoinAfterLeave     bool                  `json:"rejoin_after_leave"`
 	RetryJoin            []string              `json:"retry_join"`
 	RetryJoinWAN         []string              `json:"retry_join_wan"`
@@ -35,7 +35,7 @@ type ConsulConfig struct {
 }
 
 type ConsulConfigPorts struct {
-	DNS int `json:"dns"`
+	DNS int `json:"dns,omitempty"`
 }
 
 type ConsulConfigDnsConfig struct {
@@ -56,16 +56,21 @@ func GenerateConfiguration(config Config, configDir, nodeName string) ConsulConf
 
 	isServer := config.Consul.Agent.Mode == "server"
 
+	var ports *ConsulConfigPorts
+	if config.Consul.Agent.Ports.DNS != 0 {
+		ports = &ConsulConfigPorts{
+			DNS: config.Consul.Agent.Ports.DNS,
+		}
+	}
+
 	consulConfig := ConsulConfig{
-		Server:     isServer,
-		Domain:     config.Consul.Agent.Domain,
-		Datacenter: config.Consul.Agent.Datacenter,
-		DataDir:    config.Path.DataDir,
-		LogLevel:   config.Consul.Agent.LogLevel,
-		NodeName:   nodeName,
-		Ports: ConsulConfigPorts{
-			DNS: 53,
-		},
+		Server:             isServer,
+		Domain:             config.Consul.Agent.Domain,
+		Datacenter:         config.Consul.Agent.Datacenter,
+		DataDir:            config.Path.DataDir,
+		LogLevel:           config.Consul.Agent.LogLevel,
+		NodeName:           nodeName,
+		Ports:              ports,
 		RejoinAfterLeave:   true,
 		RetryJoin:          lan,
 		RetryJoinWAN:       wan,

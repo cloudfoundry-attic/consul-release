@@ -56,6 +56,10 @@ properties:
   consul.agent.domain:
     description: "Domain suffix for DNS"
 
+  consul.agent.ports.dns:
+    description: "DNS server port"
+    default: 53
+
   consul.ca_cert:
     description: "PEM-encoded CA certificate"
 

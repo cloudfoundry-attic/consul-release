@@ -108,6 +108,9 @@ var _ = Describe("confab", func() {
 								"name": "gorouter",
 							},
 						},
+						"ports": map[string]int{
+							"dns": 12345,
+						},
 					},
 				},
 			})
@@ -196,8 +199,8 @@ var _ = Describe("confab", func() {
 				"data_dir":   dataDir,
 				"log_level":  "debug",
 				"node_name":  "my-node-3",
-				"ports": map[string]interface{}{
-					"dns": 53,
+				"ports": map[string]int{
+					"dns": 12345,
 				},
 				"rejoin_after_leave": true,
 				"retry_join": []string{

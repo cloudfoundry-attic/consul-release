@@ -56,15 +56,12 @@ var _ = Describe("ConfigWriter", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			conf := map[string]interface{}{
-				"server":     false,
-				"domain":     "",
-				"datacenter": "",
-				"data_dir":   dataDir,
-				"log_level":  "",
-				"node_name":  "node-0",
-				"ports": map[string]interface{}{
-					"dns": 53,
-				},
+				"server":                 false,
+				"domain":                 "",
+				"datacenter":             "",
+				"data_dir":               dataDir,
+				"log_level":              "",
+				"node_name":              "node-0",
 				"rejoin_after_leave":     true,
 				"retry_join":             []string{},
 				"retry_join_wan":         []string{},

@@ -41,6 +41,7 @@ type ConfigConsulAgent struct {
 	LogLevel        string                       `json:"log_level"`
 	ProtocolVersion int                          `json:"protocol_version"`
 	DnsConfig       ConfigConsulAgentDnsConfig   `json:"dns_config"`
+	Ports           ConfigConsulAgentPorts       `json:"ports"`
 }
 
 type ConfigConsulAgentDnsConfig struct {
@@ -51,6 +52,10 @@ type ConfigConsulAgentDnsConfig struct {
 type ConfigConsulAgentServers struct {
 	LAN []string `json:"lan"`
 	WAN []string `json:"wan"`
+}
+
+type ConfigConsulAgentPorts struct {
+	DNS int `json:"dns"`
 }
 
 func defaultConfig() Config {
