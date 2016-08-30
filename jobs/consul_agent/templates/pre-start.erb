@@ -51,7 +51,9 @@ function main() {
 
   set_virtual_memory
 
+  <%if p('consul.rewrite_resolv') %>
   setup_resolvconf
+  <% end %>
 
   setcap cap_net_bind_service=+ep ${PKG}/bin/consul
 }
