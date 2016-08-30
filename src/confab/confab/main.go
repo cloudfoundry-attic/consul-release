@@ -42,6 +42,7 @@ func (ss *stringSlice) Set(value string) error {
 var (
 	recursors  stringSlice
 	configFile string
+	foreground bool
 
 	stdout = log.New(os.Stdout, "", 0)
 	stderr = log.New(os.Stderr, "", 0)
@@ -51,6 +52,7 @@ func main() {
 	flagSet := flag.NewFlagSet("flags", flag.ContinueOnError)
 	flagSet.Var(&recursors, "recursor", "specifies the address of an upstream DNS `server`, may be specified multiple times")
 	flagSet.StringVar(&configFile, "config-file", "", "specifies the config `file`")
+	flagSet.BoolVar(&foreground, "foreground", false, "if true confab will wait for consul to exit")
 
 	if len(os.Args) < 2 {
 		printUsageAndExit("invalid number of arguments", flagSet)
@@ -151,6 +153,13 @@ func main() {
 			stderr.Printf("error during start: %s", err)
 			r.Stop()
 			os.Exit(1)
+		}
+		if foreground {
+			if err := agentRunner.Wait(); err != nil {
+				stderr.Printf("error during wait: %s", err)
+				r.Stop()
+				os.Exit(1)
+			}
 		}
 	case "stop":
 		if err := r.Stop(); err != nil {
