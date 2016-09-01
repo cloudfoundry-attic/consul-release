@@ -1,5 +1,4 @@
 # consul-release
----
 
 This is a [BOSH](http://bosh.io) release for [consul](https://github.com/hashicorp/consul).
 
@@ -12,7 +11,7 @@ This is a [BOSH](http://bosh.io) release for [consul](https://github.com/hashico
 * [Deploying](#deploying)
 * [Configuring](#configuring)
 * [Known Issues](#known-issues)
-* [Disaster Recovery](#disaster-recovery)
+* [Failure Recovery](#failure-recovery)
 * [Contributing](#contributing)
 * [Confab Tests](#confab-tests)
 * [Acceptance Tests](#acceptance-tests)
@@ -267,7 +266,20 @@ Having a 1-node cluster does not ensure any amount of data persistence.
 
 WARNING: Scaling your cluster to or from a 1-node configuration may result in data loss.
 
-## Disaster Recovery
+## Failure Recovery
+
+### TLS Certificate Issues
+
+A common source of failure is TLS certification configuration.  If you have a failed
+deploy and see errors related to certificates, authorities, "crypto", etc. it's a good
+idea to confirm that:
+
+* all Consul-related certificates and keys in your manifest are correctly PEM-encoded;
+* certificates match their corresponding keys;
+* certificates have been signed by the appropriate CA certificate; and
+* the YAML syntax of your manifest is correct.
+
+### Failed Deploys, Upgrades, Split-Brain Scenarios, etc.
 
 In the event that the consul cluster ends up in a bad state that is difficult
 to debug, you have the option of stopping the consul agent on each server node,
@@ -281,11 +293,28 @@ monit start consul_agent (one-by-one on each server node in consul cluster)
 
 There are often more graceful ways to solve specific issues, but it is hard
 to document all of the possible failure modes and recovery steps. As long as
-your consul cluster does not contain critical data that cannot be repopulated,
-this option is safe and will probably get you unstuck.
+your Consul cluster does not contain critical data that cannot be repopulated,
+this option is safe and will probably get you unstuck.  If you are debugging
+a Consul server cluster in the context of a Cloud Foundry deployment, it is
+indeed safe to follow the above steps.
 
 Additional information about outage recovery can be found on the consul
 [documentation page](https://www.consul.io/docs/guides/outage.html).
+
+### Frequent Disappearance of Registered Services
+
+Many BOSH jobs that colocate the `consul_agent` process do so in order to
+register a service with Consul so that other jobs within the system can 
+discover them.  If you observe frequent service discovery failures affecting
+many services, this may be due to something affecting Consul's gossip
+protocol.  Common causes include:
+
+* network latency;
+* network failures such as high packet loss;
+* firewalls/ACLs preventing some `consul_agent`s communicating with others
+  over TCP on port 8300 and both TCP and UDP on port 8301; and
+* having a very large number of VMs driving CPU requirements for the
+  `consul_agent`s too high for the current resources allocated to their VMs.
 
 ## Contributing
 
