@@ -1,8 +1,8 @@
 package chaperon
 
 import (
-	"github.com/cloudfoundry-incubator/consul-release/src/confab"
 	"github.com/cloudfoundry-incubator/consul-release/src/confab/config"
+	"github.com/cloudfoundry-incubator/consul-release/src/confab/utils"
 )
 
 type Client struct {
@@ -25,7 +25,7 @@ func NewClient(controller controller, newRPCClient consulRPCClientConstructor, k
 	}
 }
 
-func (c Client) Start(cfg config.Config, timeout confab.Timeout) error {
+func (c Client) Start(cfg config.Config, timeout utils.Timeout) error {
 	if err := c.configWriter.Write(cfg); err != nil {
 		return err
 	}
