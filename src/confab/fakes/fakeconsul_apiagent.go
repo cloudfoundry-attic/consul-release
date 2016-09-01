@@ -17,6 +17,29 @@ type FakeconsulAPIAgent struct {
 		result1 []*api.AgentMember
 		result2 error
 	}
+	JoinCall struct {
+		CallCount int
+		Stub      func(member string, wan bool) error
+		Receives  struct {
+			Members []string
+			WAN     bool
+		}
+		Returns struct {
+			Error error
+		}
+	}
+	SelfCall struct {
+		CallCount int
+		Returns   struct {
+			SelfInfo map[string]map[string]interface{}
+			Error    error
+		}
+	}
+}
+
+func (fake *FakeconsulAPIAgent) Self() (map[string]map[string]interface{}, error) {
+	fake.SelfCall.CallCount++
+	return fake.SelfCall.Returns.SelfInfo, fake.SelfCall.Returns.Error
 }
 
 func (fake *FakeconsulAPIAgent) Members(wan bool) ([]*api.AgentMember, error) {
@@ -50,6 +73,16 @@ func (fake *FakeconsulAPIAgent) MembersReturns(result1 []*api.AgentMember, resul
 		result1 []*api.AgentMember
 		result2 error
 	}{result1, result2}
+}
+
+func (fake *FakeconsulAPIAgent) Join(member string, wan bool) error {
+	fake.JoinCall.CallCount++
+	fake.JoinCall.Receives.Members = append(fake.JoinCall.Receives.Members, member)
+	fake.JoinCall.Receives.WAN = wan
+	if fake.JoinCall.Stub != nil {
+		return fake.JoinCall.Stub(member, wan)
+	}
+	return fake.JoinCall.Returns.Error
 }
 
 // var _ confab.consulAPIAgent = new(FakeconsulAPIAgent)

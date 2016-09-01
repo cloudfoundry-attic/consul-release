@@ -42,6 +42,8 @@ type ConfigConsulAgent struct {
 	ProtocolVersion int                          `json:"protocol_version"`
 	DnsConfig       ConfigConsulAgentDnsConfig   `json:"dns_config"`
 	Ports           ConfigConsulAgentPorts       `json:"ports"`
+	Bootstrap       bool                         `json:"bootstrap"`
+	NodeName        string                       `json:"node_name"`
 }
 
 type ConfigConsulAgentDnsConfig struct {

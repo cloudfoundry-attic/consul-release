@@ -16,6 +16,7 @@ import (
 	"github.com/cloudfoundry-incubator/consul-release/src/confab/agent"
 	"github.com/cloudfoundry-incubator/consul-release/src/confab/chaperon"
 	"github.com/cloudfoundry-incubator/consul-release/src/confab/config"
+	"github.com/cloudfoundry-incubator/consul-release/src/confab/helpers"
 	"github.com/cloudfoundry-incubator/consul-release/src/confab/utils"
 	"github.com/hashicorp/consul/api"
 	consulagent "github.com/hashicorp/consul/command/agent"
@@ -140,6 +141,25 @@ func main() {
 
 		if len(agentClient.ExpectedMembers) == 0 {
 			printUsageAndExit("at least one \"expected-member\" must be provided", flagSet)
+		}
+
+		if controller.Config.Consul.Agent.Mode == "server" {
+			var err error
+			cfg.Consul.Agent.Bootstrap, err = chaperon.StartInBootstrap(chaperon.BootstrapInput{
+				AgentURL:           "http://localhost:8500",
+				Logger:             logger,
+				Controller:         controller,
+				ConfigWriter:       configWriter,
+				Config:             cfg,
+				GenerateRandomUUID: helpers.GenerateRandomUUID,
+				AgentRunner:        agentRunner,
+				AgentClient:        agentClient,
+				NewRPCClient:       consulagent.NewRPCClient,
+			})
+			if err != nil {
+				stderr.Printf("error during start: %s", err)
+				os.Exit(1)
+			}
 		}
 		timeout := confab.NewTimeout(time.After(time.Duration(controller.Config.Confab.TimeoutInSeconds) * time.Second))
 

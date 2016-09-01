@@ -4,6 +4,7 @@ import (
 	"crypto/sha1"
 	"encoding/base64"
 	"errors"
+	"strings"
 
 	"code.cloudfoundry.org/lager"
 
@@ -12,6 +13,8 @@ import (
 	"github.com/hashicorp/consul/api"
 )
 
+var NoMembersToJoinError = errors.New("no members to join")
+
 type logger interface {
 	Info(action string, data ...lager.Data)
 	Error(action string, err error, data ...lager.Data)
@@ -19,6 +22,8 @@ type logger interface {
 
 type consulAPIAgent interface {
 	Members(wan bool) ([]*api.AgentMember, error)
+	Join(member string, wan bool) error
+	Self() (map[string]map[string]interface{}, error)
 }
 
 type ConsulRPCClient interface {
@@ -109,45 +114,33 @@ func (c Client) VerifySynced() error {
 	return nil
 }
 
-func (c Client) IsLastNode() (bool, error) {
-	c.Logger.Info("agent-client.is-last-node.members.request", lager.Data{
-		"wan": false,
-	})
-
-	members, err := c.ConsulAPIAgent.Members(false)
-	if err != nil {
-		c.Logger.Error("agent-client.is-last-node.members.request.failed", err, lager.Data{
-			"wan": false,
-		})
-		return false, err
-	}
-
-	var addresses []string
-	for _, member := range members {
-		addresses = append(addresses, member.Addr)
-	}
-
-	c.Logger.Info("agent-client.is-last-node.members.response", lager.Data{
-		"wan":     false,
-		"members": addresses,
-	})
-
-	var serversCount int
-	for _, member := range members {
-		if member.Tags["role"] == "consul" {
-			serversCount++
+func (c Client) JoinMembers() error {
+	failedToJoinCount := 0
+	for _, member := range c.ExpectedMembers {
+		c.Logger.Info("agent-client.join-members.consul-api-agent.join", lager.Data{"member": member})
+		err := c.ConsulAPIAgent.Join(member, false)
+		if err != nil {
+			if strings.Contains(err.Error(), "connection refused") {
+				c.Logger.Info("agent-client.join-members.consul-api-agent.join.connection-refused")
+				failedToJoinCount++
+			} else {
+				c.Logger.Error("agent-client.join-members.consul-api-agent.join.failed", err)
+				return err
+			}
 		}
 	}
 
-	hasAllExpectedMembers := serversCount == len(c.ExpectedMembers)
+	if failedToJoinCount == len(c.ExpectedMembers) {
+		c.Logger.Info("agent-client.join-members.no-members-to-join")
+		return NoMembersToJoinError
+	}
 
-	c.Logger.Info("agent-client.is-last-node.result", lager.Data{
-		"actual_members_count":   serversCount,
-		"expected_members_count": len(c.ExpectedMembers),
-		"is_last_node":           hasAllExpectedMembers,
-	})
+	c.Logger.Info("agent-client.join-members.success")
+	return nil
+}
 
-	return hasAllExpectedMembers, nil
+func (c Client) Members(wan bool) ([]*api.AgentMember, error) {
+	return c.ConsulAPIAgent.Members(wan)
 }
 
 func (c Client) SetKeys(keys []string) error {
@@ -263,6 +256,14 @@ func (c Client) Leave() error {
 
 func (c *Client) SetConsulRPCClient(rpcClient ConsulRPCClient) {
 	c.ConsulRPCClient = rpcClient
+}
+
+func (c Client) Self() error {
+	_, err := c.ConsulAPIAgent.Self()
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func containsString(elems []string, elem string) bool {

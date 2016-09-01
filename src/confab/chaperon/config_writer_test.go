@@ -156,6 +156,23 @@ var _ = Describe("ConfigWriter", func() {
 				})
 			})
 
+			Context("when config has a node name specified", func() {
+				It("honors the node name specified in the config", func() {
+					cfg.Consul.Agent.NodeName = "some-random-node-name"
+					err := writer.Write(cfg)
+					Expect(err).NotTo(HaveOccurred())
+
+					buf, err := ioutil.ReadFile(filepath.Join(configDir, "config.json"))
+					Expect(err).NotTo(HaveOccurred())
+
+					var config map[string]interface{}
+
+					err = json.Unmarshal(buf, &config)
+					Expect(err).NotTo(HaveOccurred())
+					Expect(config["node_name"]).To(Equal("some-random-node-name"))
+				})
+			})
+
 			Context("failure cases", func() {
 				It("logs errors", func() {
 					cfg.Path.DataDir = "/some/fake/path"

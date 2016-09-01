@@ -1,25 +1,21 @@
 package fakes
 
-import "github.com/cloudfoundry-incubator/consul-release/src/confab/agent"
+import (
+	"github.com/cloudfoundry-incubator/consul-release/src/confab/agent"
+	"github.com/hashicorp/consul/api"
+)
 
 type AgentClient struct {
 	VerifyJoinedCalls struct {
 		CallCount int
 		Returns   struct {
-			Errors []error
+			Error error
 		}
 	}
 	VerifySyncedCalls struct {
 		CallCount int
 		Returns   struct {
 			Errors []error
-		}
-	}
-
-	IsLastNodeCall struct {
-		Returns struct {
-			IsLastNode bool
-			Error      error
 		}
 	}
 
@@ -45,22 +41,51 @@ type AgentClient struct {
 			ConsulRPCClient agent.ConsulRPCClient
 		}
 	}
+
+	MembersCall struct {
+		CallCount int
+		Receives  struct {
+			WAN bool
+		}
+		Returns struct {
+			Members []*api.AgentMember
+			Error   error
+		}
+	}
+
+	JoinMembersCall struct {
+		CallCount int
+		Returns   struct {
+			Error error
+		}
+	}
+	SelfCall struct {
+		CallCount int
+		Returns   struct {
+			Error  error
+			Errors []error
+		}
+	}
+}
+
+func (c *AgentClient) Self() error {
+	err := c.SelfCall.Returns.Error
+	if len(c.SelfCall.Returns.Errors) > c.SelfCall.CallCount {
+		err = c.SelfCall.Returns.Errors[c.SelfCall.CallCount]
+	}
+	c.SelfCall.CallCount++
+	return err
 }
 
 func (c *AgentClient) VerifyJoined() error {
-	err := c.VerifyJoinedCalls.Returns.Errors[c.VerifyJoinedCalls.CallCount]
 	c.VerifyJoinedCalls.CallCount++
-	return err
+	return c.VerifyJoinedCalls.Returns.Error
 }
 
 func (c *AgentClient) VerifySynced() error {
 	err := c.VerifySyncedCalls.Returns.Errors[c.VerifySyncedCalls.CallCount]
 	c.VerifySyncedCalls.CallCount++
 	return err
-}
-
-func (c *AgentClient) IsLastNode() (bool, error) {
-	return c.IsLastNodeCall.Returns.IsLastNode, c.IsLastNodeCall.Returns.Error
 }
 
 func (c *AgentClient) SetKeys(keys []string) error {
@@ -76,4 +101,15 @@ func (c *AgentClient) Leave() error {
 func (c *AgentClient) SetConsulRPCClient(rpcClient agent.ConsulRPCClient) {
 	c.SetConsulRPCClientCall.CallCount++
 	c.SetConsulRPCClientCall.Receives.ConsulRPCClient = rpcClient
+}
+
+func (c *AgentClient) Members(wan bool) ([]*api.AgentMember, error) {
+	c.MembersCall.CallCount++
+	c.MembersCall.Receives.WAN = wan
+	return c.MembersCall.Returns.Members, c.MembersCall.Returns.Error
+}
+
+func (c *AgentClient) JoinMembers() error {
+	c.JoinMembersCall.CallCount++
+	return c.JoinMembersCall.Returns.Error
 }

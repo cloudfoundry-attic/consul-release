@@ -33,7 +33,6 @@ var _ = Describe("Controller", func() {
 		logger = &fakes.Logger{}
 
 		agentClient = &fakes.AgentClient{}
-		agentClient.VerifyJoinedCalls.Returns.Errors = []error{nil}
 		agentClient.VerifySyncedCalls.Returns.Errors = []error{nil}
 
 		agentRunner = &fakes.AgentRunner{}
@@ -126,11 +125,21 @@ var _ = Describe("Controller", func() {
 	Describe("BootAgent", func() {
 		It("launches the consul agent and confirms that it joined the cluster", func() {
 			Expect(controller.BootAgent(confab.NewTimeout(make(chan time.Time)))).To(Succeed())
+
+			Expect(agentClient.JoinMembersCall.CallCount).To(Equal(1))
+
 			Expect(agentRunner.RunCalls.CallCount).To(Equal(1))
 			Expect(agentClient.VerifyJoinedCalls.CallCount).To(Equal(1))
+			Expect(agentClient.SelfCall.CallCount).To(Equal(1))
 			Expect(logger.Messages()).To(ContainSequence([]fakes.LoggerMessage{
 				{
 					Action: "controller.boot-agent.run",
+				},
+				{
+					Action: "controller.boot-agent.agent-client.waiting-for-agent",
+				},
+				{
+					Action: "controller.boot-agent.agent-client.join-members",
 				},
 				{
 					Action: "controller.boot-agent.verify-joined",
@@ -147,6 +156,7 @@ var _ = Describe("Controller", func() {
 
 				Expect(controller.BootAgent(confab.NewTimeout(make(chan time.Time)))).To(MatchError("some error"))
 				Expect(agentRunner.RunCalls.CallCount).To(Equal(1))
+				Expect(agentClient.JoinMembersCall.CallCount).To(Equal(0))
 				Expect(agentClient.VerifyJoinedCalls.CallCount).To(Equal(0))
 				Expect(logger.Messages()).To(ContainSequence([]fakes.LoggerMessage{
 					{
@@ -160,58 +170,101 @@ var _ = Describe("Controller", func() {
 			})
 		})
 
-		Context("joining fails at first but later succeeds", func() {
-			It("retries until it joins", func() {
-				agentClient.VerifyJoinedCalls.Returns.Errors = make([]error, 10)
+		Context("when the client does not respond within given timeout", func() {
+			It("retries self call until it succeeds", func() {
+				agentClient.SelfCall.Returns.Errors = make([]error, 10)
 				for i := 0; i < 9; i++ {
-					agentClient.VerifyJoinedCalls.Returns.Errors[i] = errors.New("some error")
+					agentClient.SelfCall.Returns.Errors[i] = errors.New("some error occured")
 				}
-
-				Expect(controller.BootAgent(confab.NewTimeout(make(chan time.Time)))).To(Succeed())
-				Expect(agentClient.VerifyJoinedCalls.CallCount).To(Equal(10))
+				err := controller.BootAgent(confab.NewTimeout(make(chan time.Time)))
+				Expect(err).NotTo(HaveOccurred())
 				Expect(clock.SleepCall.CallCount).To(Equal(9))
 				Expect(clock.SleepCall.Receives.Duration).To(Equal(10 * time.Millisecond))
+				Expect(agentClient.SelfCall.CallCount).To(Equal(10))
 				Expect(logger.Messages()).To(ContainSequence([]fakes.LoggerMessage{
 					{
-						Action: "controller.boot-agent.run",
-					},
-					{
-						Action: "controller.boot-agent.verify-joined",
-					},
-					{
-						Action: "controller.boot-agent.success",
+						Action: "controller.boot-agent.agent-client.waiting-for-agent",
 					},
 				}))
 			})
-		})
 
-		Context("joining never succeeds within timeout period", func() {
-			It("immediately returns an error", func() {
-				agentClient.VerifyJoinedCalls.Returns.Errors = make([]error, 10)
-				for i := 0; i < 9; i++ {
-					agentClient.VerifyJoinedCalls.Returns.Errors[i] = errors.New("some error")
-				}
+			It("returns an error after timeout", func() {
+				agentClient.SelfCall.Returns.Error = errors.New("some error occured")
 
 				timer := make(chan time.Time)
 				timeout := confab.NewTimeout(timer)
 				timer <- time.Now()
 
 				err := controller.BootAgent(timeout)
-
 				Expect(err).To(MatchError("timeout exceeded"))
-				Expect(agentClient.VerifyJoinedCalls.CallCount).To(Equal(0))
-				Expect(agentClient.VerifySyncedCalls.CallCount).To(Equal(0))
+				Expect(clock.SleepCall.CallCount).To(Equal(0))
 
+				Expect(agentClient.SelfCall.CallCount).To(Equal(0))
 				Expect(logger.Messages()).To(ContainSequence([]fakes.LoggerMessage{
 					{
-						Action: "controller.boot-agent.run",
+						Action: "controller.boot-agent.agent-client.waiting-for-agent",
 					},
+				}))
+
+			})
+		})
+
+		Context("when join members fails", func() {
+			Context("when fails to join any members", func() {
+				It("ignores and continue to bootstrap", func() {
+					agentClient.JoinMembersCall.Returns.Error = agent.NoMembersToJoinError
+					err := controller.BootAgent(confab.NewTimeout(make(chan time.Time)))
+					Expect(err).NotTo(HaveOccurred())
+					Expect(agentRunner.RunCalls.CallCount).To(Equal(1))
+					Expect(agentClient.JoinMembersCall.CallCount).To(Equal(1))
+					Expect(agentClient.VerifyJoinedCalls.CallCount).To(Equal(1))
+
+					Expect(logger.Messages()).To(ContainSequence([]fakes.LoggerMessage{
+						{
+							Action: "controller.boot-agent.agent-client.join-members",
+						},
+						{
+							Action: "controller.boot-agent.agent-client.join-members.no-members-to-join",
+							Error:  agent.NoMembersToJoinError,
+						},
+					}))
+
+				})
+			})
+
+			Context("when fails with any other error", func() {
+				It("returns an error", func() {
+					agentClient.JoinMembersCall.Returns.Error = errors.New("some error")
+					err := controller.BootAgent(confab.NewTimeout(make(chan time.Time)))
+					Expect(err).To(MatchError("some error"))
+
+					Expect(logger.Messages()).To(ContainSequence([]fakes.LoggerMessage{
+						{
+							Action: "controller.boot-agent.agent-client.join-members",
+						},
+						{
+							Action: "controller.boot-agent.agent-client.join-members.failed",
+							Error:  errors.New("some error"),
+						},
+					}))
+				})
+
+			})
+		})
+
+		Context("joining fails", func() {
+			It("returns an errors", func() {
+				agentClient.VerifyJoinedCalls.Returns.Error = errors.New("some error")
+				err := controller.BootAgent(confab.NewTimeout(make(chan time.Time)))
+				Expect(err).To(MatchError("some error"))
+				Expect(agentClient.VerifyJoinedCalls.CallCount).To(Equal(1))
+				Expect(logger.Messages()).To(ContainSequence([]fakes.LoggerMessage{
 					{
 						Action: "controller.boot-agent.verify-joined",
 					},
 					{
 						Action: "controller.boot-agent.verify-joined.failed",
-						Error:  errors.New("timeout exceeded"),
+						Error:  err,
 					},
 				}))
 			})
@@ -385,31 +438,6 @@ var _ = Describe("Controller", func() {
 			rpcClient = &consulagent.RPCClient{}
 		})
 
-		Context("when it is not the last node in the cluster", func() {
-			It("does not check that it is synced", func() {
-				Expect(controller.ConfigureServer(timeout, rpcClient)).To(Succeed())
-
-				Expect(agentClient.VerifySyncedCalls.CallCount).To(Equal(0))
-				Expect(agentClient.SetConsulRPCClientCall.CallCount).To(Equal(1))
-				Expect(agentClient.SetConsulRPCClientCall.Receives.ConsulRPCClient).To(Equal(&agent.RPCClient{*rpcClient}))
-				Expect(agentRunner.WritePIDCall.CallCount).To(Equal(1))
-				Expect(logger.Messages()).To(ContainSequence([]fakes.LoggerMessage{
-					{
-						Action: "controller.configure-server.is-last-node",
-					},
-					{
-						Action: "controller.configure-server.set-keys",
-						Data: []lager.Data{{
-							"keys": []string{"key 1", "key 2", "key 3"},
-						}},
-					},
-					{
-						Action: "controller.configure-server.success",
-					},
-				}))
-			})
-		})
-
 		Context("setting keys", func() {
 			It("sets the encryption keys used by the agent", func() {
 				Expect(controller.ConfigureServer(timeout, rpcClient)).To(Succeed())
@@ -419,9 +447,6 @@ var _ = Describe("Controller", func() {
 					"key 3",
 				}))
 				Expect(logger.Messages()).To(ContainSequence([]fakes.LoggerMessage{
-					{
-						Action: "controller.configure-server.is-last-node",
-					},
 					{
 						Action: "controller.configure-server.set-keys",
 						Data: []lager.Data{{
@@ -446,9 +471,6 @@ var _ = Describe("Controller", func() {
 					}))
 					Expect(agentRunner.WritePIDCall.CallCount).To(Equal(0))
 					Expect(logger.Messages()).To(ContainSequence([]fakes.LoggerMessage{
-						{
-							Action: "controller.configure-server.is-last-node",
-						},
 						{
 							Action: "controller.configure-server.set-keys",
 							Data: []lager.Data{{
@@ -478,9 +500,6 @@ var _ = Describe("Controller", func() {
 
 					Expect(logger.Messages()).To(ContainSequence([]fakes.LoggerMessage{
 						{
-							Action: "controller.configure-server.is-last-node",
-						},
-						{
 							Action: "controller.configure-server.no-encrypt-keys",
 							Error:  errors.New("encrypt keys cannot be empty if ssl is enabled"),
 						},
@@ -489,20 +508,13 @@ var _ = Describe("Controller", func() {
 			})
 		})
 
-		Context("when it is the last node in the cluster", func() {
-			BeforeEach(func() {
-				agentClient.IsLastNodeCall.Returns.IsLastNode = true
-			})
-
+		Context("when starting the server", func() {
 			It("checks that it is synced", func() {
 				Expect(controller.ConfigureServer(timeout, rpcClient)).To(Succeed())
 				Expect(agentClient.VerifySyncedCalls.CallCount).To(Equal(1))
 				Expect(agentRunner.WritePIDCall.CallCount).To(Equal(1))
 
 				Expect(logger.Messages()).To(ContainSequence([]fakes.LoggerMessage{
-					{
-						Action: "controller.configure-server.is-last-node",
-					},
 					{
 						Action: "controller.configure-server.verify-synced",
 					},
@@ -532,9 +544,6 @@ var _ = Describe("Controller", func() {
 					Expect(agentRunner.WritePIDCall.CallCount).To(Equal(1))
 
 					Expect(logger.Messages()).To(ContainSequence([]fakes.LoggerMessage{
-						{
-							Action: "controller.configure-server.is-last-node",
-						},
 						{
 							Action: "controller.configure-server.verify-synced",
 						},
@@ -570,34 +579,11 @@ var _ = Describe("Controller", func() {
 
 					Expect(logger.Messages()).To(ContainSequence([]fakes.LoggerMessage{
 						{
-							Action: "controller.configure-server.is-last-node",
-						},
-						{
 							Action: "controller.configure-server.verify-synced",
 						},
 						{
 							Action: "controller.configure-server.verify-synced.failed",
 							Error:  errors.New("timeout exceeded"),
-						},
-					}))
-				})
-			})
-
-			Context("error while checking if it is the last node", func() {
-				It("immediately returns the error", func() {
-					agentClient.IsLastNodeCall.Returns.Error = errors.New("some error")
-
-					Expect(controller.ConfigureServer(timeout, rpcClient)).To(MatchError("some error"))
-					Expect(agentClient.VerifySyncedCalls.CallCount).To(Equal(0))
-					Expect(agentClient.SetKeysCall.Receives.Keys).To(BeNil())
-					Expect(agentRunner.WritePIDCall.CallCount).To(Equal(0))
-					Expect(logger.Messages()).To(ContainSequence([]fakes.LoggerMessage{
-						{
-							Action: "controller.configure-server.is-last-node",
-						},
-						{
-							Action: "controller.configure-server.is-last-node.failed",
-							Error:  errors.New("some error"),
 						},
 					}))
 				})
@@ -613,9 +599,6 @@ var _ = Describe("Controller", func() {
 
 				Expect(agentRunner.WritePIDCall.CallCount).To(Equal(1))
 				Expect(logger.Messages()).To(ContainSequence([]fakes.LoggerMessage{
-					{
-						Action: "controller.configure-server.is-last-node",
-					},
 					{
 						Action: "controller.configure-server.set-keys",
 						Error:  nil,

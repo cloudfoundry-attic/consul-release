@@ -417,7 +417,7 @@ var _ = Describe("ConsulConfigDefiner", func() {
 		Describe("bootstrap_expect", func() {
 			Context("when `consul.agent.mode` is not `server`", func() {
 				It("is nil", func() {
-					Expect(consulConfig.BootstrapExpect).To(BeNil())
+					Expect(consulConfig.Bootstrap).To(BeNil())
 				})
 			})
 
@@ -426,7 +426,8 @@ var _ = Describe("ConsulConfigDefiner", func() {
 					consulConfig = config.GenerateConfiguration(config.Config{
 						Consul: config.ConfigConsul{
 							Agent: config.ConfigConsulAgent{
-								Mode: "server",
+								Bootstrap: true,
+								Mode:      "server",
 								Servers: config.ConfigConsulAgentServers{
 									LAN: []string{
 										"first-server",
@@ -437,8 +438,7 @@ var _ = Describe("ConsulConfigDefiner", func() {
 							},
 						},
 					}, configDir, "")
-					Expect(consulConfig.BootstrapExpect).NotTo(BeNil())
-					Expect(*consulConfig.BootstrapExpect).To(Equal(3))
+					Expect(*consulConfig.Bootstrap).To(BeTrue())
 				})
 			})
 		})

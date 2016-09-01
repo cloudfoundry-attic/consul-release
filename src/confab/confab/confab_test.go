@@ -143,7 +143,7 @@ var _ = Describe("confab", func() {
 				return utils.IsPIDRunning(pid)
 			}, COMMAND_TIMEOUT, time.Millisecond*250).Should(BeFalse())
 
-			Expect(fakeAgentOutput(consulConfigDir)).To(Equal(FakeAgentOutputData{
+			Expect(fakeAgentOutputFromFile(consulConfigDir, "fake-output.json")).To(Equal(FakeAgentOutputData{
 				PID: pid,
 				Args: []string{
 					"agent",
@@ -273,7 +273,7 @@ var _ = Describe("confab", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(utils.IsPIDRunning(pid)).To(BeTrue())
 
-				Expect(fakeAgentOutput(consulConfigDir)).To(Equal(FakeAgentOutputData{
+				Expect(fakeAgentOutputFromFile(consulConfigDir, "fake-output.json")).To(Equal(FakeAgentOutputData{
 					PID: pid,
 					Args: []string{
 						"agent",
@@ -310,7 +310,7 @@ var _ = Describe("confab", func() {
 				killProcessWithPIDFile(pidFile.Name())
 			})
 
-			It("starts a consul agent as a server", func() {
+			It("starts a consul agent as a bootstrap server", func() {
 				cmd := exec.Command(pathToConfab,
 					"start",
 					"--config-file", configFile.Name(),
@@ -321,17 +321,35 @@ var _ = Describe("confab", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(utils.IsPIDRunning(pid)).To(BeTrue())
 
+				Eventually(func() ([]string, error) {
+					fakeAgentOutputData, err := fakeAgentOutputFromFile(consulConfigDir, "fake-output.json")
+					return fakeAgentOutputData.Args, err
+				}, "2s").Should(Equal([]string{
+					"agent",
+					fmt.Sprintf("-config-dir=%s", consulConfigDir),
+				}))
+
+				fakeAgentOutputData, err := fakeAgentOutputFromFile(consulConfigDir, "fake-output.json")
+				Expect(err).NotTo(HaveOccurred())
+				Expect(fakeAgentOutputData.ConsulConfig).To(Equal(ConsulConfig{
+					Server: false,
+				}))
+
 				Eventually(func() (FakeAgentOutputData, error) {
-					return fakeAgentOutput(consulConfigDir)
+					return fakeAgentOutputFromFile(consulConfigDir, "fake-output-2.json")
 				}, "2s").Should(Equal(FakeAgentOutputData{
-					PID: pid,
 					Args: []string{
 						"agent",
 						fmt.Sprintf("-config-dir=%s", consulConfigDir),
 					},
-					InstallKeyCallCount: 2,
+					PID:                 pid,
 					UseKeyCallCount:     1,
+					InstallKeyCallCount: 2,
 					StatsCallCount:      1,
+					ConsulConfig: ConsulConfig{
+						Server:    true,
+						Bootstrap: true,
+					},
 				}))
 			})
 
@@ -373,9 +391,9 @@ var _ = Describe("confab", func() {
 
 				start := time.Now()
 				Eventually(cmd.Run, COMMAND_TIMEOUT, COMMAND_TIMEOUT).ShouldNot(Succeed())
-				Expect(time.Now()).To(BeTemporally("~", start.Add(3*time.Second), 1*time.Second))
+				Expect(time.Now()).To(BeTemporally("~", start.Add(4*time.Second), 1*time.Second))
 
-				output, err := fakeAgentOutput(consulConfigDir)
+				output, err := fakeAgentOutputFromFile(consulConfigDir, "fake-output-2.json")
 				Expect(err).NotTo(HaveOccurred())
 				Expect(output.StatsCallCount).To(BeNumerically(">", 0))
 				Expect(output.StatsCallCount).To(BeNumerically("<", 4))
@@ -436,12 +454,16 @@ var _ = Describe("confab", func() {
 			}, "5s").Should(BeFalse())
 
 			Eventually(func() (FakeAgentOutputData, error) {
-				return fakeAgentOutput(consulConfigDir)
+				return fakeAgentOutputFromFile(consulConfigDir, "fake-output-2.json")
 			}, COMMAND_TIMEOUT, POLL_INTERVAL).Should(Equal(FakeAgentOutputData{
 				PID: pid,
 				Args: []string{
 					"agent",
 					fmt.Sprintf("-config-dir=%s", consulConfigDir),
+				},
+				ConsulConfig: ConsulConfig{
+					Server:    true,
+					Bootstrap: true,
 				},
 				LeaveCallCount:      1,
 				InstallKeyCallCount: 2,

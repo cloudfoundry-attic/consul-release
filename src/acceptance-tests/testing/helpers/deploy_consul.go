@@ -114,7 +114,7 @@ func deployConsul(count int, client bosh.Client, config Config, releaseVersion s
 		return
 	}
 
-	log.Printf("Deploying %s\n", manifestConfig.Name)
+	log.Printf("\nDeploying %s\n", manifestConfig.Name)
 	_, err = client.Deploy(yaml)
 	if err != nil {
 		return

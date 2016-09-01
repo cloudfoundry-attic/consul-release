@@ -30,8 +30,8 @@ type ConsulConfig struct {
 	KeyFile              *string               `json:"key_file,omitempty"`
 	CertFile             *string               `json:"cert_file,omitempty"`
 	Encrypt              *string               `json:"encrypt,omitempty"`
-	BootstrapExpect      *int                  `json:"bootstrap_expect,omitempty"`
 	DnsConfig            ConsulConfigDnsConfig `json:"dns_config"`
+	Bootstrap            *bool                 `json:"bootstrap,omitempty"`
 }
 
 type ConsulConfigPorts struct {
@@ -103,7 +103,7 @@ func GenerateConfiguration(config Config, configDir, nodeName string) ConsulConf
 	}
 
 	if isServer {
-		consulConfig.BootstrapExpect = intPtr(len(config.Consul.Agent.Servers.LAN))
+		consulConfig.Bootstrap = boolPtr(config.Consul.Agent.Bootstrap)
 	}
 
 	return consulConfig
