@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
 	"net"
 	"net/http"
 	"net/http/httptest"
@@ -16,6 +15,7 @@ import (
 	"github.com/cloudfoundry-incubator/consul-release/src/confab/chaperon"
 	"github.com/cloudfoundry-incubator/consul-release/src/confab/config"
 	"github.com/cloudfoundry-incubator/consul-release/src/confab/fakes"
+	"github.com/cloudfoundry-incubator/consul-release/src/confab/utils"
 	"github.com/hashicorp/consul/api"
 	consulagent "github.com/hashicorp/consul/command/agent"
 
@@ -32,6 +32,7 @@ var _ = Describe("Checker", func() {
 			configWriter         *fakes.ConfigWriter
 			agentRunner          *fakes.AgentRunner
 			agentClient          *fakes.AgentClient
+			clock                *fakes.Clock
 			rpcClient            *consulagent.RPCClient
 			randomUUIDGenerator  chaperon.RandomUUIDGenerator
 			bootstrapInput       chaperon.BootstrapInput
@@ -46,6 +47,8 @@ var _ = Describe("Checker", func() {
 			configWriter = &fakes.ConfigWriter{}
 			agentRunner = &fakes.AgentRunner{}
 			agentClient = &fakes.AgentClient{}
+			clock = &fakes.Clock{}
+
 			randomUUIDGenerator = func(io.Reader) (string, error) {
 				return "some-random-guid", nil
 			}
@@ -94,12 +97,9 @@ var _ = Describe("Checker", func() {
 				GenerateRandomUUID: randomUUIDGenerator,
 				AgentClient:        agentClient,
 				NewRPCClient:       rpcClientConstructor,
+				Retrier:            utils.NewRetrier(clock, 10*time.Millisecond),
+				Timeout:            utils.NewTimeout(time.After(10 * time.Millisecond)),
 			}
-			chaperon.SetAgentCheckInterval(0)
-		})
-
-		AfterEach(func() {
-			chaperon.ResetAgentCheckInterval()
 		})
 
 		Context("when there is no leader in the cluster", func() {
@@ -127,6 +127,8 @@ var _ = Describe("Checker", func() {
 
 				Expect(agentRunner.RunCalls.CallCount).To(Equal(1))
 
+				Expect(agentClient.SelfCall.CallCount).To(Equal(1))
+
 				Expect(agentClient.JoinMembersCall.CallCount).To(Equal(1))
 
 				Expect(agentClient.MembersCall.CallCount).To(Equal(1))
@@ -149,15 +151,7 @@ var _ = Describe("Checker", func() {
 						Action: "chaperon-checker.start-in-bootstrap.agent-runner.run",
 					},
 					{
-						Action: "chaperon-checker.start-in-bootstrap.http.get",
-						Data: []lager.Data{
-							{
-								"route": fmt.Sprintf("%s%s", fakeAgentServer.URL, "/v1/agent/self"),
-							},
-						},
-					},
-					{
-						Action: "chaperon-checker.start-in-bootstrap.agent-is-up",
+						Action: "chaperon-checker.start-in-bootstrap.waiting-for-agent",
 					},
 					{
 						Action: "chaperon-checker.start-in-bootstrap.agent-client.join-members",
@@ -186,112 +180,50 @@ var _ = Describe("Checker", func() {
 			})
 		})
 
-		Context("when agent doesn't start right away", func() {
-			var (
-				fakeHTTPAgentServer *http.Server
-				agentSelfCallCount  int
-			)
-			BeforeEach(func() {
-				chaperon.SetAgentCheckInterval(1 * time.Second)
-				port, err := openPort()
-				Expect(err).NotTo(HaveOccurred())
-
-				fakeHTTPAgentServer = &http.Server{
-					Addr: fmt.Sprintf(":%s", port),
-					Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-						switch r.URL.Path {
-						case "/v1/status/leader":
-							w.WriteHeader(http.StatusOK)
-							w.Write([]byte(`""`))
-							return
-						case "/v1/agent/self":
-							agentSelfCallCount++
-							w.WriteHeader(http.StatusOK)
-							return
-						}
-
-						w.WriteHeader(http.StatusTeapot)
-					}),
-				}
-				bootstrapInput.AgentURL = fmt.Sprintf("http://localhost:%s", port)
-			})
-
-			It("checks that the agent is up", func() {
-				go func() {
-					time.Sleep(1 * time.Second)
-					log.Fatal(fakeHTTPAgentServer.ListenAndServe())
-					fmt.Println("started")
-				}()
-
-				startInBootstrap, err := chaperon.StartInBootstrap(bootstrapInput)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(startInBootstrap).To(BeTrue())
-
-				Expect(agentSelfCallCount).To(Equal(1))
-				Expect(logger.Messages()).To(ContainSequence([]fakes.LoggerMessage{
-					{
-						Action: "chaperon-checker.start-in-bootstrap.connection-refused",
-					},
-				}))
-			})
-		})
-
 		Context("when the agent does not start right away", func() {
-			It("succeeds when the agent starts within the check timeout", func() {
-				agentSelfCallCount := 0
+			BeforeEach(func() {
 				fakeAgentHandlerStub = func(w http.ResponseWriter, r *http.Request) {
 					switch r.URL.Path {
 					case "/v1/status/leader":
 						w.WriteHeader(http.StatusOK)
 						w.Write([]byte(`""`))
 						return
-					case "/v1/agent/self":
-						agentSelfCallCount++
-						if agentSelfCallCount == 2 {
-							w.WriteHeader(http.StatusOK)
-							return
-						}
-						w.WriteHeader(http.StatusServiceUnavailable)
-						return
 					}
 
 					w.WriteHeader(http.StatusOK)
 				}
 
+				agentClient.SelfCall.Returns.Error = nil
+			})
+
+			It("succeeds when the agent starts within the check timeout", func() {
+				agentClient.SelfCall.Returns.Errors = make([]error, 10)
+				for i := 0; i < 9; i++ {
+					agentClient.SelfCall.Returns.Errors[i] = errors.New("some error occurred")
+				}
+
 				_, err := chaperon.StartInBootstrap(bootstrapInput)
-				Expect(agentSelfCallCount).To(Equal(2))
 				Expect(err).NotTo(HaveOccurred())
-				Expect(logger.Messages()).To(ContainSequence([]fakes.LoggerMessage{
-					{
-						Action: "chaperon-checker.start-in-bootstrap.agent-is-not-ok",
-						Data: []lager.Data{
-							{
-								"status-code": fmt.Sprintf("[%d] %s", http.StatusServiceUnavailable, http.StatusText(http.StatusServiceUnavailable)),
-							},
-						},
-					},
+
+				Expect(agentClient.SelfCall.CallCount).To(Equal(10))
+				Expect(clock.SleepCall.CallCount).To(Equal(9))
+				Expect(clock.SleepCall.Receives.Duration).To(Equal(10 * time.Millisecond))
+
+				Expect(logger.Messages()).To(ContainElement(fakes.LoggerMessage{
+					Action: "chaperon-checker.start-in-bootstrap.waiting-for-agent",
 				}))
 			})
 
 			It("returns an error when the agent does not start", func() {
-				agentSelfCallCount := 0
-				fakeAgentHandlerStub = func(w http.ResponseWriter, r *http.Request) {
-					switch r.URL.Path {
-					case "/v1/agent/self":
-						agentSelfCallCount++
-						w.WriteHeader(http.StatusServiceUnavailable)
-						return
-					}
-
-					w.WriteHeader(http.StatusOK)
-				}
-
+				agentClient.SelfCall.Returns.Error = errors.New("some error occurred")
 				_, err := chaperon.StartInBootstrap(bootstrapInput)
-				Expect(agentSelfCallCount).To(Equal(10))
-				Expect(err).To(MatchError(chaperon.AgentCheckTimeoutError))
+
+				Expect(agentClient.SelfCall.CallCount).ToNot(Equal(0))
+				Expect(err).To(MatchError(`timeout exceeded: "some error occurred"`))
+
 				Expect(logger.Messages()).To(ContainElement(fakes.LoggerMessage{
-					Action: "chaperon-checker.start-in-bootstrap.agent-check-timeout",
-					Error:  chaperon.AgentCheckTimeoutError,
+					Action: "chaperon-checker.start-in-bootstrap.waiting-for-agent.failed",
+					Error:  errors.New(`timeout exceeded: "some error occurred"`),
 				}))
 			})
 		})
@@ -571,26 +503,6 @@ var _ = Describe("Checker", func() {
 					Expect(logger.Messages()).To(ContainElement(fakes.LoggerMessage{
 						Action: "chaperon-checker.start-in-bootstrap.generate-random-uuid.failed",
 						Error:  fmt.Errorf("uuid generator failed"),
-					}))
-				})
-			})
-
-			Context("when the call to agent self fails", func() {
-				It("returns an error", func() {
-					fakeAgentHandlerStub = func(w http.ResponseWriter, r *http.Request) {
-						switch r.URL.Path {
-						case "/v1/agent/self":
-							w.WriteHeader(0)
-							return
-						}
-
-						w.WriteHeader(http.StatusOK)
-					}
-					_, err := chaperon.StartInBootstrap(bootstrapInput)
-					Expect(err).To(MatchError(ContainSubstring("malformed HTTP status code")))
-					Expect(logger.Messages()).To(ContainElement(fakes.LoggerMessage{
-						Action: "chaperon-checker.start-in-bootstrap.http.get.failed",
-						Error:  err,
 					}))
 				})
 			})
