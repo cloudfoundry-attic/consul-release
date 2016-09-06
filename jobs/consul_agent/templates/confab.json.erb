@@ -24,9 +24,6 @@
       index: spec.index,
       external_ip: discover_external_ip,
     },
-    confab: {
-      include_dnsmasq: p('consul.include_dnsmasq'),
-    },
     consul: p('consul'),
   }.to_json
 %>

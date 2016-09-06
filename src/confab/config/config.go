@@ -10,8 +10,7 @@ type Config struct {
 }
 
 type ConfigConfab struct {
-	TimeoutInSeconds int  `json:"timeout_in_seconds"`
-	IncludeDNSMASQ   bool `json:"include_dnsmasq"`
+	TimeoutInSeconds int `json:"timeout_in_seconds"`
 }
 
 type ConfigConsul struct {
@@ -42,7 +41,6 @@ type ConfigConsulAgent struct {
 	LogLevel        string                       `json:"log_level"`
 	ProtocolVersion int                          `json:"protocol_version"`
 	DnsConfig       ConfigConsulAgentDnsConfig   `json:"dns_config"`
-	Ports           ConfigConsulAgentPorts       `json:"ports"`
 	Bootstrap       bool                         `json:"bootstrap"`
 	NodeName        string                       `json:"node_name"`
 }
@@ -55,10 +53,6 @@ type ConfigConsulAgentDnsConfig struct {
 type ConfigConsulAgentServers struct {
 	LAN []string `json:"lan"`
 	WAN []string `json:"wan"`
-}
-
-type ConfigConsulAgentPorts struct {
-	DNS int `json:"dns"`
 }
 
 func defaultConfig() Config {
@@ -82,7 +76,6 @@ func defaultConfig() Config {
 		},
 		Confab: ConfigConfab{
 			TimeoutInSeconds: 55,
-			IncludeDNSMASQ:   true,
 		},
 	}
 }
@@ -110,10 +103,5 @@ func ConfigFromJSON(configData []byte) (Config, error) {
 		}
 	}
 
-	if !config.Confab.IncludeDNSMASQ {
-		config.Consul.Agent.Ports.DNS = 53
-	}
-
 	return config, nil
-
 }

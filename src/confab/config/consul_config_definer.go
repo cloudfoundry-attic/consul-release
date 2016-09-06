@@ -56,13 +56,6 @@ func GenerateConfiguration(config Config, configDir, nodeName string) ConsulConf
 
 	isServer := config.Consul.Agent.Mode == "server"
 
-	var ports *ConsulConfigPorts
-	if config.Consul.Agent.Ports.DNS != 0 {
-		ports = &ConsulConfigPorts{
-			DNS: config.Consul.Agent.Ports.DNS,
-		}
-	}
-
 	consulConfig := ConsulConfig{
 		Server:             isServer,
 		Domain:             config.Consul.Agent.Domain,
@@ -70,7 +63,6 @@ func GenerateConfiguration(config Config, configDir, nodeName string) ConsulConf
 		DataDir:            config.Path.DataDir,
 		LogLevel:           config.Consul.Agent.LogLevel,
 		NodeName:           nodeName,
-		Ports:              ports,
 		RejoinAfterLeave:   true,
 		RetryJoin:          lan,
 		RetryJoinWAN:       wan,

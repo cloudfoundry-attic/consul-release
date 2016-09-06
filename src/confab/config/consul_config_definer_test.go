@@ -16,15 +16,7 @@ var _ = Describe("ConsulConfigDefiner", func() {
 
 		BeforeEach(func() {
 			configDir = "/var/vcap/jobs/consul_agent/config"
-			consulConfig = config.GenerateConfiguration(config.Config{
-				Consul: config.ConfigConsul{
-					Agent: config.ConfigConsulAgent{
-						Ports: config.ConfigConsulAgentPorts{
-							DNS: 12345,
-						},
-					},
-				},
-			}, configDir, "")
+			consulConfig = config.GenerateConfiguration(config.Config{}, configDir, "")
 		})
 
 		Describe("datacenter", func() {
@@ -173,14 +165,6 @@ var _ = Describe("ConsulConfigDefiner", func() {
 					}, configDir, "")
 					Expect(consulConfig.Server).To(BeFalse())
 				})
-			})
-		})
-
-		Describe("ports", func() {
-			It("uses the specified dns port", func() {
-				Expect(consulConfig.Ports).To(Equal(&config.ConsulConfigPorts{
-					DNS: 12345,
-				}))
 			})
 		})
 

@@ -47,8 +47,7 @@ var _ = Describe("Config", func() {
 						"encrypt_keys": ["key-1", "key-2"]
 					},
 					"confab": {
-						"timeout_in_seconds": 30,
-						"include_dnsmasq": false
+						"timeout_in_seconds": 30
 					}
 				}`)
 
@@ -86,15 +85,11 @@ var _ = Describe("Config", func() {
 								AllowStale: true,
 								MaxStale:   "15s",
 							},
-							Ports: config.ConfigConsulAgentPorts{
-								DNS: 53,
-							},
 						},
 						EncryptKeys: []string{"key-1", "key-2"},
 					},
 					Confab: config.ConfigConfab{
 						TimeoutInSeconds: 30,
-						IncludeDNSMASQ:   false,
 					},
 				}))
 			})
@@ -128,7 +123,6 @@ var _ = Describe("Config", func() {
 					},
 					Confab: config.ConfigConfab{
 						TimeoutInSeconds: 55,
-						IncludeDNSMASQ:   true,
 					},
 				}))
 			})
