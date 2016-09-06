@@ -3,7 +3,7 @@
 This is a [BOSH](http://bosh.io) release for [consul](https://github.com/hashicorp/consul).
 
 * [CI](https://mega.ci.cf-app.com/pipelines/consul)
-* [Roadmap](https://www.pivotaltracker.com/n/projects/1382120)
+* [Roadmap](https://www.pivotaltracker.com/n/projects/1488988)
 
 ###Contents
 
