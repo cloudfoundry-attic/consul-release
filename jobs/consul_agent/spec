@@ -62,7 +62,7 @@ properties:
     description: "When enabled, dnsmasq is the dns server."
     default: true
 
-  consul.dnsmasq.dns_timeout:
+  consul.dnsmasq.dns_timeout_in_seconds:
     description: "The dns timeout for dnsmasq."
     default: 5
 

@@ -13,7 +13,7 @@ function setup_resolvconf() {
 
   <% if p("consul.include_dnsmasq") %>
     sed -i '/options timeout/d' "${resolvconf_file}"
-    echo "options timeout:<%= p("consul.dnsmasq.dns_timeout") %>" >> "${resolvconf_file}"
+    echo "options timeout:<%= p("consul.dnsmasq.dns_timeout_in_seconds") %>" >> "${resolvconf_file}"
   <% end %>
 
   if ! grep -qE '127.0.0.1\b' "${resolvconf_file}"; then
