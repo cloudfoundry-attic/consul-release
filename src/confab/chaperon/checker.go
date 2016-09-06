@@ -2,8 +2,11 @@ package chaperon
 
 import (
 	"crypto/rand"
+	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
+	"net/http"
 	"strings"
 
 	"code.cloudfoundry.org/lager"
@@ -14,11 +17,12 @@ import (
 	consulagent "github.com/hashicorp/consul/command/agent"
 )
 
-type statusClient interface {
-	Leader() (string, error)
-}
+var (
+	ioutilReadAll = ioutil.ReadAll
+)
 
 type BootstrapInput struct {
+	AgentURL           string
 	Logger             logger
 	Controller         controller
 	ConfigWriter       configWriter
@@ -26,7 +30,6 @@ type BootstrapInput struct {
 	GenerateRandomUUID RandomUUIDGenerator
 	AgentRunner        agentRunner
 	AgentClient        agentClient
-	StatusClient       statusClient
 	NewRPCClient       consulRPCClientConstructor
 	Retrier            utils.Retrier
 	Timeout            utils.Timeout
@@ -103,13 +106,34 @@ func StartInBootstrap(bootstrapInput BootstrapInput) (bool, error) {
 		}
 	}
 
-	bootstrapInput.Logger.Info("chaperon-checker.start-in-bootstrap.status-client.leader")
-	leader, err := bootstrapInput.StatusClient.Leader()
+	route := fmt.Sprintf("%s/v1/status/leader", bootstrapInput.AgentURL)
+	bootstrapInput.Logger.Info("chaperon-checker.start-in-bootstrap.http.get", lager.Data{"route": route})
+	resp, err := http.Get(route)
 	if err != nil {
-		if strings.Contains(err.Error(), "No known Consul servers") {
-			return true, nil
+		bootstrapInput.Logger.Error("chaperon-checker.start-in-bootstrap.http.get.failed", err)
+		return false, err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		response, err := ioutilReadAll(resp.Body)
+		if err != nil {
+			err = fmt.Errorf("Leader check returned %d status: body could not be read %q", resp.StatusCode, err)
+		} else {
+			if strings.Contains(string(response), "No known Consul servers") && resp.StatusCode == http.StatusInternalServerError {
+				return true, nil
+			}
+
+			err = fmt.Errorf("Leader check returned %d status with response %q", resp.StatusCode, string(response))
 		}
-		bootstrapInput.Logger.Error("chaperon-checker.start-in-bootstrap.status-client.leader.failed", err)
+		bootstrapInput.Logger.Error("chaperon-checker.start-in-bootstrap.http.get.invalid-response", err)
+		return false, err
+	}
+
+	bootstrapInput.Logger.Info("chaperon-checker.start-in-bootstrap.json-decoder.decode")
+	var leader string
+	err = json.NewDecoder(resp.Body).Decode(&leader)
+	if err != nil {
+		bootstrapInput.Logger.Error("chaperon-checker.start-in-bootstrap.json-decoder.decode.failed", err)
 		return false, err
 	}
 
