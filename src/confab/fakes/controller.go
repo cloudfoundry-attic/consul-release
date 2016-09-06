@@ -6,6 +6,13 @@ import (
 )
 
 type Controller struct {
+	WriteConsulConfigCall struct {
+		CallCount int
+		Returns   struct {
+			Error error
+		}
+	}
+
 	WriteServiceDefinitionsCall struct {
 		CallCount int
 		Returns   struct {
@@ -47,6 +54,12 @@ type Controller struct {
 			RPCClient *agent.RPCClient
 		}
 	}
+}
+
+func (c *Controller) WriteConsulConfig() error {
+	c.WriteConsulConfigCall.CallCount++
+
+	return c.WriteConsulConfigCall.Returns.Error
 }
 
 func (c *Controller) WriteServiceDefinitions() error {

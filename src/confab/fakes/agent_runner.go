@@ -38,10 +38,7 @@ type AgentRunner struct {
 }
 
 func (r *AgentRunner) Run() error {
-	var err error
-	if len(r.RunCalls.Returns.Errors) > r.RunCalls.CallCount {
-		err = r.RunCalls.Returns.Errors[r.RunCalls.CallCount]
-	}
+	err := r.RunCalls.Returns.Errors[r.RunCalls.CallCount]
 	r.RunCalls.CallCount++
 	return err
 }

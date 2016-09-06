@@ -51,13 +51,7 @@ type FakeAgentOutputData struct {
 	LeaveCallCount      int
 	UseKeyCallCount     int
 	InstallKeyCallCount int
-	ConsulConfig        ConsulConfig
 	StatsCallCount      int
-}
-
-type ConsulConfig struct {
-	Server    bool
-	Bootstrap bool
 }
 
 func killProcessWithPIDFile(pidFilePath string) {
@@ -81,10 +75,10 @@ func getPID(pidFilePath string) (int, error) {
 	return strconv.Atoi(string(pidFileContents))
 }
 
-func fakeAgentOutputFromFile(configDir, fileName string) (FakeAgentOutputData, error) {
+func fakeAgentOutput(configDir string) (FakeAgentOutputData, error) {
 	var decodedFakeOutput FakeAgentOutputData
 
-	fakeOutput, err := ioutil.ReadFile(filepath.Join(configDir, fileName))
+	fakeOutput, err := ioutil.ReadFile(filepath.Join(configDir, "fake-output.json"))
 	if err != nil {
 		return decodedFakeOutput, err
 	}
