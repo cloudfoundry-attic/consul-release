@@ -12,18 +12,18 @@ import (
 	"code.cloudfoundry.org/clock"
 	"code.cloudfoundry.org/lager"
 
+	"github.com/cloudfoundry-incubator/consul-release/src/confab"
 	"github.com/cloudfoundry-incubator/consul-release/src/confab/agent"
 	"github.com/cloudfoundry-incubator/consul-release/src/confab/chaperon"
 	"github.com/cloudfoundry-incubator/consul-release/src/confab/config"
 	"github.com/cloudfoundry-incubator/consul-release/src/confab/helpers"
 	"github.com/cloudfoundry-incubator/consul-release/src/confab/utils"
 	"github.com/hashicorp/consul/api"
-
 	consulagent "github.com/hashicorp/consul/command/agent"
 )
 
 type runner interface {
-	Start(config.Config, utils.Timeout) error
+	Start(config.Config, confab.Timeout) error
 	Stop() error
 }
 
@@ -161,7 +161,7 @@ func main() {
 				os.Exit(1)
 			}
 		}
-		timeout := utils.NewTimeout(time.After(time.Duration(controller.Config.Confab.TimeoutInSeconds) * time.Second))
+		timeout := confab.NewTimeout(time.After(time.Duration(controller.Config.Confab.TimeoutInSeconds) * time.Second))
 
 		if err := r.Start(cfg, timeout); err != nil {
 			stderr.Printf("error during start: %s", err)

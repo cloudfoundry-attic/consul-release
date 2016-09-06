@@ -1,15 +1,15 @@
 package chaperon
 
 import (
+	"github.com/cloudfoundry-incubator/consul-release/src/confab"
 	"github.com/cloudfoundry-incubator/consul-release/src/confab/config"
-	"github.com/cloudfoundry-incubator/consul-release/src/confab/utils"
 	"github.com/hashicorp/consul/command/agent"
 )
 
 type controller interface {
 	WriteServiceDefinitions() error
-	BootAgent(utils.Timeout) error
-	ConfigureServer(utils.Timeout, *agent.RPCClient) error
+	BootAgent(confab.Timeout) error
+	ConfigureServer(confab.Timeout, *agent.RPCClient) error
 	ConfigureClient() error
 	StopAgent(*agent.RPCClient)
 }
@@ -34,7 +34,7 @@ func NewServer(controller controller, configWriter configWriter, newRPCClient co
 	}
 }
 
-func (s Server) Start(cfg config.Config, timeout utils.Timeout) error {
+func (s Server) Start(cfg config.Config, timeout confab.Timeout) error {
 	if err := s.configWriter.Write(cfg); err != nil {
 		return err
 	}

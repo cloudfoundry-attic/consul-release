@@ -6,11 +6,11 @@ import (
 
 	"code.cloudfoundry.org/lager"
 
+	"github.com/cloudfoundry-incubator/consul-release/src/confab"
 	"github.com/cloudfoundry-incubator/consul-release/src/confab/agent"
 	"github.com/cloudfoundry-incubator/consul-release/src/confab/chaperon"
 	"github.com/cloudfoundry-incubator/consul-release/src/confab/config"
 	"github.com/cloudfoundry-incubator/consul-release/src/confab/fakes"
-	"github.com/cloudfoundry-incubator/consul-release/src/confab/utils"
 	consulagent "github.com/hashicorp/consul/command/agent"
 
 	. "github.com/onsi/ginkgo"
@@ -124,7 +124,7 @@ var _ = Describe("Controller", func() {
 
 	Describe("BootAgent", func() {
 		It("launches the consul agent and confirms that it joined the cluster", func() {
-			Expect(controller.BootAgent(utils.NewTimeout(make(chan time.Time)))).To(Succeed())
+			Expect(controller.BootAgent(confab.NewTimeout(make(chan time.Time)))).To(Succeed())
 
 			Expect(agentClient.JoinMembersCall.CallCount).To(Equal(1))
 
@@ -154,7 +154,7 @@ var _ = Describe("Controller", func() {
 			It("immediately returns an error", func() {
 				agentRunner.RunCalls.Returns.Errors = []error{errors.New("some error")}
 
-				Expect(controller.BootAgent(utils.NewTimeout(make(chan time.Time)))).To(MatchError("some error"))
+				Expect(controller.BootAgent(confab.NewTimeout(make(chan time.Time)))).To(MatchError("some error"))
 				Expect(agentRunner.RunCalls.CallCount).To(Equal(1))
 				Expect(agentClient.JoinMembersCall.CallCount).To(Equal(0))
 				Expect(agentClient.VerifyJoinedCalls.CallCount).To(Equal(0))
@@ -176,7 +176,7 @@ var _ = Describe("Controller", func() {
 				for i := 0; i < 9; i++ {
 					agentClient.SelfCall.Returns.Errors[i] = errors.New("some error occured")
 				}
-				err := controller.BootAgent(utils.NewTimeout(make(chan time.Time)))
+				err := controller.BootAgent(confab.NewTimeout(make(chan time.Time)))
 				Expect(err).NotTo(HaveOccurred())
 				Expect(clock.SleepCall.CallCount).To(Equal(9))
 				Expect(clock.SleepCall.Receives.Duration).To(Equal(10 * time.Millisecond))
@@ -192,7 +192,7 @@ var _ = Describe("Controller", func() {
 				agentClient.SelfCall.Returns.Error = errors.New("some error occured")
 
 				timer := make(chan time.Time)
-				timeout := utils.NewTimeout(timer)
+				timeout := confab.NewTimeout(timer)
 				timer <- time.Now()
 
 				err := controller.BootAgent(timeout)
@@ -213,7 +213,7 @@ var _ = Describe("Controller", func() {
 			Context("when fails to join any members", func() {
 				It("ignores and continue to bootstrap", func() {
 					agentClient.JoinMembersCall.Returns.Error = agent.NoMembersToJoinError
-					err := controller.BootAgent(utils.NewTimeout(make(chan time.Time)))
+					err := controller.BootAgent(confab.NewTimeout(make(chan time.Time)))
 					Expect(err).NotTo(HaveOccurred())
 					Expect(agentRunner.RunCalls.CallCount).To(Equal(1))
 					Expect(agentClient.JoinMembersCall.CallCount).To(Equal(1))
@@ -235,7 +235,7 @@ var _ = Describe("Controller", func() {
 			Context("when fails with any other error", func() {
 				It("returns an error", func() {
 					agentClient.JoinMembersCall.Returns.Error = errors.New("some error")
-					err := controller.BootAgent(utils.NewTimeout(make(chan time.Time)))
+					err := controller.BootAgent(confab.NewTimeout(make(chan time.Time)))
 					Expect(err).To(MatchError("some error"))
 
 					Expect(logger.Messages()).To(ContainSequence([]fakes.LoggerMessage{
@@ -255,7 +255,7 @@ var _ = Describe("Controller", func() {
 		Context("joining fails", func() {
 			It("returns an errors", func() {
 				agentClient.VerifyJoinedCalls.Returns.Error = errors.New("some error")
-				err := controller.BootAgent(utils.NewTimeout(make(chan time.Time)))
+				err := controller.BootAgent(confab.NewTimeout(make(chan time.Time)))
 				Expect(err).To(MatchError("some error"))
 				Expect(agentClient.VerifyJoinedCalls.CallCount).To(Equal(1))
 				Expect(logger.Messages()).To(ContainSequence([]fakes.LoggerMessage{
@@ -429,12 +429,12 @@ var _ = Describe("Controller", func() {
 
 	Describe("ConfigureServer", func() {
 		var (
-			timeout   utils.Timeout
+			timeout   confab.Timeout
 			rpcClient *consulagent.RPCClient
 		)
 
 		BeforeEach(func() {
-			timeout = utils.NewTimeout(make(chan time.Time))
+			timeout = confab.NewTimeout(make(chan time.Time))
 			rpcClient = &consulagent.RPCClient{}
 		})
 
@@ -568,7 +568,7 @@ var _ = Describe("Controller", func() {
 					}
 
 					timer := make(chan time.Time)
-					timeout = utils.NewTimeout(timer)
+					timeout = confab.NewTimeout(timer)
 					timer <- time.Now()
 
 					err := controller.ConfigureServer(timeout, rpcClient)

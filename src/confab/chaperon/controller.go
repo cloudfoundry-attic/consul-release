@@ -6,9 +6,9 @@ import (
 
 	"code.cloudfoundry.org/lager"
 
+	"github.com/cloudfoundry-incubator/consul-release/src/confab"
 	"github.com/cloudfoundry-incubator/consul-release/src/confab/agent"
 	"github.com/cloudfoundry-incubator/consul-release/src/confab/config"
-	"github.com/cloudfoundry-incubator/consul-release/src/confab/utils"
 	"github.com/hashicorp/consul/api"
 	consulagent "github.com/hashicorp/consul/command/agent"
 )
@@ -63,7 +63,7 @@ type Controller struct {
 	Config         config.Config
 }
 
-func (c Controller) BootAgent(timeout utils.Timeout) error {
+func (c Controller) BootAgent(timeout confab.Timeout) error {
 	c.Logger.Info("controller.boot-agent.run")
 	err := c.AgentRunner.Run()
 	if err != nil {
@@ -98,7 +98,7 @@ func (c Controller) BootAgent(timeout utils.Timeout) error {
 	return nil
 }
 
-func (c Controller) callWithTimeout(timeout utils.Timeout, f func() error) error {
+func (c Controller) callWithTimeout(timeout confab.Timeout, f func() error) error {
 	for {
 		select {
 		case <-timeout.Done():
@@ -114,7 +114,7 @@ func (c Controller) callWithTimeout(timeout utils.Timeout, f func() error) error
 	}
 }
 
-func (c Controller) ConfigureServer(timeout utils.Timeout, rpcClient *consulagent.RPCClient) error {
+func (c Controller) ConfigureServer(timeout confab.Timeout, rpcClient *consulagent.RPCClient) error {
 	if rpcClient != nil {
 		c.AgentClient.SetConsulRPCClient(&agent.RPCClient{*rpcClient})
 	}
