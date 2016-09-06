@@ -53,7 +53,8 @@ type logger interface {
 type Controller struct {
 	AgentRunner    agentRunner
 	AgentClient    agentClient
-	Retrier        utils.Retrier
+	SyncRetryDelay time.Duration
+	SyncRetryClock clock
 	EncryptKeys    []string
 	SSLDisabled    bool
 	Logger         logger
@@ -71,7 +72,7 @@ func (c Controller) BootAgent(timeout utils.Timeout) error {
 	}
 
 	c.Logger.Info("controller.boot-agent.agent-client.waiting-for-agent")
-	if err := c.Retrier.TryUntil(timeout, c.AgentClient.Self); err != nil {
+	if err := c.callWithTimeout(timeout, c.AgentClient.Self); err != nil {
 		return err
 	}
 
@@ -97,13 +98,29 @@ func (c Controller) BootAgent(timeout utils.Timeout) error {
 	return nil
 }
 
+func (c Controller) callWithTimeout(timeout utils.Timeout, f func() error) error {
+	for {
+		select {
+		case <-timeout.Done():
+			return errors.New("timeout exceeded")
+		default:
+			err := f()
+			if err != nil {
+				c.SyncRetryClock.Sleep(c.SyncRetryDelay)
+				continue
+			}
+			return nil
+		}
+	}
+}
+
 func (c Controller) ConfigureServer(timeout utils.Timeout, rpcClient *consulagent.RPCClient) error {
 	if rpcClient != nil {
 		c.AgentClient.SetConsulRPCClient(&agent.RPCClient{*rpcClient})
 	}
 
 	c.Logger.Info("controller.configure-server.verify-synced")
-	if err := c.Retrier.TryUntil(timeout, c.AgentClient.VerifySynced); err != nil {
+	if err := c.callWithTimeout(timeout, c.AgentClient.VerifySynced); err != nil {
 		c.Logger.Error("controller.configure-server.verify-synced.failed", err)
 		return err
 	}

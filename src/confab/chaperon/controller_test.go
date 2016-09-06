@@ -46,7 +46,8 @@ var _ = Describe("Controller", func() {
 		controller = chaperon.Controller{
 			AgentClient:    agentClient,
 			AgentRunner:    agentRunner,
-			Retrier:        utils.NewRetrier(clock, 10*time.Millisecond),
+			SyncRetryDelay: 10 * time.Millisecond,
+			SyncRetryClock: clock,
 			EncryptKeys:    []string{"key 1", "key 2", "key 3"},
 			Logger:         logger,
 			ConfigDir:      "/tmp/config",
@@ -173,7 +174,7 @@ var _ = Describe("Controller", func() {
 			It("retries self call until it succeeds", func() {
 				agentClient.SelfCall.Returns.Errors = make([]error, 10)
 				for i := 0; i < 9; i++ {
-					agentClient.SelfCall.Returns.Errors[i] = errors.New("some error occurred")
+					agentClient.SelfCall.Returns.Errors[i] = errors.New("some error occured")
 				}
 				err := controller.BootAgent(utils.NewTimeout(make(chan time.Time)))
 				Expect(err).NotTo(HaveOccurred())
@@ -188,15 +189,17 @@ var _ = Describe("Controller", func() {
 			})
 
 			It("returns an error after timeout", func() {
-				agentClient.SelfCall.Returns.Error = errors.New("some error occurred")
+				agentClient.SelfCall.Returns.Error = errors.New("some error occured")
 
-				timeout := utils.NewTimeout(time.After(0))
+				timer := make(chan time.Time)
+				timeout := utils.NewTimeout(timer)
+				timer <- time.Now()
 
 				err := controller.BootAgent(timeout)
-				Expect(err).To(MatchError(`timeout exceeded: "some error occurred"`))
-				Expect(clock.SleepCall.CallCount).NotTo(Equal(0))
+				Expect(err).To(MatchError("timeout exceeded"))
+				Expect(clock.SleepCall.CallCount).To(Equal(0))
 
-				Expect(agentClient.SelfCall.CallCount).NotTo(Equal(0))
+				Expect(agentClient.SelfCall.CallCount).To(Equal(0))
 				Expect(logger.Messages()).To(ContainSequence([]fakes.LoggerMessage{
 					{
 						Action: "controller.boot-agent.agent-client.waiting-for-agent",
@@ -559,13 +562,18 @@ var _ = Describe("Controller", func() {
 
 			Context("verifying synced never succeeds within the timeout period", func() {
 				It("immediately returns an error", func() {
-					agentClient.VerifySyncedCalls.Returns.Error = errors.New("some error")
+					agentClient.VerifySyncedCalls.Returns.Errors = make([]error, 10)
+					for i := 0; i < 9; i++ {
+						agentClient.VerifySyncedCalls.Returns.Errors[i] = errors.New("some error")
+					}
 
-					timeout = utils.NewTimeout(time.After(0))
+					timer := make(chan time.Time)
+					timeout = utils.NewTimeout(timer)
+					timer <- time.Now()
 
 					err := controller.ConfigureServer(timeout, rpcClient)
-					Expect(err).To(MatchError(`timeout exceeded: "some error"`))
-					Expect(agentClient.VerifySyncedCalls.CallCount).NotTo(Equal(0))
+					Expect(err).To(MatchError("timeout exceeded"))
+					Expect(agentClient.VerifySyncedCalls.CallCount).To(Equal(0))
 					Expect(agentClient.SetKeysCall.Receives.Keys).To(BeNil())
 					Expect(agentRunner.WritePIDCall.CallCount).To(Equal(0))
 
@@ -575,7 +583,7 @@ var _ = Describe("Controller", func() {
 						},
 						{
 							Action: "controller.configure-server.verify-synced.failed",
-							Error:  errors.New(`timeout exceeded: "some error"`),
+							Error:  errors.New("timeout exceeded"),
 						},
 					}))
 				})

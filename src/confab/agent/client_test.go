@@ -365,10 +365,10 @@ var _ = Describe("Client", func() {
 
 		Context("failure case", func() {
 			It("returns an error when self call fails", func() {
-				consulAPIAgent.SelfCall.Returns.Error = errors.New("some error occurred")
+				consulAPIAgent.SelfCall.Returns.Error = errors.New("some error occured")
 
 				err := client.Self()
-				Expect(err).To(MatchError("some error occurred"))
+				Expect(err).To(MatchError("some error occured"))
 				Expect(consulAPIAgent.SelfCall.CallCount).To(Equal(1))
 			})
 		})

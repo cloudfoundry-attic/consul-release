@@ -16,7 +16,6 @@ type AgentClient struct {
 		CallCount int
 		Returns   struct {
 			Errors []error
-			Error  error
 		}
 	}
 
@@ -84,14 +83,7 @@ func (c *AgentClient) VerifyJoined() error {
 }
 
 func (c *AgentClient) VerifySynced() error {
-	var err error
-
-	if c.VerifySyncedCalls.Returns.Error != nil {
-		err = c.VerifySyncedCalls.Returns.Error
-	} else {
-		err = c.VerifySyncedCalls.Returns.Errors[c.VerifySyncedCalls.CallCount]
-	}
-
+	err := c.VerifySyncedCalls.Returns.Errors[c.VerifySyncedCalls.CallCount]
 	c.VerifySyncedCalls.CallCount++
 	return err
 }

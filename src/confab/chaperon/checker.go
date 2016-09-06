@@ -3,22 +3,29 @@ package chaperon
 import (
 	"crypto/rand"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"strings"
+	"time"
 
 	"code.cloudfoundry.org/lager"
 
 	"github.com/cloudfoundry-incubator/consul-release/src/confab/agent"
 	"github.com/cloudfoundry-incubator/consul-release/src/confab/config"
-	"github.com/cloudfoundry-incubator/consul-release/src/confab/utils"
 	consulagent "github.com/hashicorp/consul/command/agent"
 )
 
+const (
+	agentMaxChecks = 10
+)
+
 var (
-	ioutilReadAll = ioutil.ReadAll
+	agentCheckInterval     = time.Second
+	AgentCheckTimeoutError = errors.New("consul agent failed to start")
+	ioutilReadAll          = ioutil.ReadAll
 )
 
 type BootstrapInput struct {
@@ -31,8 +38,6 @@ type BootstrapInput struct {
 	AgentRunner        agentRunner
 	AgentClient        agentClient
 	NewRPCClient       consulRPCClientConstructor
-	Retrier            utils.Retrier
-	Timeout            utils.Timeout
 }
 
 type RandomUUIDGenerator func(io.Reader) (string, error)
@@ -67,9 +72,8 @@ func StartInBootstrap(bootstrapInput BootstrapInput) (bool, error) {
 		bootstrapInput.Controller.StopAgent(rpcClient)
 	}()
 
-	bootstrapInput.Logger.Info("chaperon-checker.start-in-bootstrap.waiting-for-agent")
-	if err := bootstrapInput.Retrier.TryUntil(bootstrapInput.Timeout, bootstrapInput.AgentClient.Self); err != nil {
-		bootstrapInput.Logger.Error("chaperon-checker.start-in-bootstrap.waiting-for-agent.failed", err)
+	err = checkIfAgentIsUp(bootstrapInput)
+	if err != nil {
 		return false, err
 	}
 
@@ -144,4 +148,34 @@ func StartInBootstrap(bootstrapInput BootstrapInput) (bool, error) {
 
 	bootstrapInput.Logger.Info("chaperon-checker.start-in-bootstrap.bootstrap-true")
 	return true, nil
+}
+
+func checkIfAgentIsUp(bootstrapInput BootstrapInput) error {
+	for i := 0; i < agentMaxChecks; i++ {
+		route := fmt.Sprintf("%s/v1/agent/self", bootstrapInput.AgentURL)
+		bootstrapInput.Logger.Info("chaperon-checker.start-in-bootstrap.http.get", lager.Data{"route": route})
+		resp, err := http.Get(route)
+		switch {
+		case err == nil:
+			if resp.StatusCode == http.StatusOK {
+				bootstrapInput.Logger.Info("chaperon-checker.start-in-bootstrap.agent-is-up")
+				return nil
+			} else {
+				bootstrapInput.Logger.Info("chaperon-checker.start-in-bootstrap.agent-is-not-ok",
+					lager.Data{"status-code": fmt.Sprintf("[%d] %s", resp.StatusCode, http.StatusText(resp.StatusCode))},
+				)
+			}
+		case strings.Contains(err.Error(), "connection refused"):
+			bootstrapInput.Logger.Info("chaperon-checker.start-in-bootstrap.connection-refused")
+			break
+		default:
+			bootstrapInput.Logger.Error("chaperon-checker.start-in-bootstrap.http.get.failed", err)
+			return err
+		}
+
+		time.Sleep(agentCheckInterval)
+	}
+
+	bootstrapInput.Logger.Error("chaperon-checker.start-in-bootstrap.agent-check-timeout", AgentCheckTimeoutError)
+	return AgentCheckTimeoutError
 }
