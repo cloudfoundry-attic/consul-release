@@ -10,7 +10,8 @@ type Config struct {
 }
 
 type ConfigConfab struct {
-	TimeoutInSeconds int `json:"timeout_in_seconds"`
+	TimeoutInSeconds int  `json:"timeout_in_seconds"`
+	IncludeDNSMASQ   bool `json:"include_dnsmasq"`
 }
 
 type ConfigConsul struct {
@@ -81,6 +82,7 @@ func defaultConfig() Config {
 		},
 		Confab: ConfigConfab{
 			TimeoutInSeconds: 55,
+			IncludeDNSMASQ:   true,
 		},
 	}
 }
@@ -106,6 +108,10 @@ func ConfigFromJSON(configData []byte) (Config, error) {
 		} else {
 			config.Path.DataDir = "/var/vcap/data/consul_agent"
 		}
+	}
+
+	if !config.Confab.IncludeDNSMASQ {
+		config.Consul.Agent.Ports.DNS = 53
 	}
 
 	return config, nil

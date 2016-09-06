@@ -13,3 +13,12 @@ check process consul-join
   group vcap
   depends on consul_agent
 <% end %>
+
+<% if p("consul.include_dnsmasq") %>
+check process dnsmasq
+  with pidfile /var/vcap/sys/run/consul_agent/dnsmasq.pid
+  start program "/var/vcap/jobs/consul_agent/bin/dnsmasq_ctl start"
+    as uid vcap and gid vcap with timeout 60 seconds
+  stop program "/var/vcap/jobs/consul_agent/bin/dnsmasq_ctl stop"
+  group vcap
+<% end %>

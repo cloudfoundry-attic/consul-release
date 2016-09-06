@@ -66,6 +66,7 @@ update:
 
 properties:
   consul:
+    include_dnsmasq: false
     agent:
       domain: cf.internal
       servers:
