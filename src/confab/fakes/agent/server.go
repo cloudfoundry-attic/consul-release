@@ -62,6 +62,17 @@ func (s *Server) ServeHTTP() {
 		}
 		json.NewEncoder(w).Encode(members)
 	})
+	mux.HandleFunc("/v1/agent/self", func(w http.ResponseWriter, req *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`{}`))
+	})
+	mux.HandleFunc("/v1/agent/join/", func(w http.ResponseWriter, req *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+	mux.HandleFunc("/v1/status/leader", func(w http.ResponseWriter, req *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`""`)) //s.Members[0]
+	})
 
 	server := &http.Server{
 		Addr:    s.HTTPAddr,

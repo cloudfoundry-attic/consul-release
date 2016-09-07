@@ -45,8 +45,6 @@ func main() {
 		log.Fatal("missing required config-dir flag")
 	}
 
-	ow := NewOutputWriter(filepath.Join(configDir, "fake-output.json"), os.Getpid(), os.Args[1:])
-
 	// read input options provided to us by the test
 	var inputOptions struct {
 		Members           []string
@@ -57,6 +55,12 @@ func main() {
 	if optionsBytes, err := ioutil.ReadFile(filepath.Join(configDir, "options.json")); err == nil {
 		json.Unmarshal(optionsBytes, &inputOptions)
 	}
+
+	outputFile := filepath.Join(configDir, "fake-output.json")
+	if _, err := os.Stat(outputFile); err == nil {
+		outputFile = filepath.Join(configDir, "fake-output-2.json")
+	}
+	ow := NewOutputWriter(outputFile, os.Getpid(), os.Args[1:], configDir)
 
 	tcpAddr := ""
 	if !inputOptions.FailRPCServer {

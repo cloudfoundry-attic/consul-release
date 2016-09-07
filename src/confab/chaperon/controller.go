@@ -6,9 +6,10 @@ import (
 
 	"code.cloudfoundry.org/lager"
 
-	"github.com/cloudfoundry-incubator/consul-release/src/confab"
 	"github.com/cloudfoundry-incubator/consul-release/src/confab/agent"
 	"github.com/cloudfoundry-incubator/consul-release/src/confab/config"
+	"github.com/cloudfoundry-incubator/consul-release/src/confab/utils"
+	"github.com/hashicorp/consul/api"
 	consulagent "github.com/hashicorp/consul/command/agent"
 )
 
@@ -25,12 +26,14 @@ type agentRunner interface {
 }
 
 type agentClient interface {
+	Members(wan bool) ([]*api.AgentMember, error)
 	VerifyJoined() error
 	VerifySynced() error
-	IsLastNode() (bool, error)
 	SetKeys([]string) error
 	Leave() error
 	SetConsulRPCClient(agent.ConsulRPCClient)
+	JoinMembers() error
+	Self() error
 }
 
 type serviceDefiner interface {
@@ -60,7 +63,7 @@ type Controller struct {
 	Config         config.Config
 }
 
-func (c Controller) BootAgent(timeout confab.Timeout) error {
+func (c Controller) BootAgent(timeout utils.Timeout) error {
 	c.Logger.Info("controller.boot-agent.run")
 	err := c.AgentRunner.Run()
 	if err != nil {
@@ -68,9 +71,25 @@ func (c Controller) BootAgent(timeout confab.Timeout) error {
 		return err
 	}
 
+	c.Logger.Info("controller.boot-agent.agent-client.waiting-for-agent")
+	if err := c.callWithTimeout(timeout, c.AgentClient.Self); err != nil {
+		return err
+	}
+
+	c.Logger.Info("controller.boot-agent.agent-client.join-members")
+	err = c.AgentClient.JoinMembers()
+	switch err {
+	case agent.NoMembersToJoinError:
+		c.Logger.Error("controller.boot-agent.agent-client.join-members.no-members-to-join", err)
+	case nil:
+	default:
+		c.Logger.Error("controller.boot-agent.agent-client.join-members.failed", err)
+		return err
+	}
+
 	c.Logger.Info("controller.boot-agent.verify-joined")
 
-	if err := c.callWithTimeout(timeout, c.AgentClient.VerifyJoined); err != nil {
+	if err := c.AgentClient.VerifyJoined(); err != nil {
 		c.Logger.Error("controller.boot-agent.verify-joined.failed", err)
 		return err
 	}
@@ -79,7 +98,7 @@ func (c Controller) BootAgent(timeout confab.Timeout) error {
 	return nil
 }
 
-func (c Controller) callWithTimeout(timeout confab.Timeout, f func() error) error {
+func (c Controller) callWithTimeout(timeout utils.Timeout, f func() error) error {
 	for {
 		select {
 		case <-timeout.Done():
@@ -90,30 +109,20 @@ func (c Controller) callWithTimeout(timeout confab.Timeout, f func() error) erro
 				c.SyncRetryClock.Sleep(c.SyncRetryDelay)
 				continue
 			}
-
 			return nil
 		}
 	}
 }
 
-func (c Controller) ConfigureServer(timeout confab.Timeout, rpcClient *consulagent.RPCClient) error {
+func (c Controller) ConfigureServer(timeout utils.Timeout, rpcClient *consulagent.RPCClient) error {
 	if rpcClient != nil {
 		c.AgentClient.SetConsulRPCClient(&agent.RPCClient{*rpcClient})
 	}
 
-	c.Logger.Info("controller.configure-server.is-last-node")
-	lastNode, err := c.AgentClient.IsLastNode()
-	if err != nil {
-		c.Logger.Error("controller.configure-server.is-last-node.failed", err)
+	c.Logger.Info("controller.configure-server.verify-synced")
+	if err := c.callWithTimeout(timeout, c.AgentClient.VerifySynced); err != nil {
+		c.Logger.Error("controller.configure-server.verify-synced.failed", err)
 		return err
-	}
-
-	if lastNode {
-		c.Logger.Info("controller.configure-server.verify-synced")
-		if err := c.callWithTimeout(timeout, c.AgentClient.VerifySynced); err != nil {
-			c.Logger.Error("controller.configure-server.verify-synced.failed", err)
-			return err
-		}
 	}
 
 	if len(c.EncryptKeys) == 0 {
@@ -126,7 +135,7 @@ func (c Controller) ConfigureServer(timeout confab.Timeout, rpcClient *consulage
 		"keys": c.EncryptKeys,
 	})
 
-	err = c.AgentClient.SetKeys(c.EncryptKeys)
+	err := c.AgentClient.SetKeys(c.EncryptKeys)
 	if err != nil {
 		c.Logger.Error("controller.configure-server.set-keys.failed", err, lager.Data{
 			"keys": c.EncryptKeys,

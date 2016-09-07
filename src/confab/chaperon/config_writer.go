@@ -27,10 +27,16 @@ func NewConfigWriter(dir string, logger logger) ConfigWriter {
 }
 
 func (w ConfigWriter) Write(cfg config.Config) error {
-	nodeName, err := nodeNameFor(cfg.Path.DataDir, cfg.Node)
-	if err != nil {
-		w.logger.Error("config-writer.write.determine-node-name.failed", err)
-		return err
+	var err error
+
+	nodeName := cfg.Consul.Agent.NodeName
+
+	if nodeName == "" {
+		nodeName, err = nodeNameFor(cfg.Path.DataDir, cfg.Node)
+		if err != nil {
+			w.logger.Error("config-writer.write.determine-node-name.failed", err)
+			return err
+		}
 	}
 
 	w.logger.Info("config-writer.write.determine-node-name", lager.Data{

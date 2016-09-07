@@ -3,7 +3,6 @@ package chaperon_test
 import (
 	"errors"
 
-	"github.com/cloudfoundry-incubator/consul-release/src/confab/agent"
 	"github.com/cloudfoundry-incubator/consul-release/src/confab/chaperon"
 	"github.com/cloudfoundry-incubator/consul-release/src/confab/config"
 	"github.com/cloudfoundry-incubator/consul-release/src/confab/fakes"
@@ -22,7 +21,6 @@ var _ = Describe("Server", func() {
 		cfg          config.Config
 		configWriter *fakes.ConfigWriter
 
-		agentClient *agent.Client
 		rpcClient   *consulagent.RPCClient
 		rpcEndpoint string
 	)
@@ -46,7 +44,6 @@ var _ = Describe("Server", func() {
 		server = chaperon.NewServer(controller, configWriter, rpcClientConstructor)
 
 		timeout = &fakes.Timeout{}
-		agentClient = &agent.Client{}
 	})
 
 	Describe("Start", func() {

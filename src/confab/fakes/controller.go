@@ -1,18 +1,11 @@
 package fakes
 
 import (
-	"github.com/cloudfoundry-incubator/consul-release/src/confab"
+	"github.com/cloudfoundry-incubator/consul-release/src/confab/utils"
 	"github.com/hashicorp/consul/command/agent"
 )
 
 type Controller struct {
-	WriteConsulConfigCall struct {
-		CallCount int
-		Returns   struct {
-			Error error
-		}
-	}
-
 	WriteServiceDefinitionsCall struct {
 		CallCount int
 		Returns   struct {
@@ -23,7 +16,7 @@ type Controller struct {
 	BootAgentCall struct {
 		CallCount int
 		Receives  struct {
-			Timeout confab.Timeout
+			Timeout utils.Timeout
 		}
 		Returns struct {
 			Error error
@@ -33,7 +26,7 @@ type Controller struct {
 	ConfigureServerCall struct {
 		CallCount int
 		Receives  struct {
-			Timeout   confab.Timeout
+			Timeout   utils.Timeout
 			RPCClient *agent.RPCClient
 		}
 		Returns struct {
@@ -56,26 +49,20 @@ type Controller struct {
 	}
 }
 
-func (c *Controller) WriteConsulConfig() error {
-	c.WriteConsulConfigCall.CallCount++
-
-	return c.WriteConsulConfigCall.Returns.Error
-}
-
 func (c *Controller) WriteServiceDefinitions() error {
 	c.WriteServiceDefinitionsCall.CallCount++
 
 	return c.WriteServiceDefinitionsCall.Returns.Error
 }
 
-func (c *Controller) BootAgent(timeout confab.Timeout) error {
+func (c *Controller) BootAgent(timeout utils.Timeout) error {
 	c.BootAgentCall.CallCount++
 	c.BootAgentCall.Receives.Timeout = timeout
 
 	return c.BootAgentCall.Returns.Error
 }
 
-func (c *Controller) ConfigureServer(timeout confab.Timeout, rpcClient *agent.RPCClient) error {
+func (c *Controller) ConfigureServer(timeout utils.Timeout, rpcClient *agent.RPCClient) error {
 	c.ConfigureServerCall.CallCount++
 	c.ConfigureServerCall.Receives.Timeout = timeout
 	c.ConfigureServerCall.Receives.RPCClient = rpcClient

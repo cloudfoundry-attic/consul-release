@@ -261,145 +261,147 @@ var _ = Describe("Client", func() {
 		})
 	})
 
-	Describe("IsLastNode", func() {
+	Describe("JoinMembers", func() {
 		BeforeEach(func() {
+			client.ExpectedMembers = []string{"member1", "member2", "member3"}
+		})
+
+		Context("when we are able to successfully join each expected member", func() {
+			It("returns without errors", func() {
+				err := client.JoinMembers()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(consulAPIAgent.JoinCall.CallCount).To(Equal(3))
+				Expect(consulAPIAgent.JoinCall.Receives.Members).To(Equal(client.ExpectedMembers))
+				Expect(consulAPIAgent.JoinCall.Receives.WAN).To(BeFalse())
+				Expect(logger.Messages()).To(ContainSequence([]fakes.LoggerMessage{
+					{
+						Action: "agent-client.join-members.consul-api-agent.join",
+						Data: []lager.Data{
+							{
+								"member": "member1",
+							},
+						},
+					},
+					{
+						Action: "agent-client.join-members.consul-api-agent.join",
+						Data: []lager.Data{
+							{
+								"member": "member2",
+							},
+						},
+					},
+					{
+						Action: "agent-client.join-members.consul-api-agent.join",
+						Data: []lager.Data{
+							{
+								"member": "member3",
+							},
+						},
+					},
+					{
+						Action: "agent-client.join-members.success",
+					},
+				}))
+			})
+		})
+
+		Context("when we are unable to join some expected members", func() {
+			It("returns without errors", func() {
+				consulAPIAgent.JoinCall.Stub = func(member string, wan bool) error {
+					if member == "member2" {
+						return errors.New("dial tcp 127.0.0.1:8500: getsockopt: connection refused")
+					}
+					return nil
+				}
+				err := client.JoinMembers()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(consulAPIAgent.JoinCall.CallCount).To(Equal(3))
+				Expect(consulAPIAgent.JoinCall.Receives.Members).To(Equal(client.ExpectedMembers))
+				Expect(consulAPIAgent.JoinCall.Receives.WAN).To(BeFalse())
+				Expect(logger.Messages()).To(ContainSequence([]fakes.LoggerMessage{
+					{
+						Action: "agent-client.join-members.consul-api-agent.join.connection-refused",
+					},
+				}))
+			})
+		})
+
+		Context("when we are unable to join any expected members", func() {
+			It("returns a no members to join error", func() {
+				consulAPIAgent.JoinCall.Returns.Error = errors.New("dial tcp 127.0.0.1:8500: getsockopt: connection refused")
+				err := client.JoinMembers()
+				Expect(err).To(MatchError(agent.NoMembersToJoinError))
+				Expect(logger.Messages()).To(ContainSequence([]fakes.LoggerMessage{
+					{
+						Action: "agent-client.join-members.no-members-to-join",
+					},
+				}))
+			})
+		})
+
+		Context("failure cases", func() {
+			Context("when client api agent join fails", func() {
+				It("returns an error", func() {
+					consulAPIAgent.JoinCall.Returns.Error = errors.New("failed to join")
+					err := client.JoinMembers()
+					Expect(err).To(MatchError("failed to join"))
+					Expect(logger.Messages()).To(ContainSequence([]fakes.LoggerMessage{
+						{
+							Action: "agent-client.join-members.consul-api-agent.join.failed",
+							Error:  errors.New("failed to join"),
+						},
+					}))
+				})
+			})
+		})
+	})
+
+	Describe("Self", func() {
+		It("does not return an error when the agent is ready", func() {
+			err := client.Self()
+			Expect(err).NotTo(HaveOccurred())
+			Expect(consulAPIAgent.SelfCall.CallCount).To(Equal(1))
+		})
+
+		Context("failure case", func() {
+			It("returns an error when self call fails", func() {
+				consulAPIAgent.SelfCall.Returns.Error = errors.New("some error occured")
+
+				err := client.Self()
+				Expect(err).To(MatchError("some error occured"))
+				Expect(consulAPIAgent.SelfCall.CallCount).To(Equal(1))
+			})
+		})
+
+	})
+
+	Describe("Members", func() {
+		It("returns the consul agent api members call", func() {
 			consulAPIAgent.MembersReturns([]*api.AgentMember{
 				&api.AgentMember{Addr: "member1", Tags: map[string]string{"role": "consul"}},
 				&api.AgentMember{Addr: "member2", Tags: map[string]string{"role": "consul"}},
 				&api.AgentMember{Addr: "member3", Tags: map[string]string{"role": "consul"}},
 			}, nil)
 
-			client.ExpectedMembers = []string{"member1", "member2", "member3"}
-		})
-
-		It("returns true", func() {
-			Expect(client.IsLastNode()).To(BeTrue())
-			Expect(consulAPIAgent.MembersCallCount()).To(Equal(1))
-			Expect(logger.Messages()).To(ContainSequence([]fakes.LoggerMessage{
-				{
-					Action: "agent-client.is-last-node.members.request",
-					Data: []lager.Data{{
-						"wan": false,
-					}},
-				},
-				{
-					Action: "agent-client.is-last-node.members.response",
-					Data: []lager.Data{{
-						"wan":     false,
-						"members": []string{"member1", "member2", "member3"},
-					}},
-				},
-				{
-					Action: "agent-client.is-last-node.result",
-					Data: []lager.Data{{
-						"actual_members_count":   3,
-						"expected_members_count": 3,
-						"is_last_node":           true,
-					}},
-				},
+			members, err := client.Members(false)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(members).To(Equal([]*api.AgentMember{
+				&api.AgentMember{Addr: "member1", Tags: map[string]string{"role": "consul"}},
+				&api.AgentMember{Addr: "member2", Tags: map[string]string{"role": "consul"}},
+				&api.AgentMember{Addr: "member3", Tags: map[string]string{"role": "consul"}},
 			}))
+
+			Expect(consulAPIAgent.MembersCallCount()).To(Equal(1))
+			Expect(consulAPIAgent.MembersArgsForCall(0)).To(BeFalse())
 		})
 
-		Context("When you are not the last node", func() {
-			BeforeEach(func() {
-				consulAPIAgent.MembersReturns([]*api.AgentMember{
-					&api.AgentMember{Addr: "member1", Tags: map[string]string{"role": "consul"}},
-					&api.AgentMember{Addr: "member2", Tags: map[string]string{"role": "consul"}},
-				}, nil)
-			})
-
-			It("returns false", func() {
-				Expect(client.IsLastNode()).To(BeFalse())
-				Expect(consulAPIAgent.MembersCallCount()).To(Equal(1))
-				Expect(logger.Messages()).To(ContainSequence([]fakes.LoggerMessage{
-					{
-						Action: "agent-client.is-last-node.members.request",
-						Data: []lager.Data{{
-							"wan": false,
-						}},
-					},
-					{
-						Action: "agent-client.is-last-node.members.response",
-						Data: []lager.Data{{
-							"wan":     false,
-							"members": []string{"member1", "member2"},
-						}},
-					},
-					{
-						Action: "agent-client.is-last-node.result",
-						Data: []lager.Data{{
-							"actual_members_count":   2,
-							"expected_members_count": 3,
-							"is_last_node":           false,
-						}},
-					},
-				}))
-
-			})
-
-			Context("when there are non-server members", func() {
-				BeforeEach(func() {
-					consulAPIAgent.MembersReturns([]*api.AgentMember{
-						&api.AgentMember{Addr: "member1", Tags: map[string]string{"role": "consul"}},
-						&api.AgentMember{Addr: "member2", Tags: map[string]string{"role": "node"}},
-						&api.AgentMember{Addr: "member3", Tags: map[string]string{"role": "consul"}},
-					}, nil)
+		Context("failure cases", func() {
+			Context("when the consul api agent members call fails", func() {
+				It("returns an error", func() {
+					consulAPIAgent.MembersReturns(nil, errors.New("failed to list members"))
+					_, err := client.Members(false)
+					Expect(err).To(MatchError("failed to list members"))
 				})
-
-				It("returns false", func() {
-					Expect(client.IsLastNode()).To(BeFalse())
-					Expect(consulAPIAgent.MembersCallCount()).To(Equal(1))
-					Expect(logger.Messages()).To(ContainSequence([]fakes.LoggerMessage{
-						{
-							Action: "agent-client.is-last-node.members.request",
-							Data: []lager.Data{{
-								"wan": false,
-							}},
-						},
-						{
-							Action: "agent-client.is-last-node.members.response",
-							Data: []lager.Data{{
-								"wan":     false,
-								"members": []string{"member1", "member2", "member3"},
-							}},
-						},
-						{
-							Action: "agent-client.is-last-node.result",
-							Data: []lager.Data{{
-								"actual_members_count":   2,
-								"expected_members_count": 3,
-								"is_last_node":           false,
-							}},
-						},
-					}))
-				})
-			})
-		})
-
-		Context("When members returns an error", func() {
-			BeforeEach(func() {
-				consulAPIAgent.MembersReturns([]*api.AgentMember{}, errors.New("members error"))
-			})
-
-			It("returns an error", func() {
-				_, err := client.IsLastNode()
-				Expect(err).To(MatchError("members error"))
-				Expect(consulAPIAgent.MembersCallCount()).To(Equal(1))
-				Expect(logger.Messages()).To(ContainSequence([]fakes.LoggerMessage{
-					{
-						Action: "agent-client.is-last-node.members.request",
-						Data: []lager.Data{{
-							"wan": false,
-						}},
-					},
-					{
-						Action: "agent-client.is-last-node.members.request.failed",
-						Error:  errors.New("members error"),
-						Data: []lager.Data{{
-							"wan": false,
-						}},
-					},
-				}))
 			})
 		})
 	})

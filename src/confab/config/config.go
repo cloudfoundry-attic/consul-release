@@ -41,6 +41,8 @@ type ConfigConsulAgent struct {
 	LogLevel        string                       `json:"log_level"`
 	ProtocolVersion int                          `json:"protocol_version"`
 	DnsConfig       ConfigConsulAgentDnsConfig   `json:"dns_config"`
+	Bootstrap       bool                         `json:"bootstrap"`
+	NodeName        string                       `json:"node_name"`
 }
 
 type ConfigConsulAgentDnsConfig struct {

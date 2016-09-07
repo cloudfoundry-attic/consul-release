@@ -1,4 +1,4 @@
-package confab_test
+package helpers_test
 
 import (
 	"testing"
@@ -7,7 +7,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-func TestConfab(t *testing.T) {
+func TestHelpers(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "confab")
+	RunSpecs(t, "helpers")
 }

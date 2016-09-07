@@ -1,4 +1,4 @@
-package confab
+package utils
 
 import "time"
 

@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"io/ioutil"
+	"path/filepath"
 )
 
 type OutputWriter struct {
@@ -11,8 +12,14 @@ type OutputWriter struct {
 	callCountChan chan string
 }
 
+type ConsulConfig struct {
+	Server    bool `json:"server"`
+	Bootstrap bool `json:"bootstrap"`
+}
+
 type OutputData struct {
 	Args                []string
+	ConsulConfig        ConsulConfig
 	PID                 int
 	LeaveCallCount      int
 	UseKeyCallCount     int
@@ -20,12 +27,18 @@ type OutputData struct {
 	StatsCallCount      int
 }
 
-func NewOutputWriter(filepath string, pid int, args []string) *OutputWriter {
+func NewOutputWriter(path string, pid int, args []string, configDir string) *OutputWriter {
+	consulConfig, err := decodeConsulConfig(filepath.Join(configDir, "config.json"))
+	if err != nil {
+		panic(err)
+	}
+
 	ow := &OutputWriter{
-		filepath: filepath,
+		filepath: path,
 		data: OutputData{
-			PID:  pid,
-			Args: args,
+			PID:          pid,
+			Args:         args,
+			ConsulConfig: consulConfig,
 		},
 		callCountChan: make(chan string),
 	}
@@ -33,6 +46,21 @@ func NewOutputWriter(filepath string, pid int, args []string) *OutputWriter {
 	go ow.run()
 
 	return ow
+}
+
+func decodeConsulConfig(path string) (ConsulConfig, error) {
+	contents, err := ioutil.ReadFile(path)
+	if err != nil {
+		return ConsulConfig{}, err
+	}
+
+	var consulConfig ConsulConfig
+	err = json.Unmarshal(contents, &consulConfig)
+	if err != nil {
+		return ConsulConfig{}, err
+	}
+
+	return consulConfig, nil
 }
 
 func (ow *OutputWriter) run() {
