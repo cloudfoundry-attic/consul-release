@@ -106,11 +106,12 @@ func main() {
 		Logger:          logger,
 	}
 
+	retrier := utils.NewRetrier(clock.NewClock(), 1*time.Second)
+
 	controller := chaperon.Controller{
 		AgentRunner:    agentRunner,
 		AgentClient:    agentClient,
-		SyncRetryDelay: 1 * time.Second,
-		SyncRetryClock: clock.NewClock(),
+		Retrier:        retrier,
 		EncryptKeys:    cfg.Consul.EncryptKeys,
 		Logger:         logger,
 		ServiceDefiner: config.ServiceDefiner{logger},
@@ -143,6 +144,8 @@ func main() {
 			printUsageAndExit("at least one \"expected-member\" must be provided", flagSet)
 		}
 
+		timeout := utils.NewTimeout(time.After(time.Duration(controller.Config.Confab.TimeoutInSeconds) * time.Second))
+
 		if controller.Config.Consul.Agent.Mode == "server" {
 			var err error
 			cfg.Consul.Agent.Bootstrap, err = chaperon.StartInBootstrap(chaperon.BootstrapInput{
@@ -155,13 +158,14 @@ func main() {
 				AgentRunner:        agentRunner,
 				AgentClient:        agentClient,
 				NewRPCClient:       consulagent.NewRPCClient,
+				Retrier:            retrier,
+				Timeout:            timeout,
 			})
 			if err != nil {
 				stderr.Printf("error during start: %s", err)
 				os.Exit(1)
 			}
 		}
-		timeout := utils.NewTimeout(time.After(time.Duration(controller.Config.Confab.TimeoutInSeconds) * time.Second))
 
 		if err := r.Start(cfg, timeout); err != nil {
 			stderr.Printf("error during start: %s", err)
