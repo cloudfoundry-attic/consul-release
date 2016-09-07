@@ -16,6 +16,7 @@ import (
 	"github.com/cloudfoundry-incubator/consul-release/src/confab/chaperon"
 	"github.com/cloudfoundry-incubator/consul-release/src/confab/config"
 	"github.com/cloudfoundry-incubator/consul-release/src/confab/helpers"
+	"github.com/cloudfoundry-incubator/consul-release/src/confab/status"
 	"github.com/cloudfoundry-incubator/consul-release/src/confab/utils"
 	"github.com/hashicorp/consul/api"
 
@@ -148,8 +149,8 @@ func main() {
 
 		if controller.Config.Consul.Agent.Mode == "server" {
 			var err error
+
 			cfg.Consul.Agent.Bootstrap, err = chaperon.StartInBootstrap(chaperon.BootstrapInput{
-				AgentURL:           "http://localhost:8500",
 				Logger:             logger,
 				Controller:         controller,
 				ConfigWriter:       configWriter,
@@ -157,6 +158,7 @@ func main() {
 				GenerateRandomUUID: helpers.GenerateRandomUUID,
 				AgentRunner:        agentRunner,
 				AgentClient:        agentClient,
+				StatusClient:       status.Client{ConsulAPIStatus: consulAPIClient.Status()},
 				NewRPCClient:       consulagent.NewRPCClient,
 				Retrier:            retrier,
 				Timeout:            timeout,
