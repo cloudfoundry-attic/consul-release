@@ -25,18 +25,20 @@ import (
 var _ = Describe("Checker", func() {
 	Describe("StartInBootstrap", func() {
 		var (
-			logger               *fakes.Logger
-			controller           *fakes.Controller
-			configWriter         *fakes.ConfigWriter
-			agentRunner          *fakes.AgentRunner
-			agentClient          *fakes.AgentClient
-			statusClient         *fakes.StatusClient
-			clock                *fakes.Clock
-			rpcClient            *consulagent.RPCClient
-			randomUUIDGenerator  chaperon.RandomUUIDGenerator
-			bootstrapInput       chaperon.BootstrapInput
-			fakeAgentHandlerStub func(w http.ResponseWriter, r *http.Request)
-			rpcEndpoint          string
+			logger                *fakes.Logger
+			controller            *fakes.Controller
+			configWriter          *fakes.ConfigWriter
+			agentRunner           *fakes.AgentRunner
+			agentClient           *fakes.AgentClient
+			statusClient          *fakes.StatusClient
+			clock                 *fakes.Clock
+			rpcClient             *consulagent.RPCClient
+			randomUUIDGenerator   chaperon.RandomUUIDGenerator
+			bootstrapInput        chaperon.BootstrapInput
+			fakeAgentHandlerStub  func(w http.ResponseWriter, r *http.Request)
+			rpcEndpoint           string
+			removeAllCallCount    int
+			removeAllCallReceives string
 		)
 
 		BeforeEach(func() {
@@ -97,8 +99,23 @@ var _ = Describe("Checker", func() {
 			}
 		})
 
+		AfterEach(func() {
+			chaperon.ResetTempDir()
+			chaperon.ResetRemoveAll()
+		})
+
 		Context("when there is no leader in the cluster", func() {
 			It("returns true", func() {
+				chaperon.SetRemoveAll(func(path string) error {
+					removeAllCallCount++
+					removeAllCallReceives = path
+					return nil
+				})
+
+				chaperon.SetTempDir(func(_, _ string) (string, error) {
+					return "/some/temp/dir/path", nil
+				})
+
 				startInBootstrap, err := chaperon.StartInBootstrap(bootstrapInput)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(startInBootstrap).To(BeTrue())
@@ -106,6 +123,7 @@ var _ = Describe("Checker", func() {
 				Expect(configWriter.WriteCall.CallCount).To(Equal(1))
 				Expect(configWriter.WriteCall.Receives.Config.Consul.Agent.Mode).To(Equal("client"))
 				Expect(configWriter.WriteCall.Receives.Config.Consul.Agent.NodeName).To(Equal("client-some-random-guid"))
+				Expect(configWriter.WriteCall.Receives.Config.Path.DataDir).To(Equal("/some/temp/dir/path"))
 
 				Expect(agentRunner.RunCalls.CallCount).To(Equal(1))
 
@@ -122,9 +140,23 @@ var _ = Describe("Checker", func() {
 				Expect(controller.StopAgentCall.Receives.RPCClient).To(Equal(rpcClient))
 				Expect(rpcEndpoint).To(Equal("localhost:8400"))
 
+				Expect(removeAllCallCount).To(Equal(1))
+				Expect(removeAllCallReceives).To(Equal("/some/temp/dir/path"))
+
 				Expect(logger.Messages()).To(ContainSequence([]fakes.LoggerMessage{
 					{
 						Action: "chaperon-checker.start-in-bootstrap.generate-random-uuid",
+					},
+					{
+						Action: "chaperon-checker.start-in-bootstrap.create-temp-dir",
+					},
+					{
+						Action: "chaperon-checker.start-in-bootstrap.create-temp-dir.path",
+						Data: []lager.Data{
+							{
+								"path": "/some/temp/dir/path",
+							},
+						},
 					},
 					{
 						Action: "chaperon-checker.start-in-bootstrap.config-writer.write",
@@ -149,6 +181,9 @@ var _ = Describe("Checker", func() {
 					},
 					{
 						Action: "chaperon-checker.start-in-bootstrap.controller.stop-agent",
+					},
+					{
+						Action: "chaperon-checker.start-in-bootstrap.delete-temp-dir",
 					},
 				}))
 			})
@@ -359,6 +394,35 @@ var _ = Describe("Checker", func() {
 						Action: "chaperon-checker.start-in-bootstrap.generate-random-uuid.failed",
 						Error:  fmt.Errorf("uuid generator failed"),
 					}))
+				})
+			})
+
+			Context("when creating a temp dir fails", func() {
+				It("returns an error", func() {
+					chaperon.SetTempDir(func(_, _ string) (string, error) {
+						return "", errors.New("failed to create temp dir")
+					})
+
+					_, err := chaperon.StartInBootstrap(bootstrapInput)
+					Expect(err).To(MatchError("failed to create temp dir"))
+					Expect(logger.Messages()).To(ContainElement(fakes.LoggerMessage{
+						Action: "chaperon-checker.start-in-bootstrap.create-temp-dir.failed",
+						Error:  fmt.Errorf("failed to create temp dir"),
+					}))
+				})
+			})
+
+			Context("when deleting a temp dir fails", func() {
+				It("returns an error", func() {
+					chaperon.SetRemoveAll(func(_ string) error {
+						return errors.New("failed to delete temp dir")
+					})
+					chaperon.StartInBootstrap(bootstrapInput)
+					Expect(logger.Messages()).To(ContainElement(fakes.LoggerMessage{
+						Action: "chaperon-checker.start-in-bootstrap.delete-temp-dir.failed",
+						Error:  fmt.Errorf("failed to delete temp dir"),
+					}))
+
 				})
 			})
 		})

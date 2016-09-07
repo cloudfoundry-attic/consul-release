@@ -4,6 +4,8 @@ import (
 	"crypto/rand"
 	"fmt"
 	"io"
+	"io/ioutil"
+	"os"
 	"strings"
 
 	"code.cloudfoundry.org/lager"
@@ -34,6 +36,11 @@ type BootstrapInput struct {
 
 type RandomUUIDGenerator func(io.Reader) (string, error)
 
+var (
+	tempDir   = ioutil.TempDir
+	removeAll = os.RemoveAll
+)
+
 func StartInBootstrap(bootstrapInput BootstrapInput) (bool, error) {
 	var rpcClient *consulagent.RPCClient
 
@@ -45,6 +52,16 @@ func StartInBootstrap(bootstrapInput BootstrapInput) (bool, error) {
 	}
 	bootstrapInput.Config.Consul.Agent.Mode = "client"
 	bootstrapInput.Config.Consul.Agent.NodeName = fmt.Sprintf("client-%s", randomID)
+
+	bootstrapInput.Logger.Info("chaperon-checker.start-in-bootstrap.create-temp-dir")
+	dataDirPath, err := tempDir("", "")
+	if err != nil {
+		bootstrapInput.Logger.Error("chaperon-checker.start-in-bootstrap.create-temp-dir.failed", err)
+		return false, err
+	}
+
+	bootstrapInput.Logger.Info("chaperon-checker.start-in-bootstrap.create-temp-dir.path", lager.Data{"path": dataDirPath})
+	bootstrapInput.Config.Path.DataDir = dataDirPath
 
 	bootstrapInput.Logger.Info("chaperon-checker.start-in-bootstrap.config-writer.write")
 	err = bootstrapInput.ConfigWriter.Write(bootstrapInput.Config)
@@ -62,6 +79,12 @@ func StartInBootstrap(bootstrapInput BootstrapInput) (bool, error) {
 	defer func() {
 		bootstrapInput.Logger.Info("chaperon-checker.start-in-bootstrap.controller.stop-agent")
 		bootstrapInput.Controller.StopAgent(rpcClient)
+
+		bootstrapInput.Logger.Info("chaperon-checker.start-in-bootstrap.delete-temp-dir")
+		err := removeAll(dataDirPath)
+		if err != nil {
+			bootstrapInput.Logger.Error("chaperon-checker.start-in-bootstrap.delete-temp-dir.failed", err)
+		}
 	}()
 
 	bootstrapInput.Logger.Info("chaperon-checker.start-in-bootstrap.waiting-for-agent")
