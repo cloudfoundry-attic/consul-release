@@ -326,7 +326,7 @@ var _ = Describe("confab", func() {
 				fakeAgentOutputData, err := fakeAgentOutputFromFile(consulConfigDir, "fake-output.json")
 				Expect(err).NotTo(HaveOccurred())
 				Expect(fakeAgentOutputData.ConsulConfig).To(Equal(ConsulConfig{
-					Server: false,
+					Server: true,
 				}))
 
 				Eventually(func() (FakeAgentOutputData, error) {

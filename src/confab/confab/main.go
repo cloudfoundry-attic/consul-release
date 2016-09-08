@@ -15,7 +15,6 @@ import (
 	"github.com/cloudfoundry-incubator/consul-release/src/confab/agent"
 	"github.com/cloudfoundry-incubator/consul-release/src/confab/chaperon"
 	"github.com/cloudfoundry-incubator/consul-release/src/confab/config"
-	"github.com/cloudfoundry-incubator/consul-release/src/confab/helpers"
 	"github.com/cloudfoundry-incubator/consul-release/src/confab/status"
 	"github.com/cloudfoundry-incubator/consul-release/src/confab/utils"
 	"github.com/hashicorp/consul/api"
@@ -125,7 +124,8 @@ func main() {
 
 	var r runner = chaperon.NewClient(controller, consulagent.NewRPCClient, keyringRemover, configWriter)
 	if controller.Config.Consul.Agent.Mode == "server" {
-		r = chaperon.NewServer(controller, configWriter, consulagent.NewRPCClient)
+		bootstrapChecker := chaperon.NewBootstrapChecker(logger, agentClient, status.Client{ConsulAPIStatus: consulAPIClient.Status()})
+		r = chaperon.NewServer(controller, configWriter, consulagent.NewRPCClient, bootstrapChecker)
 	}
 
 	switch os.Args[1] {
@@ -146,28 +146,6 @@ func main() {
 		}
 
 		timeout := utils.NewTimeout(time.After(time.Duration(controller.Config.Confab.TimeoutInSeconds) * time.Second))
-
-		if controller.Config.Consul.Agent.Mode == "server" {
-			var err error
-
-			cfg.Consul.Agent.Bootstrap, err = chaperon.StartInBootstrap(chaperon.BootstrapInput{
-				Logger:             logger,
-				Controller:         controller,
-				ConfigWriter:       configWriter,
-				Config:             cfg,
-				GenerateRandomUUID: helpers.GenerateRandomUUID,
-				AgentRunner:        agentRunner,
-				AgentClient:        agentClient,
-				StatusClient:       status.Client{ConsulAPIStatus: consulAPIClient.Status()},
-				NewRPCClient:       consulagent.NewRPCClient,
-				Retrier:            retrier,
-				Timeout:            timeout,
-			})
-			if err != nil {
-				stderr.Printf("error during start: %s", err)
-				os.Exit(1)
-			}
-		}
 
 		if err := r.Start(cfg, timeout); err != nil {
 			stderr.Printf("error during start: %s", err)

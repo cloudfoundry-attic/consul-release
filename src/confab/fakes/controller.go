@@ -15,6 +15,7 @@ type Controller struct {
 
 	BootAgentCall struct {
 		CallCount int
+		Stub      func(timeout utils.Timeout) error
 		Receives  struct {
 			Timeout utils.Timeout
 		}
@@ -58,6 +59,10 @@ func (c *Controller) WriteServiceDefinitions() error {
 func (c *Controller) BootAgent(timeout utils.Timeout) error {
 	c.BootAgentCall.CallCount++
 	c.BootAgentCall.Receives.Timeout = timeout
+
+	if c.BootAgentCall.Stub != nil {
+		return c.BootAgentCall.Stub(timeout)
+	}
 
 	return c.BootAgentCall.Returns.Error
 }

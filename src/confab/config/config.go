@@ -1,6 +1,9 @@
 package config
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"path/filepath"
+)
 
 type Config struct {
 	Node   ConfigNode
@@ -87,20 +90,16 @@ func ConfigFromJSON(configData []byte) (Config, error) {
 		return Config{}, err
 	}
 
-	if config.Path.KeyringFile == "" {
-		if config.Consul.Agent.Mode == "server" {
-			config.Path.KeyringFile = "/var/vcap/store/consul_agent/serf/local.keyring"
-		} else {
-			config.Path.KeyringFile = "/var/vcap/data/consul_agent/serf/local.keyring"
-		}
-	}
-
 	if config.Path.DataDir == "" {
 		if config.Consul.Agent.Mode == "server" {
 			config.Path.DataDir = "/var/vcap/store/consul_agent"
 		} else {
 			config.Path.DataDir = "/var/vcap/data/consul_agent"
 		}
+	}
+
+	if config.Path.KeyringFile == "" {
+		config.Path.KeyringFile = filepath.Join(config.Path.DataDir, "serf", "local.keyring")
 	}
 
 	return config, nil
