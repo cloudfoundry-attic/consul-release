@@ -63,8 +63,6 @@ var _ = Describe("ConfigWriter", func() {
 				"log_level":              "",
 				"node_name":              "node-0",
 				"rejoin_after_leave":     true,
-				"retry_join":             []string{},
-				"retry_join_wan":         []string{},
 				"bind_addr":              "",
 				"disable_remote_exec":    true,
 				"disable_update_check":   true,

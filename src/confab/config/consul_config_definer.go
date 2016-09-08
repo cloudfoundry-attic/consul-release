@@ -17,8 +17,6 @@ type ConsulConfig struct {
 	NodeName             string                `json:"node_name"`
 	Ports                *ConsulConfigPorts    `json:"ports,omitempty"`
 	RejoinAfterLeave     bool                  `json:"rejoin_after_leave"`
-	RetryJoin            []string              `json:"retry_join"`
-	RetryJoinWAN         []string              `json:"retry_join_wan"`
 	BindAddr             string                `json:"bind_addr"`
 	DisableRemoteExec    bool                  `json:"disable_remote_exec"`
 	DisableUpdateCheck   bool                  `json:"disable_update_check"`
@@ -64,8 +62,6 @@ func GenerateConfiguration(config Config, configDir, nodeName string) ConsulConf
 		LogLevel:           config.Consul.Agent.LogLevel,
 		NodeName:           nodeName,
 		RejoinAfterLeave:   true,
-		RetryJoin:          lan,
-		RetryJoinWAN:       wan,
 		BindAddr:           config.Node.ExternalIP,
 		DisableRemoteExec:  true,
 		DisableUpdateCheck: true,

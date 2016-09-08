@@ -190,23 +190,13 @@ var _ = Describe("confab", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			conf := map[string]interface{}{
-				"server":             false,
-				"domain":             "some-domain",
-				"datacenter":         "dc1",
-				"data_dir":           dataDir,
-				"log_level":          "debug",
-				"node_name":          "my-node-3",
-				"rejoin_after_leave": true,
-				"retry_join": []string{
-					"member-1",
-					"member-2",
-					"member-3",
-				},
-				"retry_join_wan": []string{
-					"wan-member-1",
-					"wan-member-2",
-					"wan-member-3",
-				},
+				"server":                 false,
+				"domain":                 "some-domain",
+				"datacenter":             "dc1",
+				"data_dir":               dataDir,
+				"log_level":              "debug",
+				"node_name":              "my-node-3",
+				"rejoin_after_leave":     true,
 				"bind_addr":              "10.0.0.1",
 				"disable_remote_exec":    true,
 				"disable_update_check":   true,
