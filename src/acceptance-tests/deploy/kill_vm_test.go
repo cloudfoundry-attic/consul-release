@@ -49,7 +49,7 @@ var _ = Describe("KillVm", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		Eventually(func() ([]bosh.VM, error) {
-			return boshClient.DeploymentVMs(consulManifest.Name)
+			return helpers.DeploymentVMs(boshClient, consulManifest.Name)
 		}, "1m", "10s").Should(ConsistOf(helpers.GetVMsFromManifest(consulManifest)))
 
 		spammer = helpers.NewSpammer(kv, 1*time.Second, "test-consumer-0")
@@ -64,7 +64,7 @@ var _ = Describe("KillVm", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			Eventually(func() ([]bosh.VM, error) {
-				return boshClient.DeploymentVMs(consulManifest.Name)
+				return helpers.DeploymentVMs(boshClient, consulManifest.Name)
 			}, "1m", "10s").Should(ConsistOf(helpers.GetVMsFromManifest(consulManifest)))
 		})
 
@@ -103,7 +103,7 @@ var _ = Describe("KillVm", func() {
 				}, "5m", "1m").ShouldNot(HaveOccurred())
 
 				Eventually(func() ([]bosh.VM, error) {
-					return boshClient.DeploymentVMs(consulManifest.Name)
+					return helpers.DeploymentVMs(boshClient, consulManifest.Name)
 				}, "1m", "10s").Should(ConsistOf(helpers.GetVMsFromManifest(consulManifest)))
 
 				spammer.Stop()

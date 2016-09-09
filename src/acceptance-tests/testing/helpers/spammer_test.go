@@ -142,7 +142,7 @@ var _ = Describe("Spammer", func() {
 					spammer = helpers.NewSpammer(kv, time.Duration(0), prefix)
 					spammer.Spam()
 
-					// This eventually should make sure that a high number of keys have been written so that we do not fail in a seperate key write percentage
+					// This eventually should make sure that a high number of keys have been written so that we do not fail in a separate key write percentage
 					// error check.
 					// On single core machines, the total key write amount would be low enough to create a high failure key write percentage
 					Eventually(func() int {

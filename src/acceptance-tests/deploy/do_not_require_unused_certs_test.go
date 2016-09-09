@@ -27,7 +27,7 @@ var _ = Describe("Do not require unused certs in server/client modes", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		Eventually(func() ([]bosh.VM, error) {
-			return boshClient.DeploymentVMs(manifest.Name)
+			return helpers.DeploymentVMs(boshClient, manifest.Name)
 		}, "1m", "10s").Should(ConsistOf(helpers.GetVMsFromManifest(manifest)))
 	})
 })

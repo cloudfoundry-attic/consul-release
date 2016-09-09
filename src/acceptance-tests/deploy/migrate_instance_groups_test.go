@@ -44,7 +44,7 @@ var _ = Describe("Migrate instance groups", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				Eventually(func() ([]bosh.VM, error) {
-					return boshClient.DeploymentVMs(manifest.Name)
+					return helpers.DeploymentVMs(boshClient, manifest.Name)
 				}, "1m", "10s").Should(ConsistOf(helpers.GetVMsFromManifest(manifest)))
 
 				for i, ip := range manifest.Jobs[2].Networks[0].StaticIPs {
@@ -67,7 +67,7 @@ var _ = Describe("Migrate instance groups", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				Eventually(func() ([]bosh.VM, error) {
-					return boshClient.DeploymentVMs(manifestv2.Name)
+					return helpers.DeploymentVMs(boshClient, manifestv2.Name)
 				}, "1m", "10s").Should(ConsistOf(helpers.GetVMsFromManifestV2(manifestv2)))
 			})
 
