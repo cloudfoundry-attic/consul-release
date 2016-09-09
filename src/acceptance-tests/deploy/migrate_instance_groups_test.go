@@ -40,7 +40,7 @@ var _ = Describe("Migrate instance groups", func() {
 		It("deploys successfully with minimal interruption", func() {
 			By("deploying 3 node cluster across two AZs with BOSH 1.0 manifest", func() {
 				var err error
-				manifest, err = helpers.DeployMultiAZConsul(boshClient, config)
+				manifest, err = helpers.DeployMultiAZConsul("migrate-instance-group", boshClient, config)
 				Expect(err).NotTo(HaveOccurred())
 
 				Eventually(func() ([]bosh.VM, error) {

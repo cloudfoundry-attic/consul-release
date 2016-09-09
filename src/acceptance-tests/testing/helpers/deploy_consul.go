@@ -15,20 +15,20 @@ import (
 
 type ManifestGenerator func(consul.Config, iaas.Config) (consul.Manifest, error)
 
-func DeployConsulWithInstanceCount(count int, client bosh.Client, config Config) (manifest consul.Manifest, kv consulclient.HTTPKV, err error) {
-	return DeployConsulWithInstanceCountAndReleaseVersion(count, client, config, ConsulReleaseVersion())
+func DeployConsulWithInstanceCount(deploymentPrefix string, count int, client bosh.Client, config Config) (manifest consul.Manifest, kv consulclient.HTTPKV, err error) {
+	return DeployConsulWithInstanceCountAndReleaseVersion(deploymentPrefix, count, client, config, ConsulReleaseVersion())
 }
 
-func DeployConsulWithJobLevelConsulProperties(client bosh.Client, config Config) (manifest consul.Manifest, err error) {
-	manifest, _, err = deployConsul(1, client, config, ConsulReleaseVersion(), consul.NewManifestWithJobLevelProperties)
+func DeployConsulWithJobLevelConsulProperties(deploymentPrefix string, client bosh.Client, config Config) (manifest consul.Manifest, err error) {
+	manifest, _, err = deployConsul(deploymentPrefix, 1, client, config, ConsulReleaseVersion(), consul.NewManifestWithJobLevelProperties)
 	return
 }
 
-func DeployConsulWithInstanceCountAndReleaseVersion(count int, client bosh.Client, config Config, releaseVersion string) (manifest consul.Manifest, kv consulclient.HTTPKV, err error) {
-	return deployConsul(count, client, config, releaseVersion, consul.NewManifest)
+func DeployConsulWithInstanceCountAndReleaseVersion(deploymentPrefix string, count int, client bosh.Client, config Config, releaseVersion string) (manifest consul.Manifest, kv consulclient.HTTPKV, err error) {
+	return deployConsul(deploymentPrefix, count, client, config, releaseVersion, consul.NewManifest)
 }
 
-func deployConsul(count int, client bosh.Client, config Config, releaseVersion string, manifestGenerator ManifestGenerator) (manifest consul.Manifest, kv consulclient.HTTPKV, err error) {
+func deployConsul(deploymentPrefix string, count int, client bosh.Client, config Config, releaseVersion string, manifestGenerator ManifestGenerator) (manifest consul.Manifest, kv consulclient.HTTPKV, err error) {
 	guid, err := NewGUID()
 	if err != nil {
 		return
@@ -41,7 +41,7 @@ func deployConsul(count int, client bosh.Client, config Config, releaseVersion s
 
 	manifestConfig := consul.Config{
 		DirectorUUID: info.UUID,
-		Name:         fmt.Sprintf("consul-%s", guid),
+		Name:         fmt.Sprintf("consul-%s-%s", deploymentPrefix, guid),
 	}
 
 	var iaasConfig iaas.Config
@@ -127,7 +127,7 @@ func deployConsul(count int, client bosh.Client, config Config, releaseVersion s
 	return
 }
 
-func DeployMultiAZConsul(client bosh.Client, config Config) (manifest consul.Manifest, err error) {
+func DeployMultiAZConsul(deploymentPrefix string, client bosh.Client, config Config) (manifest consul.Manifest, err error) {
 	guid, err := NewGUID()
 	if err != nil {
 		return
@@ -140,7 +140,7 @@ func DeployMultiAZConsul(client bosh.Client, config Config) (manifest consul.Man
 
 	manifestConfig := consul.Config{
 		DirectorUUID: info.UUID,
-		Name:         fmt.Sprintf("consul-%s", guid),
+		Name:         fmt.Sprintf("consul-%s-%s", deploymentPrefix, guid),
 	}
 
 	var iaasConfig iaas.Config

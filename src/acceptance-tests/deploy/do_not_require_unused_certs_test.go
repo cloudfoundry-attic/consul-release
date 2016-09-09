@@ -23,7 +23,7 @@ var _ = Describe("Do not require unused certs in server/client modes", func() {
 
 	It("successfully deploys a consul server and client without unused certs", func() {
 		var err error
-		manifest, err = helpers.DeployConsulWithJobLevelConsulProperties(boshClient, config)
+		manifest, err = helpers.DeployConsulWithJobLevelConsulProperties("unused-certs", boshClient, config)
 		Expect(err).NotTo(HaveOccurred())
 
 		Eventually(func() ([]bosh.VM, error) {

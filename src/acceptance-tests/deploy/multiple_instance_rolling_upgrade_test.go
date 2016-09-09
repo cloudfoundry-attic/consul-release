@@ -42,7 +42,7 @@ var _ = Describe("Multiple instance rolling upgrade", func() {
 			releaseNumber, err := helpers.DownloadLatestConsulRelease(boshClient)
 			Expect(err).NotTo(HaveOccurred())
 
-			manifest, kv, err = helpers.DeployConsulWithInstanceCountAndReleaseVersion(3, boshClient, config, releaseNumber)
+			manifest, kv, err = helpers.DeployConsulWithInstanceCountAndReleaseVersion("multiple-instance-rolling-upgrade", 3, boshClient, config, releaseNumber)
 			Expect(err).NotTo(HaveOccurred())
 
 			Eventually(func() ([]bosh.VM, error) {

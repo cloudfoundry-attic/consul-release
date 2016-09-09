@@ -36,7 +36,7 @@ var _ = Describe("Scaling down instances", func() {
 			testKey = "consul-key-" + guid
 			testValue = "consul-value-" + guid
 
-			manifest, kv, err = helpers.DeployConsulWithInstanceCount(3, boshClient, config)
+			manifest, kv, err = helpers.DeployConsulWithInstanceCount("scale-down-3-to-1", 3, boshClient, config)
 			Expect(err).NotTo(HaveOccurred())
 
 			Eventually(func() ([]bosh.VM, error) {
@@ -84,7 +84,7 @@ var _ = Describe("Scaling down instances", func() {
 			testKey = "consul-key-" + guid
 			testValue = "consul-value-" + guid
 
-			manifest, kv, err = helpers.DeployConsulWithInstanceCount(5, boshClient, config)
+			manifest, kv, err = helpers.DeployConsulWithInstanceCount("scale-down-5-to-3", 5, boshClient, config)
 			Expect(err).NotTo(HaveOccurred())
 
 			Eventually(func() ([]bosh.VM, error) {

@@ -22,7 +22,7 @@ var _ = Describe("Single host multiple services", func() {
 	BeforeEach(func() {
 		var err error
 
-		manifest, _, err = helpers.DeployConsulWithInstanceCount(1, boshClient, config)
+		manifest, _, err = helpers.DeployConsulWithInstanceCount("single-host-multiple-services", 1, boshClient, config)
 		Expect(err).NotTo(HaveOccurred())
 
 		Eventually(func() ([]bosh.VM, error) {

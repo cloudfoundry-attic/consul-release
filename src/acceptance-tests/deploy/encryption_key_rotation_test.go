@@ -28,7 +28,7 @@ var _ = Describe("Encryption key rotation", func() {
 		testKey = "consul-key-" + guid
 		testValue = "consul-value-" + guid
 
-		manifest, kv, err = helpers.DeployConsulWithInstanceCount(3, boshClient, config)
+		manifest, kv, err = helpers.DeployConsulWithInstanceCount("encrption-key-rotation", 3, boshClient, config)
 		Expect(err).NotTo(HaveOccurred())
 
 		Eventually(func() ([]bosh.VM, error) {

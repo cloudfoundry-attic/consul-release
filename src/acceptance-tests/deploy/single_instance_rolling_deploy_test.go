@@ -25,7 +25,7 @@ var _ = Describe("Single instance rolling deploys", func() {
 		testKey = "consul-key-" + guid
 		testValue = "consul-value-" + guid
 
-		manifest, kv, err = helpers.DeployConsulWithInstanceCount(1, boshClient, config)
+		manifest, kv, err = helpers.DeployConsulWithInstanceCount("single-instance-rolling-deploy", 1, boshClient, config)
 		Expect(err).NotTo(HaveOccurred())
 
 		Eventually(func() ([]bosh.VM, error) {
