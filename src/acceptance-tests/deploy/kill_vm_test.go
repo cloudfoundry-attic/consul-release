@@ -34,7 +34,7 @@ var _ = Describe("KillVm", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		Eventually(func() ([]bosh.VM, error) {
-			return boshClient.DeploymentVMs(turbulenceManifest.Name)
+			return helpers.DeploymentVMs(boshClient, turbulenceManifest.Name)
 		}, "1m", "10s").Should(ConsistOf(helpers.GetTurbulenceVMsFromManifest(turbulenceManifest)))
 
 		turbulenceClient = helpers.NewTurbulenceClient(turbulenceManifest)
