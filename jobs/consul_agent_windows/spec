@@ -6,6 +6,7 @@ templates:
   ca.crt.erb: config/certs/ca.crt
   confab.json.erb: confab.json
   pre-start.ps1.erb: bin/pre-start.ps1
+  drain.ps1.erb: bin/drain.ps1
 
 packages:
 - consul-windows

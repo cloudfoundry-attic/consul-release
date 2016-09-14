@@ -1,0 +1,22 @@
+$SERVICE_NAME="consul"
+$LOG_DIR="/var/vcap/sys/log/consul_agent_windows"
+$LOGFILE="${LOG_DIR}/drain.log"
+
+
+Set-Service "${SERVICE_NAME}" -StartupType "Disabled"
+echo "$(Get-Date): service '${SERVICE_NAME}' StartupType set to 'Disabled'" >> $LOGFILE
+
+echo "$(Get-Date): drain triggered" >> $LOGFILE
+
+/var/vcap/packages/confab-windows/bin/confab.exe stop --config-file /var/vcap/jobs/consul_agent_windows/confab.json >> $LOGFILE
+
+while ((Get-Service $SERVICE_NAME).Status -ne "Stopped") {
+    Start-Sleep -Seconds 5
+    echo "$(Get-Date): waiting" >> $LOGFILE
+}
+
+Set-Service "${SERVICE_NAME}" -StartupType "Automatic"
+echo "$(Get-Date): service '${SERVICE_NAME}' StartupType set to 'Automatic'" >> $LOGFILE
+
+echo "0"
+Exit 0
