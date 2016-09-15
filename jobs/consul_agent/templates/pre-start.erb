@@ -6,6 +6,7 @@ DATA_DIR=<%= p('consul.agent.mode') == 'server' ? '/var/vcap/store/consul_agent'
 CONF_DIR=/var/vcap/jobs/consul_agent/config
 CERT_DIR=$CONF_DIR/certs
 PKG_DIR=/var/vcap/packages
+RUN_DIR=/var/vcap/sys/run/consul_agent
 
 function setup_resolvconf() {
   local resolvconf_file
@@ -34,6 +35,9 @@ function create_directories_and_chown_to_vcap() {
 
   mkdir -p "${CONF_DIR}"
   chown -R vcap:vcap "${CONF_DIR}"
+
+  mkdir -p "${RUN_DIR}"
+  chown -R vcap:vcap "${RUN_DIR}"
 
   chown vcap:vcap ${CERT_DIR}/*.{crt,key}
   chmod 640 ${CERT_DIR}/*.{crt,key}
