@@ -361,7 +361,7 @@ brew install consul go jq
 
 #### BOSH-Lite
 
-Make sure you’ve run `bin/add-route`.
+Make sure you’ve run `bin/add-route` and `bin/enable_container_internet`.
 This will setup some routing rules to give the tests access to the consul VMs.
 
 #### AWS
