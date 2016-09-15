@@ -458,9 +458,10 @@ var _ = Describe("Controller", func() {
 
 			Context("when setting keys errors", func() {
 				It("returns the error", func() {
+					timeout = utils.NewTimeout(time.After(0))
 					agentClient.SetKeysCall.Returns.Error = errors.New("oh noes")
 
-					Expect(controller.ConfigureServer(timeout, rpcClient)).To(MatchError("oh noes"))
+					Expect(controller.ConfigureServer(timeout, rpcClient)).To(MatchError(`timeout exceeded: "oh noes"`))
 					Expect(agentClient.SetKeysCall.Receives.Keys).To(Equal([]string{
 						"key 1",
 						"key 2",
@@ -476,7 +477,7 @@ var _ = Describe("Controller", func() {
 						},
 						{
 							Action: "controller.configure-server.set-keys.failed",
-							Error:  errors.New("oh noes"),
+							Error:  errors.New(`timeout exceeded: "oh noes"`),
 							Data: []lager.Data{{
 								"keys": []string{"key 1", "key 2", "key 3"},
 							}},

@@ -120,7 +120,9 @@ func (c Client) JoinMembers() error {
 		c.Logger.Info("agent-client.join-members.consul-api-agent.join", lager.Data{"member": member})
 		err := c.ConsulAPIAgent.Join(member, false)
 		if err != nil {
-			if strings.Contains(err.Error(), "connection refused") || strings.Contains(err.Error(), "no route to host") {
+			if strings.Contains(err.Error(), "connection refused") ||
+				strings.Contains(err.Error(), "no route to host") ||
+				strings.Contains(err.Error(), "i/o timeout") {
 				c.Logger.Info("agent-client.join-members.consul-api-agent.join.unable-to-join", lager.Data{
 					"reason": err.Error(),
 				})

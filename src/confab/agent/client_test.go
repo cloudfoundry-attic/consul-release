@@ -306,6 +306,27 @@ var _ = Describe("Client", func() {
 		})
 
 		Context("when we are unable to join some expected members", func() {
+			It("returns without errors when there is a 'i/o timeout' message", func() {
+				consulAPIAgent.JoinCall.Stub = func(member string, wan bool) error {
+					if member == "member2" {
+						return errors.New("dial tcp 127.0.0.1:8500: i/o timeout")
+					}
+					return nil
+				}
+				err := client.JoinMembers()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(consulAPIAgent.JoinCall.CallCount).To(Equal(3))
+				Expect(consulAPIAgent.JoinCall.Receives.Members).To(Equal(client.ExpectedMembers))
+				Expect(consulAPIAgent.JoinCall.Receives.WAN).To(BeFalse())
+				Expect(logger.Messages()).To(ContainSequence([]fakes.LoggerMessage{
+					{
+						Action: "agent-client.join-members.consul-api-agent.join.unable-to-join",
+						Data: []lager.Data{{
+							"reason": "dial tcp 127.0.0.1:8500: i/o timeout",
+						}},
+					},
+				}))
+			})
 			It("returns without errors when there is a 'no route to host' message", func() {
 				consulAPIAgent.JoinCall.Stub = func(member string, wan bool) error {
 					if member == "member2" {

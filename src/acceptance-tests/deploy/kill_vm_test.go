@@ -60,7 +60,7 @@ var _ = Describe("KillVm", func() {
 			yaml, err := consulManifest.ToYAML()
 			Expect(err).NotTo(HaveOccurred())
 
-			err = boshClient.ScanAndFix(yaml)
+			err = boshClient.ScanAndFixAll(yaml)
 			Expect(err).NotTo(HaveOccurred())
 
 			Eventually(func() ([]bosh.VM, error) {
@@ -99,7 +99,7 @@ var _ = Describe("KillVm", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				Eventually(func() error {
-					return boshClient.ScanAndFix(yaml)
+					return boshClient.ScanAndFixAll(yaml)
 				}, "5m", "1m").ShouldNot(HaveOccurred())
 
 				Eventually(func() ([]bosh.VM, error) {

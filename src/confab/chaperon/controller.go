@@ -102,15 +102,15 @@ func (c Controller) ConfigureServer(timeout utils.Timeout, rpcClient *consulagen
 		c.AgentClient.SetConsulRPCClient(&agent.RPCClient{*rpcClient})
 	}
 
-	c.Logger.Info("controller.configure-server.verify-synced")
-	if err := c.Retrier.TryUntil(timeout, c.AgentClient.VerifySynced); err != nil {
-		c.Logger.Error("controller.configure-server.verify-synced.failed", err)
-		return err
-	}
-
 	if len(c.EncryptKeys) == 0 {
 		err := errors.New("encrypt keys cannot be empty if ssl is enabled")
 		c.Logger.Error("controller.configure-server.no-encrypt-keys", err)
+		return err
+	}
+
+	c.Logger.Info("controller.configure-server.verify-synced")
+	if err := c.Retrier.TryUntil(timeout, c.AgentClient.VerifySynced); err != nil {
+		c.Logger.Error("controller.configure-server.verify-synced.failed", err)
 		return err
 	}
 
@@ -118,7 +118,9 @@ func (c Controller) ConfigureServer(timeout utils.Timeout, rpcClient *consulagen
 		"keys": c.EncryptKeys,
 	})
 
-	err := c.AgentClient.SetKeys(c.EncryptKeys)
+	err := c.Retrier.TryUntil(timeout, func() error {
+		return c.AgentClient.SetKeys(c.EncryptKeys)
+	})
 	if err != nil {
 		c.Logger.Error("controller.configure-server.set-keys.failed", err, lager.Data{
 			"keys": c.EncryptKeys,
