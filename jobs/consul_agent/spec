@@ -5,6 +5,7 @@ templates:
   agent_ctl.sh.erb: bin/agent_ctl
   join_ctl.sh.erb: bin/join_ctl
   pre-start.erb: bin/pre-start
+  drain: bin/drain
   confab.json.erb: confab.json
   ca.crt.erb: config/certs/ca.crt
   server.crt.erb: config/certs/server.crt

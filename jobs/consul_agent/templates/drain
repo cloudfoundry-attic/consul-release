@@ -1,0 +1,16 @@
+#!/bin/bash -exu
+
+LOG_DIR=/var/vcap/sys/log/consul_agent
+JOB_DIR=/var/vcap/jobs/consul_agent
+
+exec 3>&1
+
+exec 1>> ${LOG_DIR}/drain.log
+exec 2>> ${LOG_DIR}/drain.log
+
+set +e
+${JOB_DIR}/bin/agent_ctl stop
+set -e
+
+echo 0 >&3
+exit 0
