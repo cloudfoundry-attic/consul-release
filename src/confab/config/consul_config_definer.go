@@ -15,7 +15,7 @@ type ConsulConfig struct {
 	DataDir              string                `json:"data_dir"`
 	LogLevel             string                `json:"log_level"`
 	NodeName             string                `json:"node_name"`
-	Ports                *ConsulConfigPorts    `json:"ports,omitempty"`
+	Ports                ConsulConfigPorts     `json:"ports"`
 	RejoinAfterLeave     bool                  `json:"rejoin_after_leave"`
 	BindAddr             string                `json:"bind_addr"`
 	DisableRemoteExec    bool                  `json:"disable_remote_exec"`
@@ -66,6 +66,9 @@ func GenerateConfiguration(config Config, configDir, nodeName string) ConsulConf
 		DisableRemoteExec:  true,
 		DisableUpdateCheck: true,
 		Protocol:           config.Consul.Agent.ProtocolVersion,
+		Ports: ConsulConfigPorts{
+			DNS: 53,
+		},
 		DnsConfig: ConsulConfigDnsConfig{
 			AllowStale: config.Consul.Agent.DnsConfig.AllowStale,
 			MaxStale:   config.Consul.Agent.DnsConfig.MaxStale,

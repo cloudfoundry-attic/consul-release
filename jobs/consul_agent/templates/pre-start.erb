@@ -12,9 +12,6 @@ function setup_resolvconf() {
   local resolvconf_file
   resolvconf_file=/etc/resolvconf/resolv.conf.d/head
 
-  sed -i '/options timeout/d' "${resolvconf_file}"
-  echo "options timeout:<%= p("consul.dnsmasq.dns_timeout_in_seconds") %>" >> "${resolvconf_file}"
-
   if ! grep -qE '127.0.0.1\b' "${resolvconf_file}"; then
           if [[ "$(stat -c "%s" "${resolvconf_file}")" = "0" ]]; then
                   echo 'nameserver 127.0.0.1' > "${resolvconf_file}"
@@ -58,10 +55,8 @@ function main() {
 
   set_virtual_memory
 
-  <% if p("consul.include_dnsmasq") %>
-    setup_resolvconf
-    setcap cap_net_bind_service=+ep ${PKG_DIR}/dnsmasq/sbin/dnsmasq
-  <% end %>
+  setup_resolvconf
+  setcap cap_net_bind_service=+ep ${PKG_DIR}/consul/bin/consul
 }
 
 main

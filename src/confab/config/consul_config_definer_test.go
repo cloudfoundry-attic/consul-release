@@ -203,6 +203,12 @@ var _ = Describe("ConsulConfigDefiner", func() {
 			})
 		})
 
+		Describe("DNS port", func() {
+			It("defaults to 53", func() {
+				Expect(consulConfig.Ports.DNS).To(Equal(53))
+			})
+		})
+
 		Describe("protocol", func() {
 			It("defaults to 0", func() {
 				Expect(consulConfig.Protocol).To(Equal(0))

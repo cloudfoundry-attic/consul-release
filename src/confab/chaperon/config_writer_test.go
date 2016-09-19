@@ -77,6 +77,9 @@ var _ = Describe("ConfigWriter", func() {
 					"allow_stale": false,
 					"max_stale":   "5s",
 				},
+				"ports": map[string]int{
+					"dns": 53,
+				},
 			}
 			body, err := json.Marshal(conf)
 			Expect(err).To(BeNil())

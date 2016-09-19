@@ -1,7 +1,0 @@
----
-name: dnsmasq
-
-dependencies:
-
-files:
-- dnsmasq/dnsmasq-2.76.tar.gz

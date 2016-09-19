@@ -11,12 +11,10 @@ templates:
   server.key.erb: config/certs/server.key
   agent.crt.erb: config/certs/agent.crt
   agent.key.erb: config/certs/agent.key
-  dnsmasq_ctl.erb: bin/dnsmasq_ctl
 
 packages:
   - consul
   - confab
-  - dnsmasq
 
 properties:
   consul.agent.mode:
@@ -58,18 +56,9 @@ properties:
   consul.agent.domain:
     description: "Domain suffix for DNS"
 
-  consul.include_dnsmasq:
-    description: "When enabled, dnsmasq is the dns server."
-    default: true
-
-  consul.dnsmasq.dns_timeout_in_seconds:
-    description: "The dns timeout for dnsmasq."
+  consul.dns_timeout_in_seconds:
+    description: "The dns timeout for consul."
     default: 5
-
-  consul.dnsmasq.nameservers:
-    description: "List of domains and their associated dns server address"
-    default:
-    - cf.internal/127.0.0.1#8600
 
   consul.ca_cert:
     description: "PEM-encoded CA certificate"
