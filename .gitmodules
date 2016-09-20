@@ -18,7 +18,7 @@
 	url = https://github.com/hashicorp/memberlist
 [submodule "src/confab/vendor/github.com/hashicorp/serf"]
 	path = src/confab/vendor/github.com/hashicorp/serf
-	url = https://github.com/hashicorp/serf
+	url = https://github.com/cloudfoundry-incubator/serf
 [submodule "src/confab/vendor/golang.org/x/crypto"]
 	path = src/confab/vendor/golang.org/x/crypto
 	url = https://go.googlesource.com/crypto
@@ -52,3 +52,12 @@
 [submodule "src/confab/vendor/code.cloudfoundry.org/clock"]
 	path = src/confab/vendor/code.cloudfoundry.org/clock
 	url = https://github.com/cloudfoundry/clock
+[submodule "src/confab/vendor/github.com/hashicorp/go-multierror"]
+	path = src/confab/vendor/github.com/hashicorp/go-multierror
+	url = https://github.com/hashicorp/go-multierror
+[submodule "src/confab/vendor/github.com/miekg/dns"]
+	path = src/confab/vendor/github.com/miekg/dns
+	url = https://github.com/miekg/dns
+[submodule "src/confab/vendor/github.com/hashicorp/errwrap"]
+	path = src/confab/vendor/github.com/hashicorp/errwrap
+	url = https://github.com/hashicorp/errwrap

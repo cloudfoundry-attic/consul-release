@@ -458,7 +458,7 @@ var _ = Describe("Controller", func() {
 
 			Context("when setting keys errors", func() {
 				It("returns the error", func() {
-					timeout = utils.NewTimeout(time.After(0))
+					timeout = utils.NewTimeout(time.After(1 * time.Nanosecond))
 					agentClient.SetKeysCall.Returns.Error = errors.New("oh noes")
 
 					Expect(controller.ConfigureServer(timeout, rpcClient)).To(MatchError(`timeout exceeded: "oh noes"`))
