@@ -20,7 +20,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("quorum loss", func() {
+var _ = PDescribe("quorum loss", func() {
 	var (
 		turbulenceManifest turbulence.Manifest
 		turbulenceClient   turbulenceclient.Client
