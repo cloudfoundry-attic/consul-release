@@ -64,15 +64,21 @@ var _ = Describe("ConsulConfigDefiner", func() {
 		})
 
 		Describe("dns_config", func() {
-			It("defaults to consul defaults", func() {
-				cfg := config.Config{}
-				cfg.Consul.Agent.DnsConfig.MaxStale = "5s"
-				Expect(cfg.Consul.Agent.DnsConfig).To(Equal(config.ConfigConsulAgentDnsConfig{
-					// https://www.consul.io/docs/agent/options.html#allow_stale
-					AllowStale: false,
-					// https://www.consul.io/docs/agent/options.html#max_stale
-					MaxStale: "5s",
-				}))
+			Describe("recursor_timeout", func() {
+				Context("when the `consul.agent.dns_config.recursor_timeout` property is true", func() {
+					It("uses that value", func() {
+						consulConfig = config.GenerateConfiguration(config.Config{
+							Consul: config.ConfigConsul{
+								Agent: config.ConfigConsulAgent{
+									DnsConfig: config.ConfigConsulAgentDnsConfig{
+										RecursorTimeout: "10s",
+									},
+								},
+							},
+						}, configDir, "")
+						Expect(consulConfig.DnsConfig.RecursorTimeout).To(Equal("10s"))
+					})
+				})
 			})
 
 			Describe("allow_stale", func() {

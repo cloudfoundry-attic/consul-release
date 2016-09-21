@@ -54,12 +54,12 @@ properties:
     description: "When allow_stale is specified, this is used to limit how stale results are allowed to be."
     default: "5s"
 
+  consul.agent.dns_config.recursor_timeout:
+    description: "Timeout used by Consul when recursively querying an upstream DNS server."
+    default: "5s"
+
   consul.agent.domain:
     description: "Domain suffix for DNS"
-
-  consul.dns_timeout_in_seconds:
-    description: "The dns timeout for consul."
-    default: 5
 
   consul.ca_cert:
     description: "PEM-encoded CA certificate"

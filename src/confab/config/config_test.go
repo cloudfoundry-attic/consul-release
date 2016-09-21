@@ -41,7 +41,8 @@ var _ = Describe("Config", func() {
 							},
 							"dns_config": {
 								"allow_stale": true,
-								"max_stale": "15s"
+								"max_stale": "15s",
+								"recursor_timeout": "15s"
 							}
 						},
 						"encrypt_keys": ["key-1", "key-2"]
@@ -82,8 +83,9 @@ var _ = Describe("Config", func() {
 								WAN: []string{"wan-server1", "wan-server2", "wan-server3"},
 							},
 							DnsConfig: config.ConfigConsulAgentDnsConfig{
-								AllowStale: true,
-								MaxStale:   "15s",
+								AllowStale:      true,
+								MaxStale:        "15s",
+								RecursorTimeout: "15s",
 							},
 						},
 						EncryptKeys: []string{"key-1", "key-2"},
@@ -116,8 +118,9 @@ var _ = Describe("Config", func() {
 								WAN: []string{},
 							},
 							DnsConfig: config.ConfigConsulAgentDnsConfig{
-								AllowStale: false,
-								MaxStale:   "5s",
+								AllowStale:      false,
+								MaxStale:        "5s",
+								RecursorTimeout: "5s",
 							},
 						},
 					},

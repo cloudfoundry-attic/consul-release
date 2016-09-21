@@ -49,8 +49,9 @@ type ConfigConsulAgent struct {
 }
 
 type ConfigConsulAgentDnsConfig struct {
-	AllowStale bool   `json:"allow_stale"`
-	MaxStale   string `json:"max_stale"`
+	AllowStale      bool   `json:"allow_stale"`
+	MaxStale        string `json:"max_stale"`
+	RecursorTimeout string `json:"recursor_timeout"`
 }
 
 type ConfigConsulAgentServers struct {
@@ -68,8 +69,9 @@ func defaultConfig() Config {
 		Consul: ConfigConsul{
 			Agent: ConfigConsulAgent{
 				DnsConfig: ConfigConsulAgentDnsConfig{
-					AllowStale: false,
-					MaxStale:   "5s",
+					AllowStale:      false,
+					MaxStale:        "5s",
+					RecursorTimeout: "5s",
 				},
 				Servers: ConfigConsulAgentServers{
 					LAN: []string{},

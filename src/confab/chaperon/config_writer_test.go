@@ -41,6 +41,7 @@ var _ = Describe("ConfigWriter", func() {
 
 			cfg = config.Config{}
 			cfg.Consul.Agent.DnsConfig.MaxStale = "5s"
+			cfg.Consul.Agent.DnsConfig.RecursorTimeout = "5s"
 			cfg.Node = config.ConfigNode{Name: "node", Index: 0}
 			cfg.Path.ConsulConfigDir = configDir
 			cfg.Path.DataDir = dataDir
@@ -74,8 +75,9 @@ var _ = Describe("ConfigWriter", func() {
 				"key_file":               filepath.Join(configDir, "certs", "agent.key"),
 				"cert_file":              filepath.Join(configDir, "certs", "agent.crt"),
 				"dns_config": map[string]interface{}{
-					"allow_stale": false,
-					"max_stale":   "5s",
+					"allow_stale":      false,
+					"max_stale":        "5s",
+					"recursor_timeout": "5s",
 				},
 				"ports": map[string]int{
 					"dns": 53,

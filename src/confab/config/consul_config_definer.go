@@ -37,8 +37,9 @@ type ConsulConfigPorts struct {
 }
 
 type ConsulConfigDnsConfig struct {
-	AllowStale bool   `json:"allow_stale"`
-	MaxStale   string `json:"max_stale"`
+	AllowStale      bool   `json:"allow_stale"`
+	MaxStale        string `json:"max_stale"`
+	RecursorTimeout string `json:"recursor_timeout"`
 }
 
 func GenerateConfiguration(config Config, configDir, nodeName string) ConsulConfig {
@@ -70,8 +71,9 @@ func GenerateConfiguration(config Config, configDir, nodeName string) ConsulConf
 			DNS: 53,
 		},
 		DnsConfig: ConsulConfigDnsConfig{
-			AllowStale: config.Consul.Agent.DnsConfig.AllowStale,
-			MaxStale:   config.Consul.Agent.DnsConfig.MaxStale,
+			AllowStale:      config.Consul.Agent.DnsConfig.AllowStale,
+			MaxStale:        config.Consul.Agent.DnsConfig.MaxStale,
+			RecursorTimeout: config.Consul.Agent.DnsConfig.RecursorTimeout,
 		},
 	}
 
