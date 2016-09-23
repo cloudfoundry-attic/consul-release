@@ -14,6 +14,7 @@ type Config struct {
 	Registry              ConfigRegistry `json:"registry"`
 	ParallelNodes         int            `json:"parallel_nodes"`
 	TurbulenceReleaseName string
+	TurbulenceHost        string
 }
 
 type ConfigBOSH struct {

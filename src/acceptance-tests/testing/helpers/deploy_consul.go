@@ -15,6 +15,10 @@ import (
 
 type ManifestGenerator func(consul.Config, iaas.Config) (consul.Manifest, error)
 
+func DeployConsulWithTurbulence(deploymentPrefix string, count int, client bosh.Client, config Config) (manifest consul.Manifest, kv consulclient.HTTPKV, err error) {
+	return deployConsul(deploymentPrefix, count, client, config, ConsulReleaseVersion(), consul.NewManifestWithTurbulenceAgent)
+}
+
 func DeployConsulWithInstanceCount(deploymentPrefix string, count int, client bosh.Client, config Config) (manifest consul.Manifest, kv consulclient.HTTPKV, err error) {
 	return DeployConsulWithInstanceCountAndReleaseVersion(deploymentPrefix, count, client, config, ConsulReleaseVersion())
 }
@@ -40,8 +44,9 @@ func deployConsul(deploymentPrefix string, count int, client bosh.Client, config
 	}
 
 	manifestConfig := consul.Config{
-		DirectorUUID: info.UUID,
-		Name:         fmt.Sprintf("consul-%s-%s", deploymentPrefix, guid),
+		DirectorUUID:   info.UUID,
+		Name:           fmt.Sprintf("consul-%s-%s", deploymentPrefix, guid),
+		TurbulenceHost: config.TurbulenceHost,
 	}
 
 	var iaasConfig iaas.Config

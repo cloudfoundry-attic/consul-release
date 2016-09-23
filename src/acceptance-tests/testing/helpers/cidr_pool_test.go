@@ -40,6 +40,32 @@ var _ = Describe("CIDRPool", func() {
 				_, err := cidrPool.Get(4)
 				Expect(err).To(MatchError("cannot get cidr of index 4 when pool size is size of 4"))
 			})
+
+			It("returns an error if the user attempts to get a index less than zero", func() {
+				cidrPool = helpers.NewCIDRPool("10.244.4.0", 24, 26)
+
+				_, err := cidrPool.Get(-1)
+				Expect(err).To(MatchError("invalid index: -1"))
+			})
+		})
+	})
+
+	Describe("Last", func() {
+		It("returns the last cidr block from the cidr pool", func() {
+			cidrPool = helpers.NewCIDRPool("10.244.4.0", 24, 26)
+
+			cidr, err := cidrPool.Last()
+			Expect(err).NotTo(HaveOccurred())
+			Expect(cidr).To(Equal("10.244.4.192/26"))
+		})
+
+		Context("failure cases", func() {
+			It("returns an error if there are no cidr blocks in the cidr pool", func() {
+				cidrPool = helpers.NewCIDRPool("10.244.4.0", 33, 33)
+
+				_, err := cidrPool.Last()
+				Expect(err).To(MatchError("pool has no available cidr blocks: 10.244.4.0/33"))
+			})
 		})
 	})
 })

@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"os/exec"
 	"strings"
@@ -28,6 +29,10 @@ func (d DNSHandler) ServeHTTP(response http.ResponseWriter, request *http.Reques
 	}
 
 	var addresses []string
+	defer func() {
+		log.Println("Querying DNS for ", serviceName, " results being ", addresses)
+	}()
+
 	command := exec.Command(d.pathToCheckARecord, serviceName)
 
 	stdout, err := command.Output()
@@ -35,8 +40,10 @@ func (d DNSHandler) ServeHTTP(response http.ResponseWriter, request *http.Reques
 	case nil:
 		addresses = strings.Split(strings.TrimSpace(string(stdout)), "\n")
 	case *exec.ExitError:
+		log.Println("Some exit error occured : ", err)
 		addresses = []string{}
 	default:
+		log.Println("Some error occured : ", err)
 		response.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprintf(response, err.Error())
 		return

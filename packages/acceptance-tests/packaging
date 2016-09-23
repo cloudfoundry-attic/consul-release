@@ -12,7 +12,9 @@ export PATH="${GOROOT}/bin:${PATH}"
 export GO15VENDOREXPERIMENT=1
 
 go install "github.com/cloudfoundry-incubator/consul-release/src/acceptance-tests/testing/testconsumer"
+go install "github.com/cloudfoundry-incubator/consul-release/src/acceptance-tests/testing/fake-dns-server"
 go install "github.com/cloudfoundry-incubator/check-a-record"
 
 chown vcap:vcap "${BOSH_INSTALL_TARGET}/bin/testconsumer"
+chown vcap:vcap "${BOSH_INSTALL_TARGET}/bin/fake-dns-server"
 chown vcap:vcap "${BOSH_INSTALL_TARGET}/bin/check-a-record"

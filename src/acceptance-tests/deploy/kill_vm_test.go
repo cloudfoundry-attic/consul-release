@@ -7,9 +7,7 @@ import (
 	"github.com/cloudfoundry-incubator/consul-release/src/acceptance-tests/testing/consulclient"
 	"github.com/cloudfoundry-incubator/consul-release/src/acceptance-tests/testing/helpers"
 	"github.com/pivotal-cf-experimental/bosh-test/bosh"
-	turbulenceclient "github.com/pivotal-cf-experimental/bosh-test/turbulence"
 	"github.com/pivotal-cf-experimental/destiny/consul"
-	"github.com/pivotal-cf-experimental/destiny/turbulence"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -17,9 +15,6 @@ import (
 
 var _ = Describe("KillVm", func() {
 	var (
-		turbulenceManifest turbulence.Manifest
-		turbulenceClient   turbulenceclient.Client
-
 		consulManifest consul.Manifest
 		kv             consulclient.HTTPKV
 
@@ -29,16 +24,6 @@ var _ = Describe("KillVm", func() {
 	)
 
 	BeforeEach(func() {
-		var err error
-		turbulenceManifest, err = helpers.DeployTurbulence(boshClient, config)
-		Expect(err).NotTo(HaveOccurred())
-
-		Eventually(func() ([]bosh.VM, error) {
-			return helpers.DeploymentVMs(boshClient, turbulenceManifest.Name)
-		}, "1m", "10s").Should(ConsistOf(helpers.GetTurbulenceVMsFromManifest(turbulenceManifest)))
-
-		turbulenceClient = helpers.NewTurbulenceClient(turbulenceManifest)
-
 		guid, err := helpers.NewGUID()
 		Expect(err).NotTo(HaveOccurred())
 
@@ -71,13 +56,6 @@ var _ = Describe("KillVm", func() {
 		By("deleting the deployment", func() {
 			if !CurrentGinkgoTestDescription().Failed {
 				err := boshClient.DeleteDeployment(consulManifest.Name)
-				Expect(err).NotTo(HaveOccurred())
-			}
-		})
-
-		By("deleting the turbulence deployment", func() {
-			if !CurrentGinkgoTestDescription().Failed {
-				err := boshClient.DeleteDeployment(turbulenceManifest.Name)
 				Expect(err).NotTo(HaveOccurred())
 			}
 		})

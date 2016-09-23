@@ -9,7 +9,6 @@ import (
 	"github.com/pivotal-cf-experimental/destiny/iaas"
 	"github.com/pivotal-cf-experimental/destiny/turbulence"
 
-	ginkgoConfig "github.com/onsi/ginkgo/config"
 	turbulenceclient "github.com/pivotal-cf-experimental/bosh-test/turbulence"
 )
 
@@ -76,7 +75,7 @@ func DeployTurbulence(client bosh.Client, config Config) (turbulence.Manifest, e
 
 			var cidrBlock string
 			cidrPool := NewCIDRPool(subnet.Range, 24, 27)
-			cidrBlock, err = cidrPool.Get(ginkgoConfig.GinkgoConfig.ParallelNode - 1)
+			cidrBlock, err = cidrPool.Last()
 			if err != nil {
 				return turbulence.Manifest{}, err
 			}
@@ -91,7 +90,7 @@ func DeployTurbulence(client bosh.Client, config Config) (turbulence.Manifest, e
 	case "warden_cpi":
 		var cidrBlock string
 		cidrPool := NewCIDRPool("10.244.4.0", 24, 27)
-		cidrBlock, err = cidrPool.Get(ginkgoConfig.GinkgoConfig.ParallelNode - 1)
+		cidrBlock, err = cidrPool.Last()
 		if err != nil {
 			return turbulence.Manifest{}, err
 		}
