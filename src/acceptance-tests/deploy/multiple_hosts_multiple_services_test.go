@@ -47,14 +47,14 @@ var _ = Describe("Multiple hosts multiple services", func() {
 					Check: &core.JobPropertiesConsulAgentServiceCheck{
 						Name:     "some-service-check",
 						Script:   healthCheck,
-						Interval: "1m",
+						Interval: "30s",
 					},
 				},
 				"some-other-service": core.JobPropertiesConsulAgentService{
 					Check: &core.JobPropertiesConsulAgentServiceCheck{
 						Name:     "some-other-service-check",
 						Script:   healthCheck,
-						Interval: "1m",
+						Interval: "30s",
 					},
 				},
 			}
@@ -78,35 +78,35 @@ var _ = Describe("Multiple hosts multiple services", func() {
 		By("resolving service addresses", func() {
 			Eventually(func() ([]string, error) {
 				return tcClient.DNS("some-service.service.cf.internal")
-			}, "1m", "10s").Should(ConsistOf(manifest.Jobs[0].Networks[0].StaticIPs))
+			}, "2m", "10s").Should(ConsistOf(manifest.Jobs[0].Networks[0].StaticIPs))
 
 			Eventually(func() ([]string, error) {
 				return tcClient.DNS("consul-z1-0.some-service.service.cf.internal")
-			}, "1m", "10s").Should(ConsistOf(manifest.Jobs[0].Networks[0].StaticIPs[0]))
+			}, "2m", "10s").Should(ConsistOf(manifest.Jobs[0].Networks[0].StaticIPs[0]))
 
 			Eventually(func() ([]string, error) {
 				return tcClient.DNS("consul-z1-1.some-service.service.cf.internal")
-			}, "1m", "10s").Should(ConsistOf(manifest.Jobs[0].Networks[0].StaticIPs[1]))
+			}, "2m", "10s").Should(ConsistOf(manifest.Jobs[0].Networks[0].StaticIPs[1]))
 
 			Eventually(func() ([]string, error) {
 				return tcClient.DNS("consul-z1-2.some-service.service.cf.internal")
-			}, "1m", "10s").Should(ConsistOf(manifest.Jobs[0].Networks[0].StaticIPs[2]))
+			}, "2m", "10s").Should(ConsistOf(manifest.Jobs[0].Networks[0].StaticIPs[2]))
 
 			Eventually(func() ([]string, error) {
 				return tcClient.DNS("some-other-service.service.cf.internal")
-			}, "1m", "10s").Should(ConsistOf(manifest.Jobs[0].Networks[0].StaticIPs))
+			}, "2m", "10s").Should(ConsistOf(manifest.Jobs[0].Networks[0].StaticIPs))
 
 			Eventually(func() ([]string, error) {
 				return tcClient.DNS("consul-z1-0.some-other-service.service.cf.internal")
-			}, "1m", "10s").Should(ConsistOf(manifest.Jobs[0].Networks[0].StaticIPs[0]))
+			}, "2m", "10s").Should(ConsistOf(manifest.Jobs[0].Networks[0].StaticIPs[0]))
 
 			Eventually(func() ([]string, error) {
 				return tcClient.DNS("consul-z1-1.some-other-service.service.cf.internal")
-			}, "1m", "10s").Should(ConsistOf(manifest.Jobs[0].Networks[0].StaticIPs[1]))
+			}, "2m", "10s").Should(ConsistOf(manifest.Jobs[0].Networks[0].StaticIPs[1]))
 
 			Eventually(func() ([]string, error) {
 				return tcClient.DNS("consul-z1-2.some-other-service.service.cf.internal")
-			}, "1m", "10s").Should(ConsistOf(manifest.Jobs[0].Networks[0].StaticIPs[2]))
+			}, "2m", "10s").Should(ConsistOf(manifest.Jobs[0].Networks[0].StaticIPs[2]))
 		})
 	})
 })

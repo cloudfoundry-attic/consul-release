@@ -42,6 +42,8 @@ var _ = Describe("Health Check", func() {
 	Context("with an operator defined check script", func() {
 		It("deregisters a service if the health check fails", func() {
 			By("registering a service", func() {
+				manifest, err := manifest.SetJobInstanceCount("consul_test_consumer", 3)
+				Expect(err).NotTo(HaveOccurred())
 				manifest.Jobs[0].Properties.Consul.Agent.Services = core.JobPropertiesConsulAgentServices{
 					"some-service": core.JobPropertiesConsulAgentService{
 						Name: "some-service-name",
@@ -103,6 +105,8 @@ var _ = Describe("Health Check", func() {
 	Context("with the default check script", func() {
 		It("deregisters a service if the health check fails", func() {
 			By("registering a service", func() {
+				manifest, err := manifest.SetJobInstanceCount("consul_test_consumer", 3)
+				Expect(err).NotTo(HaveOccurred())
 				manifest.Jobs[1].Properties = &core.JobProperties{
 					Consul: &core.JobPropertiesConsul{
 						Agent: core.JobPropertiesConsulAgent{

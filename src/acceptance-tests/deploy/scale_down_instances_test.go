@@ -52,11 +52,11 @@ var _ = Describe("Scaling down instances", func() {
 
 			By("scaling from 3 nodes to 1", func() {
 				var err error
-				manifest.Jobs[0], manifest.Properties, err = consul.SetJobInstanceCount(manifest.Jobs[0], manifest.Networks[0], manifest.Properties, 1)
+				manifest, err = manifest.SetConsulJobInstanceCount(1)
 				Expect(err).NotTo(HaveOccurred())
 
 				members := manifest.ConsulMembers()
-				Expect(members).To(HaveLen(4))
+				Expect(members).To(HaveLen(2))
 
 				yaml, err := manifest.ToYAML()
 				Expect(err).NotTo(HaveOccurred())
@@ -102,11 +102,11 @@ var _ = Describe("Scaling down instances", func() {
 
 			By("scaling from 5 nodes to 3", func() {
 				var err error
-				manifest.Jobs[0], manifest.Properties, err = consul.SetJobInstanceCount(manifest.Jobs[0], manifest.Networks[0], manifest.Properties, 3)
+				manifest, err = manifest.SetConsulJobInstanceCount(3)
 				Expect(err).NotTo(HaveOccurred())
 
 				members := manifest.ConsulMembers()
-				Expect(members).To(HaveLen(6))
+				Expect(members).To(HaveLen(4))
 
 				yaml, err := manifest.ToYAML()
 				Expect(err).NotTo(HaveOccurred())

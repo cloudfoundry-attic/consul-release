@@ -71,13 +71,6 @@ var _ = PDescribe("quorum loss", func() {
 				Expect(err).NotTo(HaveOccurred())
 			}
 		})
-
-		By("deleting the turbulence deployment", func() {
-			if !CurrentGinkgoTestDescription().Failed {
-				err := boshClient.DeleteDeployment(turbulenceManifest.Name)
-				Expect(err).NotTo(HaveOccurred())
-			}
-		})
 	})
 
 	Context("when a consul node is killed", func() {

@@ -73,3 +73,8 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 
 	turbulenceClient = helpers.NewTurbulenceClient(turbulenceManifest)
 })
+
+var _ = SynchronizedAfterSuite(func() {}, func() {
+	err := boshClient.DeleteDeployment(turbulenceManifest.Name)
+	Expect(err).NotTo(HaveOccurred())
+})

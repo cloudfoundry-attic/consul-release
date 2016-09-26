@@ -50,8 +50,6 @@ var _ = Describe("recursor timeout", func() {
 			}, TIMEOUT.String(), "10s").ShouldNot(BeEmpty())
 			err := boshClient.DeleteDeployment(consulManifest.Name)
 			Expect(err).NotTo(HaveOccurred())
-			err = boshClient.DeleteDeployment(turbulenceManifest.Name)
-			Expect(err).NotTo(HaveOccurred())
 		}
 	})
 
