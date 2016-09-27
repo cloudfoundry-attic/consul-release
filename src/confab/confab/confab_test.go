@@ -312,7 +312,7 @@ var _ = Describe("confab", func() {
 				Eventually(func() ([]string, error) {
 					fakeAgentOutputData, err := fakeAgentOutputFromFile(consulConfigDir, "fake-output.json")
 					return fakeAgentOutputData.Args, err
-				}, "2s").Should(Equal([]string{
+				}, "5s").Should(Equal([]string{
 					"agent",
 					fmt.Sprintf("-config-dir=%s", consulConfigDir),
 				}))
