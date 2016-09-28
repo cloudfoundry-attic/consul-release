@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"sync"
 	"time"
 
 	"github.com/cloudfoundry-incubator/consul-release/src/confab/utils"
@@ -117,18 +118,7 @@ var _ = Describe("confab", func() {
 			Expect(os.Remove(configFile.Name())).NotTo(HaveOccurred())
 		})
 
-		It("starts and stops the consul process as a daemon", func() {
-			start := exec.Command(pathToConfab,
-				"start",
-				"--recursor", "8.8.8.8",
-				"--recursor", "10.0.2.3",
-				"--config-file", configFile.Name(),
-			)
-			Eventually(start.Run, COMMAND_TIMEOUT, COMMAND_TIMEOUT).Should(Succeed())
-
-			pid, err := getPID(pidFile.Name())
-			Expect(err).NotTo(HaveOccurred())
-			Expect(utils.IsPIDRunning(pid)).To(BeTrue())
+		testStoppingConsulProcess := func(pid int) {
 
 			stop := exec.Command(pathToConfab,
 				"stop",
@@ -220,7 +210,90 @@ var _ = Describe("confab", func() {
 			body, err := json.Marshal(conf)
 			Expect(err).To(BeNil())
 			Expect(string(consulConfig)).To(MatchJSON(body))
+		}
+
+		It("starts and stops the consul process as a daemon", func() {
+			start := exec.Command(pathToConfab,
+				"start",
+				"--recursor", "8.8.8.8",
+				"--recursor", "10.0.2.3",
+				"--config-file", configFile.Name(),
+			)
+			Eventually(start.Run, COMMAND_TIMEOUT, COMMAND_TIMEOUT).Should(Succeed())
+
+			pid, err := getPID(pidFile.Name())
+			Expect(err).NotTo(HaveOccurred())
+			Expect(utils.IsPIDRunning(pid)).To(BeTrue())
+
+			testStoppingConsulProcess(pid)
 		})
+
+		It("starts and stops the consul process as a foreground process", func() {
+			start := exec.Command(pathToConfab,
+				"start",
+				"--foreground",
+				"--recursor", "8.8.8.8",
+				"--recursor", "10.0.2.3",
+				"--config-file", configFile.Name(),
+			)
+			Eventually(start.Start, COMMAND_TIMEOUT, COMMAND_TIMEOUT).Should(Succeed())
+
+			wg := new(sync.WaitGroup)
+			wg.Add(1)
+			go func() {
+				defer GinkgoRecover()
+				defer wg.Done()
+				Expect(start.Wait()).To(Succeed())
+			}()
+
+			// Wait until pidfile exists
+			Eventually(func() error {
+				_, err := os.Stat(pidFile.Name())
+				return err
+			}, COMMAND_TIMEOUT, time.Second*1).Should(Succeed())
+
+			pid, err := getPID(pidFile.Name())
+			Expect(err).NotTo(HaveOccurred())
+			Expect(utils.IsPIDRunning(pid)).To(BeTrue())
+
+			testStoppingConsulProcess(pid)
+			Eventually(func() error { wg.Wait(); return nil }).Should(Succeed())
+		})
+
+		It("the foreground process exits when the runner process exits", func() {
+			start := exec.Command(pathToConfab,
+				"start",
+				"--foreground",
+				"--recursor", "8.8.8.8",
+				"--recursor", "10.0.2.3",
+				"--config-file", configFile.Name(),
+			)
+			Eventually(start.Start, COMMAND_TIMEOUT, COMMAND_TIMEOUT).Should(Succeed())
+
+			wg := new(sync.WaitGroup)
+			wg.Add(1)
+			go func() {
+				defer GinkgoRecover()
+				defer wg.Done()
+				Expect(start.Wait()).To(Succeed())
+			}()
+
+			// Wait until pidfile exists
+			Eventually(func() error {
+				_, err := os.Stat(pidFile.Name())
+				return err
+			}, COMMAND_TIMEOUT, time.Second*1).Should(Succeed())
+
+			pid, err := getPID(pidFile.Name())
+			Expect(err).NotTo(HaveOccurred())
+			Expect(utils.IsPIDRunning(pid)).To(BeTrue())
+
+			killProcessAttachedToPort(8400)
+			killProcessAttachedToPort(8500)
+
+			Eventually(func() error { wg.Wait(); return nil }).Should(Succeed())
+		})
+
 	})
 
 	Context("when starting", func() {
