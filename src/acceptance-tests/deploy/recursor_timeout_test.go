@@ -105,16 +105,17 @@ var _ = Describe("recursor timeout", func() {
 		})
 
 		By("successfully making a DNS query", func() {
-			dnsStartTime := time.Now()
-			address, err := tcClient.DNS("my-fake-server.fake.local")
-			Expect(err).NotTo(HaveOccurred())
-
-			dnsElapsedTime := time.Since(dnsStartTime)
-			Expect(dnsElapsedTime.Nanoseconds()).To(BeNumerically(">", DELAY))
+			var dnsStartTime time.Time
 
 			// miekg/dns implementation responds with A and AAAA records regardless of the type of record requested
 			// therefore we're expected 4 IPs here
-			Expect(address).To(Equal([]string{"10.2.3.4", "10.2.3.4", "10.2.3.4", "10.2.3.4"}))
+			Eventually(func() ([]string, error) {
+				dnsStartTime = time.Now()
+				return tcClient.DNS("my-fake-server.fake.local")
+			}, "30s", "100ms").Should(Equal([]string{"10.2.3.4", "10.2.3.4", "10.2.3.4", "10.2.3.4"}))
+
+			dnsElapsedTime := time.Since(dnsStartTime)
+			Expect(dnsElapsedTime.Nanoseconds()).To(BeNumerically(">", DELAY))
 		})
 	})
 })
