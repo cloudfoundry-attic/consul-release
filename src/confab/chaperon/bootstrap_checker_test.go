@@ -2,6 +2,7 @@ package chaperon_test
 
 import (
 	"errors"
+	"time"
 
 	"code.cloudfoundry.org/lager"
 	"github.com/cloudfoundry-incubator/consul-release/src/confab/chaperon"
@@ -20,14 +21,16 @@ var _ = Describe("BootstrapChecker", func() {
 			agentClient      *fakes.AgentClient
 			statusClient     *fakes.StatusClient
 			bootstrapChecker chaperon.BootstrapChecker
+			sleeper          func(d time.Duration)
 		)
 
 		BeforeEach(func() {
 			logger = &fakes.Logger{}
 			agentClient = &fakes.AgentClient{}
 			statusClient = &fakes.StatusClient{}
+			sleeper = func(d time.Duration) {}
 
-			bootstrapChecker = chaperon.NewBootstrapChecker(logger, agentClient, statusClient)
+			bootstrapChecker = chaperon.NewBootstrapChecker(logger, agentClient, statusClient, sleeper)
 		})
 
 		Context("when there is no leader or bootstrap node in the cluster", func() {
@@ -39,7 +42,7 @@ var _ = Describe("BootstrapChecker", func() {
 				Expect(agentClient.MembersCall.CallCount).To(Equal(1))
 				Expect(agentClient.MembersCall.Receives.WAN).To(BeFalse())
 
-				Expect(statusClient.LeaderCall.CallCount).To(Equal(1))
+				Expect(statusClient.LeaderCall.CallCount).To(Equal(20))
 
 				Expect(logger.Messages()).To(ContainSequence([]fakes.LoggerMessage{
 					{
@@ -152,6 +155,49 @@ var _ = Describe("BootstrapChecker", func() {
 						Data: []lager.Data{
 							{
 								"bootstrap": true,
+							},
+						},
+					},
+				}))
+			})
+
+			It("attempts to retry leader status check till it timesout", func() {
+				sleeperDuration := 0 * time.Second
+				sleeper = func(d time.Duration) {
+					sleeperDuration = d
+				}
+				bootstrapChecker = chaperon.NewBootstrapChecker(logger, agentClient, statusClient, sleeper)
+
+				leaderCallCount := 0
+				statusClient.LeaderCall.Stub = func() (string, error) {
+					leaderCallCount++
+					if leaderCallCount > 3 {
+						return "some-leader", nil
+					}
+					return "", nil
+				}
+
+				startInBootstrap, err := bootstrapChecker.StartInBootstrapMode()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(startInBootstrap).To(BeFalse())
+
+				Expect(statusClient.LeaderCall.CallCount).To(Equal(4))
+				Expect(sleeperDuration).To(Equal(100 * time.Millisecond))
+
+				Expect(logger.Messages()).To(ContainSequence([]fakes.LoggerMessage{
+					{
+						Action: "chaperon-bootstrap-checker.start-in-bootstrap-mode.leader-exists",
+						Data: []lager.Data{
+							{
+								"leader": "some-leader",
+							},
+						},
+					},
+					{
+						Action: "chaperon-bootstrap-checker.start-in-bootstrap-mode",
+						Data: []lager.Data{
+							{
+								"bootstrap": false,
 							},
 						},
 					},

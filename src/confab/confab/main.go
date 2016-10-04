@@ -126,7 +126,7 @@ func main() {
 
 	var r runner = chaperon.NewClient(controller, consulagent.NewRPCClient, keyringRemover, configWriter)
 	if controller.Config.Consul.Agent.Mode == "server" {
-		bootstrapChecker := chaperon.NewBootstrapChecker(logger, agentClient, status.Client{ConsulAPIStatus: consulAPIClient.Status()})
+		bootstrapChecker := chaperon.NewBootstrapChecker(logger, agentClient, status.Client{ConsulAPIStatus: consulAPIClient.Status()}, time.Sleep)
 		r = chaperon.NewServer(controller, configWriter, consulagent.NewRPCClient, bootstrapChecker)
 	}
 

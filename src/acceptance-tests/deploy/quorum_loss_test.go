@@ -12,34 +12,20 @@ import (
 	"github.com/cloudfoundry-incubator/consul-release/src/acceptance-tests/testing/consulclient"
 	"github.com/cloudfoundry-incubator/consul-release/src/acceptance-tests/testing/helpers"
 	"github.com/pivotal-cf-experimental/bosh-test/bosh"
-	turbulenceclient "github.com/pivotal-cf-experimental/bosh-test/turbulence"
 	"github.com/pivotal-cf-experimental/destiny/consul"
-	"github.com/pivotal-cf-experimental/destiny/turbulence"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
 
-var _ = PDescribe("quorum loss", func() {
+var _ = Describe("quorum loss", func() {
 	var (
-		turbulenceManifest turbulence.Manifest
-		turbulenceClient   turbulenceclient.Client
-
 		consulManifest consul.Manifest
 		kv             consulclient.HTTPKV
 	)
 
 	BeforeEach(func() {
 		var err error
-		turbulenceManifest, err = helpers.DeployTurbulence(boshClient, config)
-		Expect(err).NotTo(HaveOccurred())
-
-		Eventually(func() ([]bosh.VM, error) {
-			return helpers.DeploymentVMs(boshClient, turbulenceManifest.Name)
-		}, "1m", "10s").Should(ConsistOf(helpers.GetTurbulenceVMsFromManifest(turbulenceManifest)))
-
-		turbulenceClient = helpers.NewTurbulenceClient(turbulenceManifest)
-
 		consulManifest, kv, err = helpers.DeployConsulWithInstanceCount("quorum-loss", 5, boshClient, config)
 		Expect(err).NotTo(HaveOccurred())
 

@@ -438,7 +438,7 @@ var _ = Describe("confab", func() {
 						"encrypt_keys": []string{"key-1", "key-2"},
 					},
 					"confab": map[string]interface{}{
-						"timeout_in_seconds": 3,
+						"timeout_in_seconds": 5,
 					},
 				})
 
@@ -452,7 +452,7 @@ var _ = Describe("confab", func() {
 
 				start := time.Now()
 				Eventually(cmd.Run, COMMAND_TIMEOUT, COMMAND_TIMEOUT).ShouldNot(Succeed())
-				Expect(time.Now()).To(BeTemporally("~", start.Add(4*time.Second), 1*time.Second))
+				Expect(time.Now()).To(BeTemporally("~", start.Add(6*time.Second), 1*time.Second))
 
 				output, err := fakeAgentOutputFromFile(consulConfigDir, "fake-output-2.json")
 				Expect(err).NotTo(HaveOccurred())
