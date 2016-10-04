@@ -70,9 +70,9 @@ var _ = Describe("recursor timeout", func() {
 		})
 
 		By("making a DNS query which should timeout", func() {
-			address, err := tcClient.DNS("my-fake-server.fake.local")
-			Expect(err).NotTo(HaveOccurred())
-			Expect(address).To(BeEmpty())
+			Eventually(func() ([]string, error) {
+				return tcClient.DNS("my-fake-server.fake.local")
+			}, "30s", "100ms").Should(BeEmpty())
 		})
 
 		By("waiting for the network delay to end", func() {
