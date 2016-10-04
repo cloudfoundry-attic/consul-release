@@ -282,8 +282,17 @@ idea to confirm that:
 ### Failed Deploys, Upgrades, Split-Brain Scenarios, etc.
 
 In the event that the consul cluster ends up in a bad state that is difficult
-to debug, you have the option of stopping the consul agent on each server node,
-removing its data store, and then restarting the process:
+to debug, a simple
+
+```
+bosh restart consul_server
+```
+
+should fix the cluster.
+
+If the consul cluster does not recover via the above method, you have the option
+of stopping the consul agent on each server node, removing its data store, and
+then restarting the process:
 
 ```
 monit stop consul_agent (on all server nodes in consul cluster)
