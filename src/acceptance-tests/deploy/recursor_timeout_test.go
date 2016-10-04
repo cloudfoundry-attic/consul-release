@@ -48,6 +48,19 @@ var _ = Describe("recursor timeout", func() {
 
 				return incidentResp.ExecutionCompletedAt
 			}, TIMEOUT.String(), "10s").ShouldNot(BeEmpty())
+
+			// Turbulence API might say that the incident is finished, but it might not be - sanity check
+			Eventually(func() (int64, error) {
+				var err error
+				dnsStartTime := time.Now()
+				_, err = tcClient.DNS("my-fake-server.fake.local")
+				if err != nil {
+					return 0, err
+				}
+				dnsElapsedTime := time.Since(dnsStartTime)
+				return dnsElapsedTime.Nanoseconds(), nil
+			}, TIMEOUT.String(), "100ms").Should(BeNumerically("<", 1*time.Second))
+
 			err := boshClient.DeleteDeployment(consulManifest.Name)
 			Expect(err).NotTo(HaveOccurred())
 		}
