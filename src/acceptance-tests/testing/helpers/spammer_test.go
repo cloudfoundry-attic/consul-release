@@ -102,7 +102,7 @@ var _ = Describe("Spammer", func() {
 			It("does not return an error when an underlying proxy http error occurs", func() {
 				kv.SetCall.Stub = func(string, string) error {
 					if kv.SetCall.CallCount.Value() < 10 {
-						return errors.New("http: proxy error")
+						return errors.New("unexpected status: 502 Bad Gateway")
 					}
 					return nil
 				}

@@ -3,7 +3,7 @@
 CONSATS_DIR="/var/vcap/packages/acceptance-tests"
 
 export PATH="${PATH}:/var/vcap/packages/consul/bin"
-export GOROOT="$(readlink -nf /var/vcap/packages/golang1.6)"
+export GOROOT="$(readlink -nf /var/vcap/packages/golang1.7)"
 export GOPATH="${CONSATS_DIR}"
 export PATH="${GOROOT}/bin:${PATH}"
 export GO15VENDOREXPERIMENT=1

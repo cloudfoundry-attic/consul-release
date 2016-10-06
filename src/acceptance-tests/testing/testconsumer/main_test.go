@@ -174,7 +174,7 @@ var _ = Describe("Proxying consul requests", func() {
 	})
 
 	Context("proxy errors", func() {
-		It("returns the underlying proxy error message", func() {
+		It("returns a bad gateway status", func() {
 			var err error
 			command := exec.Command(pathToConsumer, "--port", port, "--consul-url", "http://localhost:999999", "--path-to-check-a-record", pathToCheckARecord)
 
@@ -183,10 +183,9 @@ var _ = Describe("Proxying consul requests", func() {
 
 			waitForServerToStart(port)
 
-			status, responseBody, err := makeRequest("GET", fmt.Sprintf("http://localhost:%s/consul/v1/kv/some-key?raw", port), "")
+			status, _, err := makeRequest("GET", fmt.Sprintf("http://localhost:%s/consul/v1/kv/some-key?raw", port), "")
 			Expect(err).NotTo(HaveOccurred())
-			Expect(status).To(Equal(http.StatusInternalServerError))
-			Expect(responseBody).To(ContainSubstring("http: proxy error: dial tcp: invalid port 999999"))
+			Expect(status).To(Equal(http.StatusBadGateway))
 		})
 	})
 })

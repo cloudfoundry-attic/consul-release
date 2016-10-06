@@ -19,3 +19,7 @@ golang/go1.6.3.windows-amd64.zip:
   object_id: 6c709e3e-fe04-40a9-b89d-9f6ada0852b8
   sha: ff377b0e402ba5968a47cf1780b7c322e4d4d2f6
   size: 91586837
+golang/go1.7.1.linux-amd64.tar.gz:
+  object_id: 78524ac4-6c73-43ba-ba77-0bd017368fe6
+  sha: 919ab01305ada0078a9fdf8a12bb56fb0b8a1444
+  size: 81618401

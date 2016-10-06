@@ -95,6 +95,7 @@ func (s *Spammer) Spam() {
 						// failures to connect to the test consumer should not count as failed key writes
 						// this typically happens when the test-consumer vm is rolled
 						counts.attempts--
+					case strings.Contains(err.Error(), "unexpected status: 502 Bad Gateway"):
 					case strings.Contains(err.Error(), "http: proxy error"):
 					default:
 						s.errors.Add(err)
