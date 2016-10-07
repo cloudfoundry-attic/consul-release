@@ -19,7 +19,7 @@ const (
 	TIMEOUT = 30 * time.Second
 )
 
-var _ = Describe("recursor timeout", func() {
+var _ = PDescribe("recursor timeout", func() {
 	var (
 		consulManifest  consul.Manifest
 		delayIncidentID string
