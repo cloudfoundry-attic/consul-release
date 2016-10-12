@@ -51,7 +51,7 @@ properties:
 
   consul.acceptance_tests.aws.region:
    description: "Region for AWS deployments"
-   default: "us-east-1"
+   default: "us-west-2"
 
   consul.acceptance_tests.registry.host:
    description: "Host for the BOSH registry"

@@ -234,7 +234,7 @@ var _ = Describe("configuration", func() {
 					},
 					AWS: helpers.ConfigAWS{
 						DefaultKeyName: "bosh",
-						Region:         "us-east-1",
+						Region:         "us-west-2",
 					},
 					TurbulenceReleaseName: "turbulence",
 					ParallelNodes:         1,
@@ -273,7 +273,7 @@ var _ = Describe("configuration", func() {
 					},
 					AWS: helpers.ConfigAWS{
 						DefaultKeyName: "bosh",
-						Region:         "us-east-1",
+						Region:         "us-west-2",
 					},
 					TurbulenceReleaseName: "turbulence",
 					ParallelNodes:         1,
@@ -301,7 +301,7 @@ var _ = Describe("configuration", func() {
 				Expect(err).NotTo(HaveOccurred())
 			})
 
-			It("uses the region 'us-east-1'", func() {
+			It("uses the region 'us-west-2'", func() {
 				config, err := helpers.LoadConfig(configFilePath)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(config).To(Equal(helpers.Config{
@@ -312,7 +312,7 @@ var _ = Describe("configuration", func() {
 					},
 					AWS: helpers.ConfigAWS{
 						DefaultKeyName: "bosh",
-						Region:         "us-east-1",
+						Region:         "us-west-2",
 					},
 					TurbulenceReleaseName: "turbulence",
 					ParallelNodes:         1,
@@ -351,7 +351,7 @@ var _ = Describe("configuration", func() {
 					},
 					AWS: helpers.ConfigAWS{
 						DefaultKeyName: "bosh",
-						Region:         "us-east-1",
+						Region:         "us-west-2",
 					},
 					TurbulenceReleaseName: "turbulence",
 					ParallelNodes:         1,

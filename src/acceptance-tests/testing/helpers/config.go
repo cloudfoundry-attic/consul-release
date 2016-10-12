@@ -80,7 +80,7 @@ func LoadConfig(configFilePath string) (Config, error) {
 	}
 
 	if config.AWS.Region == "" {
-		config.AWS.Region = "us-east-1"
+		config.AWS.Region = "us-west-2"
 	}
 
 	if config.ParallelNodes == 0 {
