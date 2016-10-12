@@ -9,7 +9,7 @@ releases:
 compilation:
   cloud_properties:
     instance_type: c3.large
-    availability_zone: us-east-1a
+    availability_zone: us-west-2a
     ephemeral_disk:
       size: 2048
       type: gp2
@@ -82,7 +82,7 @@ networks:
 resource_pools:
 - cloud_properties:
     instance_type: m3.medium
-    availability_zone: us-east-1a
+    availability_zone: us-west-2a
     ephemeral_disk:
       size: 1024
       type: gp2
@@ -93,7 +93,7 @@ resource_pools:
     version: latest
 - cloud_properties:
     instance_type: m3.medium
-    availability_zone: us-east-1c
+    availability_zone: us-west-2c
     ephemeral_disk:
       size: 1024
       type: gp2
