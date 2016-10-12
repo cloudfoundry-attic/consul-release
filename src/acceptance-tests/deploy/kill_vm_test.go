@@ -13,7 +13,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = PDescribe("KillVm", func() {
+var _ = Describe("KillVm", func() {
 	var (
 		consulManifest consul.Manifest
 		kv             consulclient.HTTPKV

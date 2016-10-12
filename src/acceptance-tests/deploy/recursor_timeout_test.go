@@ -19,7 +19,7 @@ const (
 	TIMEOUT = 30 * time.Second
 )
 
-var _ = PDescribe("recursor timeout", func() {
+var _ = Describe("recursor timeout", func() {
 	var (
 		consulManifest  consul.Manifest
 		delayIncidentID string
@@ -30,7 +30,7 @@ var _ = PDescribe("recursor timeout", func() {
 		var err error
 		config.TurbulenceHost = turbulenceManifest.Jobs[0].Networks[0].StaticIPs[0]
 
-		consulManifest, _, err = helpers.DeployConsulWithTurbulence("dns-timeout", 1, boshClient, config)
+		consulManifest, _, err = helpers.DeployConsulWithTurbulence("recursor-timeout", 1, boshClient, config)
 		Expect(err).NotTo(HaveOccurred())
 
 		Eventually(func() ([]bosh.VM, error) {

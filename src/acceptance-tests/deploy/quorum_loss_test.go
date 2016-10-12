@@ -18,7 +18,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = PDescribe("quorum loss", func() {
+var _ = Describe("quorum loss", func() {
 	var (
 		consulManifest consul.Manifest
 		kv             consulclient.HTTPKV
