@@ -199,8 +199,8 @@ var _ = Describe("confab", func() {
 				"cert_file":              filepath.Join(consulConfigDir, "certs", "agent.crt"),
 				"encrypt":                "enqzXBmgKOy13WIGsmUk+g==",
 				"dns_config": map[string]interface{}{
-					"allow_stale":      false,
-					"max_stale":        "5s",
+					"allow_stale":      true,
+					"max_stale":        "30s",
 					"recursor_timeout": "5s",
 				},
 				"ports": map[string]int{

@@ -118,8 +118,8 @@ var _ = Describe("Config", func() {
 								WAN: []string{},
 							},
 							DnsConfig: config.ConfigConsulAgentDnsConfig{
-								AllowStale:      false,
-								MaxStale:        "5s",
+								AllowStale:      true,
+								MaxStale:        "30s",
 								RecursorTimeout: "5s",
 							},
 						},

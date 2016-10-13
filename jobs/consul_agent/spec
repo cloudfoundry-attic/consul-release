@@ -48,11 +48,11 @@ properties:
 
   consul.agent.dns_config.allow_stale:
     description: "Enables a stale query for DNS information. This allows any Consul server, rather than only the leader, to service the request."
-    default: false
+    default: true
 
   consul.agent.dns_config.max_stale:
     description: "When allow_stale is specified, this is used to limit how stale results are allowed to be."
-    default: "5s"
+    default: "30s"
 
   consul.agent.dns_config.recursor_timeout:
     description: "Timeout used by Consul when recursively querying an upstream DNS server."

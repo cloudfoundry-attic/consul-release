@@ -69,8 +69,8 @@ func defaultConfig() Config {
 		Consul: ConfigConsul{
 			Agent: ConfigConsulAgent{
 				DnsConfig: ConfigConsulAgentDnsConfig{
-					AllowStale:      false,
-					MaxStale:        "5s",
+					AllowStale:      true,
+					MaxStale:        "30s",
 					RecursorTimeout: "5s",
 				},
 				Servers: ConfigConsulAgentServers{
