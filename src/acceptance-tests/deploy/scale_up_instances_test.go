@@ -69,7 +69,13 @@ var _ = Describe("Scaling up Instances", func() {
 				}, "1m", "10s").Should(ConsistOf(helpers.GetVMsFromManifest(manifest)))
 			})
 
-			By("setting a persistent value to check the cluster is up after the scale up", func() {
+			By("checking if value was persisted", func() {
+				actualVal, err := kv.Get(testKey)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(actualVal).To(Equal(testValue))
+			})
+
+			By("setting a persistent value to check if the cluster is up", func() {
 				err := kv.Set(testKey, testValue)
 				Expect(err).NotTo(HaveOccurred())
 			})
