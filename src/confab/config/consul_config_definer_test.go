@@ -380,5 +380,11 @@ var _ = Describe("ConsulConfigDefiner", func() {
 				})
 			})
 		})
+
+		Describe("performance", func() {
+			It("defaults to raft_multiplier to 1", func() {
+				Expect(consulConfig.Performance.RaftMultiplier).To(Equal(1))
+			})
+		})
 	})
 })
