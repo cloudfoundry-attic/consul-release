@@ -110,6 +110,9 @@ var _ = Describe("confab", func() {
 							},
 						},
 					},
+					"performance": map[string]int{
+						"raft_multiplier": 1,
+					},
 				},
 			})
 		})
@@ -205,6 +208,9 @@ var _ = Describe("confab", func() {
 				},
 				"ports": map[string]int{
 					"dns": 53,
+				},
+				"performance": map[string]int{
+					"raft_multiplier": 1,
 				},
 			}
 			body, err := json.Marshal(conf)

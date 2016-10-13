@@ -82,6 +82,9 @@ var _ = Describe("ConfigWriter", func() {
 				"ports": map[string]int{
 					"dns": 53,
 				},
+				"performance": map[string]int{
+					"raft_multiplier": 1,
+				},
 			}
 			body, err := json.Marshal(conf)
 			Expect(err).To(BeNil())
