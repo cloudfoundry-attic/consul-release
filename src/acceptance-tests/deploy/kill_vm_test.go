@@ -45,6 +45,10 @@ var _ = Describe("KillVm", func() {
 			yaml, err := consulManifest.ToYAML()
 			Expect(err).NotTo(HaveOccurred())
 
+			Eventually(func() ([]string, error) {
+				return lockedDeployments()
+			}).Should(ContainElement(consulManifest.Name))
+
 			err = boshClient.ScanAndFixAll(yaml)
 			Expect(err).NotTo(HaveOccurred())
 

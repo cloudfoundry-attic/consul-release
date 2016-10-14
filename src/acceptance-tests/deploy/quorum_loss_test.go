@@ -45,9 +45,12 @@ var _ = Describe("quorum loss", func() {
 				yaml, err := consulManifest.ToYAML()
 				Expect(err).NotTo(HaveOccurred())
 
-				Eventually(func() error {
-					return boshClient.ScanAndFixAll(yaml)
-				}, "5m", "1m").ShouldNot(HaveOccurred())
+				Eventually(func() ([]string, error) {
+					return lockedDeployments()
+				}).Should(ContainElement(consulManifest.Name))
+
+				err = boshClient.ScanAndFixAll(yaml)
+				Expect(err).NotTo(HaveOccurred())
 
 				Eventually(func() ([]bosh.VM, error) {
 					return helpers.DeploymentVMs(boshClient, consulManifest.Name)

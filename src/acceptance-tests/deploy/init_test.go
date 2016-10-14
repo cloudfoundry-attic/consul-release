@@ -78,3 +78,15 @@ var _ = SynchronizedAfterSuite(func() {}, func() {
 	err := boshClient.DeleteDeployment(turbulenceManifest.Name)
 	Expect(err).NotTo(HaveOccurred())
 })
+
+func lockedDeployments() ([]string, error) {
+	var lockNames []string
+	locks, err := boshClient.Locks()
+	if err != nil {
+		return []string{}, err
+	}
+	for _, lock := range locks {
+		lockNames = append(lockNames, lock.Resource[0])
+	}
+	return lockNames, nil
+}
