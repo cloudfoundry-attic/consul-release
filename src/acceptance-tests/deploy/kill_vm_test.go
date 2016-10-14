@@ -47,7 +47,7 @@ var _ = Describe("KillVm", func() {
 
 			Eventually(func() ([]string, error) {
 				return lockedDeployments()
-			}).Should(ContainElement(consulManifest.Name))
+			}, "5m", "30s").ShouldNot(ContainElement(consulManifest.Name))
 
 			err = boshClient.ScanAndFixAll(yaml)
 			Expect(err).NotTo(HaveOccurred())
