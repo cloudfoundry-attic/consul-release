@@ -12,6 +12,11 @@ import (
 )
 
 var createFile = os.Create
+var syncFile = syncFileFn
+
+func syncFileFn(f *os.File) error {
+	return f.Sync()
+}
 
 type logger interface {
 	Info(action string, data ...lager.Data)
@@ -117,8 +122,15 @@ func (s ServiceDefiner) WriteDefinitions(configDir string, definitions []Service
 			s.Logger.Error("service-definer.write-definitions.write.failed", err, lager.Data{
 				"path": path,
 			})
+			file.Close()
 			return err
 		}
+		if err := syncFile(file); err != nil {
+			file.Close()
+			return err
+		}
+
+		file.Close()
 
 		s.Logger.Info("service-definer.write-definitions.write.success", lager.Data{
 			"path": path,

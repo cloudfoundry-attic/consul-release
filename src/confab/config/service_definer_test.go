@@ -1,6 +1,7 @@
 package config_test
 
 import (
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -31,6 +32,7 @@ var _ = Describe("ServiceDefiner", func() {
 
 	AfterEach(func() {
 		config.ResetCreateFile()
+		config.ResetSyncFile()
 	})
 
 	Describe("GenerateDefinitions", func() {
@@ -655,6 +657,22 @@ var _ = Describe("ServiceDefiner", func() {
 			}`))
 		})
 
+		It("syncs the file", func() {
+			syncFileCallCount := 0
+			config.SetSyncFile(func(*os.File) error {
+				syncFileCallCount++
+				return nil
+			})
+			err := definer.WriteDefinitions(tempDir, []config.ServiceDefinition{
+				{
+					ServiceName: "some-service",
+				},
+			})
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(syncFileCallCount).To(Equal(1))
+		})
+
 		Context("failure cases", func() {
 			It("errors when the file cannot be created", func() {
 				const RandomPath = "/some/random/path"
@@ -742,6 +760,18 @@ var _ = Describe("ServiceDefiner", func() {
 						}},
 					},
 				}))
+			})
+
+			It("returns an error when it fails to sync the file", func() {
+				config.SetSyncFile(func(*os.File) error {
+					return errors.New("something bad happened")
+				})
+				err := definer.WriteDefinitions(tempDir, []config.ServiceDefinition{
+					{
+						ServiceName: "some-service",
+					},
+				})
+				Expect(err).To(MatchError("something bad happened"))
 			})
 		})
 	})
