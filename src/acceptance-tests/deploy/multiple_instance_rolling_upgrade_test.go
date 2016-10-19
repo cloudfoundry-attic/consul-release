@@ -1,6 +1,7 @@
 package deploy_test
 
 import (
+	"os"
 	"time"
 
 	"github.com/cloudfoundry-incubator/consul-release/src/acceptance-tests/testing/consulclient"
@@ -37,11 +38,11 @@ var _ = Describe("Multiple instance rolling upgrade", func() {
 		}
 	})
 
-	It("persists data throughout the rolling upgrade", func() {
+	FIt("persists data throughout the rolling upgrade", func() {
 		By("deploying the previous version of consul-release", func() {
-			releaseNumber, err := helpers.DownloadLatestConsulRelease(boshClient)
-			Expect(err).NotTo(HaveOccurred())
+			releaseNumber := os.Getenv("LATEST_CONSUL_RELEASE_VERSION")
 
+			var err error
 			manifest, kv, err = helpers.DeployConsulWithInstanceCountAndReleaseVersion("multiple-instance-rolling-upgrade", 3, boshClient, config, releaseNumber)
 			Expect(err).NotTo(HaveOccurred())
 

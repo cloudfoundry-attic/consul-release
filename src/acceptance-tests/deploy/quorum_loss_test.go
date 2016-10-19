@@ -47,7 +47,7 @@ var _ = Describe("quorum loss", func() {
 
 				Eventually(func() ([]string, error) {
 					return lockedDeployments()
-				}, "5m", "30s").ShouldNot(ContainElement(consulManifest.Name))
+				}, "10m", "30s").ShouldNot(ContainElement(consulManifest.Name))
 
 				err = boshClient.ScanAndFixAll(yaml)
 				Expect(err).NotTo(HaveOccurred())
