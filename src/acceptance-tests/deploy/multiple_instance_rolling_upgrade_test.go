@@ -38,7 +38,7 @@ var _ = Describe("Multiple instance rolling upgrade", func() {
 		}
 	})
 
-	FIt("persists data throughout the rolling upgrade", func() {
+	It("persists data throughout the rolling upgrade", func() {
 		By("deploying the previous version of consul-release", func() {
 			releaseNumber := os.Getenv("LATEST_CONSUL_RELEASE_VERSION")
 
