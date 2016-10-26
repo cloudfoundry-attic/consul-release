@@ -62,19 +62,13 @@ function upload_releases() {
   releases_dir="/tmp/consats/releases"
   mkdir -p "${releases_dir}"
 
-  set +e
-  wget -nc -O "${releases_dir}/bosh-warden-cpi-release-${warden_cpi_version}.tgz" "http://bosh.io/d/github.com/cppforlife/bosh-warden-cpi-release?v=${warden_cpi_version}"
-  set -e
+  wget -nc -O "${releases_dir}/bosh-warden-cpi-release-${warden_cpi_version}.tgz" "http://bosh.io/d/github.com/cppforlife/bosh-warden-cpi-release?v=${warden_cpi_version}" || echo "File Exists"
   bosh -t ${BOSH_DIRECTOR} upload release "${releases_dir}/bosh-warden-cpi-release-${warden_cpi_version}.tgz" --skip-if-exists
 
-  set +e
-  wget -nc -O "${releases_dir}/turbulence-release-${turbulence_version}.tgz" "http://bosh.io/d/github.com/cppforlife/turbulence-release?v=${turbulence_version}"
-  set -e
+  wget -nc -O "${releases_dir}/turbulence-release-${turbulence_version}.tgz" "http://bosh.io/d/github.com/cppforlife/turbulence-release?v=${turbulence_version}" || echo "File Exists"
   bosh -t "${BOSH_DIRECTOR}" upload release "${releases_dir}/turbulence-release-${turbulence_version}.tgz" --skip-if-exists
 
-  set +e
-  wget -nc -O "${releases_dir}/consul-release-${LATEST_CONSUL_RELEASE_VERSION}.tgz" "http://bosh.io/d/github.com/cloudfoundry-incubator/consul-release?v=${LATEST_CONSUL_RELEASE_VERSION}"
-  set -e
+  wget -nc -O "${releases_dir}/consul-release-${LATEST_CONSUL_RELEASE_VERSION}.tgz" "http://bosh.io/d/github.com/cloudfoundry-incubator/consul-release?v=${LATEST_CONSUL_RELEASE_VERSION}" || echo "File Exists"
   bosh -t "${BOSH_DIRECTOR}" upload release "${releases_dir}/consul-release-${LATEST_CONSUL_RELEASE_VERSION}.tgz" --skip-if-exists
 }
 
