@@ -45,7 +45,7 @@ var _ = Describe("Migrate instance groups", func() {
 
 				Eventually(func() ([]bosh.VM, error) {
 					return helpers.DeploymentVMs(boshClient, manifest.Name)
-				}, "1m", "10s").Should(ConsistOf(helpers.GetVMsFromManifest(manifest)))
+				}, "1m", "10s").Should(ConsistOf(helpers.GetVMsFromManifestV1(manifest)))
 
 				for i, ip := range manifest.Jobs[2].Networks[0].StaticIPs {
 					kv = consulclient.NewHTTPKV(fmt.Sprintf("http://%s:6769", ip))
@@ -60,15 +60,12 @@ var _ = Describe("Migrate instance groups", func() {
 			})
 
 			By("deploying 3 node cluster across two AZs with BOSH 2.0 manifest", func() {
-				err := helpers.UpdateCloudConfig(boshClient, config)
-				Expect(err).NotTo(HaveOccurred())
-
 				manifestv2, err := helpers.DeployMultiAZConsulMigration(boshClient, config, manifest.Name)
 				Expect(err).NotTo(HaveOccurred())
 
 				Eventually(func() ([]bosh.VM, error) {
 					return helpers.DeploymentVMs(boshClient, manifestv2.Name)
-				}, "1m", "10s").Should(ConsistOf(helpers.GetVMsFromManifestV2(manifestv2)))
+				}, "1m", "10s").Should(ConsistOf(helpers.GetVMsFromManifest(manifestv2)))
 			})
 
 			By("verifying keys are accounted for in cluster", func() {

@@ -14,7 +14,7 @@ import (
 
 var _ = Describe("Encryption key rotation", func() {
 	var (
-		manifest  consul.Manifest
+		manifest  consul.ManifestV2
 		kv        consulclient.HTTPKV
 		testKey   string
 		testValue string

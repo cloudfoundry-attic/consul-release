@@ -7,11 +7,14 @@ import (
 	"github.com/cloudfoundry-incubator/consul-release/src/acceptance-tests/testing/helpers"
 	"github.com/pivotal-cf-experimental/bosh-test/bosh"
 	"github.com/pivotal-cf-experimental/destiny/consul"
+	"github.com/pivotal-cf-experimental/destiny/turbulence"
 
 	testconsumerclient "github.com/cloudfoundry-incubator/consul-release/src/acceptance-tests/testing/testconsumer/client"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+
+	turbulenceclient "github.com/pivotal-cf-experimental/bosh-test/turbulence"
 )
 
 const (
@@ -21,49 +24,72 @@ const (
 
 var _ = Describe("recursor timeout", func() {
 	var (
-		consulManifest  consul.Manifest
-		delayIncidentID string
-		tcClient        testconsumerclient.Client
+		turbulenceClient   turbulenceclient.Client
+		turbulenceManifest turbulence.Manifest
+		consulManifest     consul.ManifestV2
+		delayIncidentID    string
+		tcClient           testconsumerclient.Client
 	)
 
 	BeforeEach(func() {
-		var err error
-		config.TurbulenceHost = turbulenceManifest.Jobs[0].Networks[0].StaticIPs[0]
+		By("deploying turbulence", func() {
+			var err error
+			turbulenceManifest, err = helpers.DeployTurbulence(boshClient, config)
+			Expect(err).NotTo(HaveOccurred())
 
-		consulManifest, _, err = helpers.DeployConsulWithTurbulence("recursor-timeout", 1, boshClient, config)
-		Expect(err).NotTo(HaveOccurred())
+			Eventually(func() ([]bosh.VM, error) {
+				return helpers.DeploymentVMs(boshClient, turbulenceManifest.Name)
+			}, "1m", "10s").Should(ConsistOf(helpers.GetTurbulenceVMsFromManifest(turbulenceManifest)))
 
-		Eventually(func() ([]bosh.VM, error) {
-			return helpers.DeploymentVMs(boshClient, consulManifest.Name)
-		}, "1m", "10s").Should(ConsistOf(helpers.GetVMsFromManifest(consulManifest)))
+			turbulenceClient = helpers.NewTurbulenceClient(turbulenceManifest)
+		})
 
-		tcClient = testconsumerclient.New(fmt.Sprintf("http://%s:6769", consulManifest.Jobs[1].Networks[0].StaticIPs[0]))
+		By("deploying consul", func() {
+			var err error
+			config.TurbulenceHost = turbulenceManifest.InstanceGroups[0].Networks[0].StaticIPs[0]
+
+			consulManifest, _, err = helpers.DeployConsulWithTurbulence("recursor-timeout", 1, boshClient, config)
+			Expect(err).NotTo(HaveOccurred())
+
+			Eventually(func() ([]bosh.VM, error) {
+				return helpers.DeploymentVMs(boshClient, consulManifest.Name)
+			}, "1m", "10s").Should(ConsistOf(helpers.GetVMsFromManifest(consulManifest)))
+
+			tcClient = testconsumerclient.New(fmt.Sprintf("http://%s:6769", consulManifest.InstanceGroups[1].Networks[0].StaticIPs[0]))
+		})
 	})
 
 	AfterEach(func() {
-		if !CurrentGinkgoTestDescription().Failed {
-			Eventually(func() string {
-				incidentResp, err := turbulenceClient.Incident(delayIncidentID)
+		By("deleting consul deployment", func() {
+			if !CurrentGinkgoTestDescription().Failed {
+				Eventually(func() string {
+					incidentResp, err := turbulenceClient.Incident(delayIncidentID)
+					Expect(err).NotTo(HaveOccurred())
+
+					return incidentResp.ExecutionCompletedAt
+				}, TIMEOUT.String(), "10s").ShouldNot(BeEmpty())
+
+				// Turbulence API might say that the incident is finished, but it might not be - sanity check
+				Eventually(func() (int64, error) {
+					var err error
+					dnsStartTime := time.Now()
+					_, err = tcClient.DNS("my-fake-server.fake.local")
+					if err != nil {
+						return 0, err
+					}
+					dnsElapsedTime := time.Since(dnsStartTime)
+					return dnsElapsedTime.Nanoseconds(), nil
+				}, TIMEOUT.String(), "100ms").Should(BeNumerically("<", 1*time.Second))
+
+				err := boshClient.DeleteDeployment(consulManifest.Name)
 				Expect(err).NotTo(HaveOccurred())
+			}
+		})
 
-				return incidentResp.ExecutionCompletedAt
-			}, TIMEOUT.String(), "10s").ShouldNot(BeEmpty())
-
-			// Turbulence API might say that the incident is finished, but it might not be - sanity check
-			Eventually(func() (int64, error) {
-				var err error
-				dnsStartTime := time.Now()
-				_, err = tcClient.DNS("my-fake-server.fake.local")
-				if err != nil {
-					return 0, err
-				}
-				dnsElapsedTime := time.Since(dnsStartTime)
-				return dnsElapsedTime.Nanoseconds(), nil
-			}, TIMEOUT.String(), "100ms").Should(BeNumerically("<", 1*time.Second))
-
-			err := boshClient.DeleteDeployment(consulManifest.Name)
+		By("deleting turbulence", func() {
+			err := boshClient.DeleteDeployment(turbulenceManifest.Name)
 			Expect(err).NotTo(HaveOccurred())
-		}
+		})
 	})
 
 	It("resolves long running DNS queries utilizing the consul recursor_timeout property", func() {

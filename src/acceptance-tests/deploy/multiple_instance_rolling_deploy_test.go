@@ -14,7 +14,7 @@ import (
 
 var _ = Describe("Multiple instance rolling deploys", func() {
 	var (
-		manifest  consul.Manifest
+		manifest  consul.ManifestV2
 		kv        consulclient.HTTPKV
 		testKey   string
 		testValue string
@@ -52,7 +52,7 @@ var _ = Describe("Multiple instance rolling deploys", func() {
 		})
 
 		By("deploying", func() {
-			manifest.Jobs[0].Properties.Consul.Agent.LogLevel = "trace"
+			manifest.InstanceGroups[0].Properties.Consul.Agent.LogLevel = "trace"
 
 			yaml, err := manifest.ToYAML()
 			Expect(err).NotTo(HaveOccurred())

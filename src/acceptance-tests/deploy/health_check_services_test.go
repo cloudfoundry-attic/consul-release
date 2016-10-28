@@ -15,7 +15,7 @@ import (
 
 var _ = Describe("Health Check", func() {
 	var (
-		manifest consul.Manifest
+		manifest consul.ManifestV2
 		tcClient testconsumerclient.Client
 	)
 
@@ -29,7 +29,7 @@ var _ = Describe("Health Check", func() {
 			return helpers.DeploymentVMs(boshClient, manifest.Name)
 		}, "1m", "10s").Should(ConsistOf(helpers.GetVMsFromManifest(manifest)))
 
-		tcClient = testconsumerclient.New(fmt.Sprintf("http://%s:6769", manifest.Jobs[1].Networks[0].StaticIPs[0]))
+		tcClient = testconsumerclient.New(fmt.Sprintf("http://%s:6769", manifest.InstanceGroups[1].Networks[0].StaticIPs[0]))
 	})
 
 	AfterEach(func() {
@@ -42,14 +42,14 @@ var _ = Describe("Health Check", func() {
 	Context("with an operator defined check script", func() {
 		It("deregisters a service if the health check fails", func() {
 			By("registering a service", func() {
-				manifest, err := manifest.SetJobInstanceCount("consul_test_consumer", 3)
+				manifest, err := manifest.SetInstanceCount("test_consumer", 3)
 				Expect(err).NotTo(HaveOccurred())
-				manifest.Jobs[0].Properties.Consul.Agent.Services = core.JobPropertiesConsulAgentServices{
+				manifest.InstanceGroups[0].Properties.Consul.Agent.Services = core.JobPropertiesConsulAgentServices{
 					"some-service": core.JobPropertiesConsulAgentService{
 						Name: "some-service-name",
 						Check: &core.JobPropertiesConsulAgentServiceCheck{
 							Name:     "some-service-check",
-							Script:   fmt.Sprintf("curl -f %s", fmt.Sprintf("http://%s:6769/health_check", manifest.Jobs[1].Networks[0].StaticIPs[0])),
+							Script:   fmt.Sprintf("curl -f %s", fmt.Sprintf("http://%s:6769/health_check", manifest.InstanceGroups[1].Networks[0].StaticIPs[0])),
 							Interval: "10s",
 						},
 						Tags: []string{"some-service-tag"},
@@ -75,7 +75,7 @@ var _ = Describe("Health Check", func() {
 			By("resolving the service address", func() {
 				Eventually(func() ([]string, error) {
 					return tcClient.DNS("some-service-name.service.cf.internal")
-				}, "1m", "10s").Should(ConsistOf(manifest.Jobs[0].Networks[0].StaticIPs))
+				}, "1m", "10s").Should(ConsistOf(manifest.InstanceGroups[0].Networks[0].StaticIPs))
 			})
 
 			By("causing the health check to fail", func() {
@@ -97,7 +97,7 @@ var _ = Describe("Health Check", func() {
 			By("the service should be alive", func() {
 				Eventually(func() ([]string, error) {
 					return tcClient.DNS("some-service-name.service.cf.internal")
-				}, "1m", "10s").Should(ConsistOf(manifest.Jobs[0].Networks[0].StaticIPs))
+				}, "1m", "10s").Should(ConsistOf(manifest.InstanceGroups[0].Networks[0].StaticIPs))
 			})
 		})
 	})
@@ -105,9 +105,9 @@ var _ = Describe("Health Check", func() {
 	Context("with the default check script", func() {
 		It("deregisters a service if the health check fails", func() {
 			By("registering a service", func() {
-				manifest, err := manifest.SetJobInstanceCount("consul_test_consumer", 3)
+				manifest, err := manifest.SetInstanceCount("test_consumer", 3)
 				Expect(err).NotTo(HaveOccurred())
-				manifest.Jobs[1].Properties = &core.JobProperties{
+				manifest.InstanceGroups[1].Properties = &core.JobProperties{
 					Consul: &core.JobPropertiesConsul{
 						Agent: core.JobPropertiesConsulAgent{
 							Mode: "client",
@@ -137,7 +137,7 @@ var _ = Describe("Health Check", func() {
 			By("resolving the service address", func() {
 				Eventually(func() ([]string, error) {
 					return tcClient.DNS("consul-test-consumer.service.cf.internal")
-				}, "1m", "10s").Should(ConsistOf(manifest.Jobs[1].Networks[0].StaticIPs))
+				}, "1m", "10s").Should(ConsistOf(manifest.InstanceGroups[1].Networks[0].StaticIPs))
 			})
 
 			By("causing the health check to fail", func() {
@@ -159,7 +159,7 @@ var _ = Describe("Health Check", func() {
 			By("the service should be alive", func() {
 				Eventually(func() ([]string, error) {
 					return tcClient.DNS("consul-test-consumer.service.cf.internal")
-				}, "1m", "10s").Should(ConsistOf(manifest.Jobs[1].Networks[0].StaticIPs))
+				}, "1m", "10s").Should(ConsistOf(manifest.InstanceGroups[1].Networks[0].StaticIPs))
 			})
 		})
 	})

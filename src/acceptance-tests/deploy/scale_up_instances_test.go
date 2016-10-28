@@ -14,7 +14,7 @@ import (
 
 var _ = Describe("Scaling up Instances", func() {
 	var (
-		manifest  consul.Manifest
+		manifest  consul.ManifestV2
 		kv        consulclient.HTTPKV
 		testKey   string
 		testValue string
@@ -54,9 +54,6 @@ var _ = Describe("Scaling up Instances", func() {
 				var err error
 				manifest, err = manifest.SetConsulJobInstanceCount(3)
 				Expect(err).NotTo(HaveOccurred())
-
-				members := manifest.ConsulMembers()
-				Expect(members).To(HaveLen(4))
 
 				yaml, err := manifest.ToYAML()
 				Expect(err).NotTo(HaveOccurred())
@@ -110,9 +107,6 @@ var _ = Describe("Scaling up Instances", func() {
 				var err error
 				manifest, err = manifest.SetConsulJobInstanceCount(5)
 				Expect(err).NotTo(HaveOccurred())
-
-				members := manifest.ConsulMembers()
-				Expect(members).To(HaveLen(6))
 
 				yaml, err := manifest.ToYAML()
 				Expect(err).NotTo(HaveOccurred())

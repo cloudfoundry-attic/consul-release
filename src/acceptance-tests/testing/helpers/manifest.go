@@ -18,7 +18,7 @@ func DeploymentVMs(boshClient bosh.Client, deploymentName string) ([]bosh.VM, er
 	return vms, nil
 }
 
-func GetVMsFromManifest(manifest consul.Manifest) []bosh.VM {
+func GetVMsFromManifestV1(manifest consul.Manifest) []bosh.VM {
 	var vms []bosh.VM
 
 	for _, job := range manifest.Jobs {
@@ -30,7 +30,7 @@ func GetVMsFromManifest(manifest consul.Manifest) []bosh.VM {
 	return vms
 }
 
-func GetVMsFromManifestV2(manifest consul.ManifestV2) []bosh.VM {
+func GetVMsFromManifest(manifest consul.ManifestV2) []bosh.VM {
 	var vms []bosh.VM
 
 	for _, ig := range manifest.InstanceGroups {

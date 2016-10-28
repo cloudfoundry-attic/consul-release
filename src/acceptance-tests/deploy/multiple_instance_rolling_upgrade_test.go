@@ -15,7 +15,7 @@ import (
 
 var _ = Describe("Multiple instance rolling upgrade", func() {
 	var (
-		manifest consul.Manifest
+		manifest consul.ManifestV2
 		kv       consulclient.HTTPKV
 		spammer  *helpers.Spammer
 

@@ -15,7 +15,7 @@ import (
 
 var _ = Describe("Single host multiple services", func() {
 	var (
-		manifest consul.Manifest
+		manifest consul.ManifestV2
 		tcClient testconsumerclient.Client
 	)
 
@@ -29,7 +29,7 @@ var _ = Describe("Single host multiple services", func() {
 			return helpers.DeploymentVMs(boshClient, manifest.Name)
 		}, "1m", "10s").Should(ConsistOf(helpers.GetVMsFromManifest(manifest)))
 
-		tcClient = testconsumerclient.New(fmt.Sprintf("http://%s:6769", manifest.Jobs[1].Networks[0].StaticIPs[0]))
+		tcClient = testconsumerclient.New(fmt.Sprintf("http://%s:6769", manifest.InstanceGroups[1].Networks[0].StaticIPs[0]))
 	})
 
 	AfterEach(func() {
@@ -41,8 +41,8 @@ var _ = Describe("Single host multiple services", func() {
 
 	It("discovers multiples services on a single host", func() {
 		By("registering services", func() {
-			healthCheck := fmt.Sprintf("curl -f http://%s:6769/health_check", manifest.Jobs[1].Networks[0].StaticIPs[0])
-			manifest.Jobs[1].Properties = &core.JobProperties{
+			healthCheck := fmt.Sprintf("curl -f http://%s:6769/health_check", manifest.InstanceGroups[1].Networks[0].StaticIPs[0])
+			manifest.InstanceGroups[1].Properties = &core.JobProperties{
 				Consul: &core.JobPropertiesConsul{
 					Agent: core.JobPropertiesConsulAgent{
 						Mode: "client",
@@ -79,11 +79,11 @@ var _ = Describe("Single host multiple services", func() {
 		By("resolving service addresses", func() {
 			Eventually(func() ([]string, error) {
 				return tcClient.DNS("consul-test-consumer.service.cf.internal")
-			}, "1m", "10s").Should(ConsistOf(manifest.Jobs[1].Networks[0].StaticIPs))
+			}, "1m", "10s").Should(ConsistOf(manifest.InstanceGroups[1].Networks[0].StaticIPs))
 
 			Eventually(func() ([]string, error) {
 				return tcClient.DNS("some-service.service.cf.internal")
-			}, "1m", "10s").Should(ConsistOf(manifest.Jobs[1].Networks[0].StaticIPs))
+			}, "1m", "10s").Should(ConsistOf(manifest.InstanceGroups[1].Networks[0].StaticIPs))
 		})
 	})
 })

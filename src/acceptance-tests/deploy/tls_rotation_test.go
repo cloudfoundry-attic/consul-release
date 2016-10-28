@@ -151,7 +151,7 @@ kz9FT4jnME5mUOg+0p5XEfoZUhklll3HWTU/hWVwJzplIRAz3mk=
 
 var _ = Describe("TLS key rotation", func() {
 	var (
-		manifest consul.Manifest
+		manifest consul.ManifestV2
 		kv       consulclient.HTTPKV
 		spammer  *helpers.Spammer
 	)

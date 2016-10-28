@@ -11,7 +11,7 @@ import (
 
 var _ = Describe("Do not require unused certs in server/client modes", func() {
 	var (
-		manifest consul.Manifest
+		manifest consul.ManifestV2
 	)
 
 	AfterEach(func() {

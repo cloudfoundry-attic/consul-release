@@ -9,16 +9,16 @@ import (
 	"github.com/pivotal-cf-experimental/destiny/iaas"
 	"github.com/pivotal-cf-experimental/destiny/turbulence"
 
+	ginkgoConfig "github.com/onsi/ginkgo/config"
 	turbulenceclient "github.com/pivotal-cf-experimental/bosh-test/turbulence"
 )
 
 func GetTurbulenceVMsFromManifest(manifest turbulence.Manifest) []bosh.VM {
 	var vms []bosh.VM
 
-	for _, job := range manifest.Jobs {
+	for _, job := range manifest.InstanceGroups {
 		for i := 0; i < job.Instances; i++ {
 			vms = append(vms, bosh.VM{JobName: job.Name, Index: i, State: "running"})
-
 		}
 	}
 
@@ -28,7 +28,7 @@ func GetTurbulenceVMsFromManifest(manifest turbulence.Manifest) []bosh.VM {
 func NewTurbulenceClient(manifest turbulence.Manifest) turbulenceclient.Client {
 	turbulenceUrl := fmt.Sprintf("https://turbulence:%s@%s:8080",
 		manifest.Properties.TurbulenceAPI.Password,
-		manifest.Jobs[0].Networks[0].StaticIPs[0])
+		manifest.InstanceGroups[0].Networks[0].StaticIPs[0])
 
 	return turbulenceclient.NewClient(turbulenceUrl, 5*time.Minute, 2*time.Second)
 }
@@ -75,7 +75,7 @@ func DeployTurbulence(client bosh.Client, config Config) (turbulence.Manifest, e
 
 			var cidrBlock string
 			cidrPool := NewCIDRPool(subnet.Range, 24, 27)
-			cidrBlock, err = cidrPool.Last()
+			cidrBlock, err = cidrPool.Get(ginkgoConfig.GinkgoConfig.ParallelNode)
 			if err != nil {
 				return turbulence.Manifest{}, err
 			}

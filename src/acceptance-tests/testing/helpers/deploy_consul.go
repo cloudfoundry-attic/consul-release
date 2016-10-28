@@ -6,33 +6,33 @@ import (
 
 	"github.com/cloudfoundry-incubator/consul-release/src/acceptance-tests/testing/consulclient"
 	"github.com/pivotal-cf-experimental/bosh-test/bosh"
-	"github.com/pivotal-cf-experimental/destiny/cloudconfig"
 	"github.com/pivotal-cf-experimental/destiny/consul"
+	"github.com/pivotal-cf-experimental/destiny/core"
 	"github.com/pivotal-cf-experimental/destiny/iaas"
 
 	ginkgoConfig "github.com/onsi/ginkgo/config"
 )
 
-type ManifestGenerator func(consul.Config, iaas.Config) (consul.Manifest, error)
+type ManifestGenerator func(consul.ConfigV2, iaas.Config) (consul.ManifestV2, error)
 
-func DeployConsulWithTurbulence(deploymentPrefix string, count int, client bosh.Client, config Config) (manifest consul.Manifest, kv consulclient.HTTPKV, err error) {
+func DeployConsulWithTurbulence(deploymentPrefix string, count int, client bosh.Client, config Config) (manifest consul.ManifestV2, kv consulclient.HTTPKV, err error) {
 	return deployConsul(deploymentPrefix, count, client, config, ConsulReleaseVersion(), consul.NewManifestWithTurbulenceAgent)
 }
 
-func DeployConsulWithInstanceCount(deploymentPrefix string, count int, client bosh.Client, config Config) (manifest consul.Manifest, kv consulclient.HTTPKV, err error) {
+func DeployConsulWithInstanceCount(deploymentPrefix string, count int, client bosh.Client, config Config) (manifest consul.ManifestV2, kv consulclient.HTTPKV, err error) {
 	return DeployConsulWithInstanceCountAndReleaseVersion(deploymentPrefix, count, client, config, ConsulReleaseVersion())
 }
 
-func DeployConsulWithJobLevelConsulProperties(deploymentPrefix string, client bosh.Client, config Config) (manifest consul.Manifest, err error) {
+func DeployConsulWithJobLevelConsulProperties(deploymentPrefix string, client bosh.Client, config Config) (manifest consul.ManifestV2, err error) {
 	manifest, _, err = deployConsul(deploymentPrefix, 1, client, config, ConsulReleaseVersion(), consul.NewManifestWithJobLevelProperties)
 	return
 }
 
-func DeployConsulWithInstanceCountAndReleaseVersion(deploymentPrefix string, count int, client bosh.Client, config Config, releaseVersion string) (manifest consul.Manifest, kv consulclient.HTTPKV, err error) {
-	return deployConsul(deploymentPrefix, count, client, config, releaseVersion, consul.NewManifest)
+func DeployConsulWithInstanceCountAndReleaseVersion(deploymentPrefix string, count int, client bosh.Client, config Config, releaseVersion string) (manifest consul.ManifestV2, kv consulclient.HTTPKV, err error) {
+	return deployConsul(deploymentPrefix, count, client, config, releaseVersion, consul.NewManifestV2)
 }
 
-func deployConsul(deploymentPrefix string, count int, client bosh.Client, config Config, releaseVersion string, manifestGenerator ManifestGenerator) (manifest consul.Manifest, kv consulclient.HTTPKV, err error) {
+func deployConsul(deploymentPrefix string, count int, client bosh.Client, config Config, releaseVersion string, manifestGenerator ManifestGenerator) (manifest consul.ManifestV2, kv consulclient.HTTPKV, err error) {
 	guid, err := NewGUID()
 	if err != nil {
 		return
@@ -43,7 +43,7 @@ func deployConsul(deploymentPrefix string, count int, client bosh.Client, config
 		return
 	}
 
-	manifestConfig := consul.Config{
+	manifestConfig := consul.ConfigV2{
 		DirectorUUID:   info.UUID,
 		Name:           fmt.Sprintf("consul-%s-%s", deploymentPrefix, guid),
 		TurbulenceHost: config.TurbulenceHost,
@@ -64,7 +64,7 @@ func deployConsul(deploymentPrefix string, count int, client bosh.Client, config
 			}
 
 			awsConfig.Subnets = append(awsConfig.Subnets, iaas.AWSConfigSubnet{ID: subnet.ID, Range: cidrBlock, AZ: subnet.AZ, SecurityGroup: subnet.SecurityGroup})
-			manifestConfig.Networks = append(manifestConfig.Networks, consul.ConfigNetwork{IPRange: cidrBlock, Nodes: count})
+			manifestConfig.AZs = append(manifestConfig.AZs, consul.ConfigAZ{IPRange: cidrBlock, Nodes: count, Name: "z1"})
 		} else {
 			err = errors.New("AWSSubnet is required for AWS IAAS deployment")
 			return
@@ -81,10 +81,11 @@ func deployConsul(deploymentPrefix string, count int, client bosh.Client, config
 			return
 		}
 
-		manifestConfig.Networks = []consul.ConfigNetwork{
+		manifestConfig.AZs = []consul.ConfigAZ{
 			{
 				IPRange: cidrBlock,
 				Nodes:   count,
+				Name:    "z1",
 			},
 		}
 	default:
@@ -128,7 +129,7 @@ func deployConsul(deploymentPrefix string, count int, client bosh.Client, config
 		return
 	}
 
-	kv = consulclient.NewHTTPKV(fmt.Sprintf("http://%s:6769", manifest.Jobs[1].Networks[0].StaticIPs[0]))
+	kv = consulclient.NewHTTPKV(fmt.Sprintf("http://%s:6769", manifest.InstanceGroups[1].Networks[0].StaticIPs[0]))
 	return
 }
 
@@ -171,23 +172,9 @@ func DeployMultiAZConsul(deploymentPrefix string, client bosh.Client, config Con
 	case "warden_cpi":
 		iaasConfig = iaas.NewWardenConfig()
 
-		var cidrBlock string
-		cidrPool := NewCIDRPool("10.244.4.0", 24, 27)
-		cidrBlock, err = cidrPool.Get(0)
-		if err != nil {
-			return
-		}
-
-		var cidrBlock2 string
-		cidrPool2 := NewCIDRPool("10.244.5.0", 24, 27)
-		cidrBlock2, err = cidrPool2.Get(0)
-		if err != nil {
-			return
-		}
-
 		manifestConfig.Networks = []consul.ConfigNetwork{
-			{IPRange: cidrBlock, Nodes: 2},
-			{IPRange: cidrBlock2, Nodes: 1},
+			{IPRange: "10.244.4.0/24", Nodes: 2},
+			{IPRange: "10.244.5.0/24", Nodes: 1},
 		}
 	default:
 		err = errors.New("unknown infrastructure type")
@@ -304,6 +291,33 @@ func DeployMultiAZConsulMigration(client bosh.Client, config Config, deploymentN
 		return consul.ManifestV2{}, err
 	}
 
+	consulInstanceGroup, err := manifest.GetInstanceGroup("consul")
+	if err != nil {
+		return consul.ManifestV2{}, err
+	}
+	consulInstanceGroup.MigratedFrom = []core.InstanceGroupMigratedFrom{
+		{
+			Name: "consul_z1",
+			AZ:   "z1",
+		},
+		{
+			Name: "consul_z2",
+			AZ:   "z2",
+		},
+	}
+
+	consulTestConsumerInstanceGroup, err := manifest.GetInstanceGroup("test_consumer")
+	if err != nil {
+		return consul.ManifestV2{}, err
+	}
+
+	consulTestConsumerInstanceGroup.MigratedFrom = []core.InstanceGroupMigratedFrom{
+		{
+			Name: "consul_test_consumer",
+			AZ:   "z1",
+		},
+	}
+
 	for i := range manifest.Releases {
 		if manifest.Releases[i].Name == "consul" {
 			manifest.Releases[i].Version = ConsulReleaseVersion()
@@ -349,44 +363,6 @@ func VerifyDeploymentRelease(client bosh.Client, deploymentName string, releaseV
 	}
 
 	return
-}
-
-func UpdateCloudConfig(client bosh.Client, config Config) error {
-	var cloudConfigOptions cloudconfig.Config
-
-	info, err := client.Info()
-	if err != nil {
-		return err
-	}
-
-	switch info.CPI {
-	case "aws_cpi":
-		return nil
-	case "warden_cpi":
-		cloudConfigOptions.AZs = []cloudconfig.ConfigAZ{
-			{IPRange: "10.244.4.0/27", StaticIPs: 11},
-			{IPRange: "10.244.5.0/27", StaticIPs: 5},
-		}
-	default:
-		return errors.New("unknown infrastructure type")
-	}
-
-	cloudConfig, err := cloudconfig.NewWardenCloudConfig(cloudConfigOptions)
-	if err != nil {
-		return err
-	}
-
-	cloudConfigYAML, err := cloudConfig.ToYAML()
-	if err != nil {
-		return err
-	}
-
-	err = client.UpdateCloudConfig(cloudConfigYAML)
-	if err != nil {
-		return err
-	}
-
-	return nil
 }
 
 func buildAWSConfig(config Config) iaas.AWSConfig {
