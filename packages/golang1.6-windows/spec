@@ -1,8 +1,0 @@
----
-name: golang1.6-windows
-
-dependencies: []
-
-files:
-- golang/go1.6.3.windows-amd64.zip
-- exiter.ps1
