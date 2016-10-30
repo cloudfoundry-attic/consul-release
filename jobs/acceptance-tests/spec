@@ -81,6 +81,6 @@ properties:
    description: "The latest bosh.io consul-release version number to deploy"
    default: latest
 
-consul.acceptance_tests.enable_turbulence_tests:
+  consul.acceptance_tests.enable_turbulence_tests:
    description: "Run tests in turbulence package"
    default: false
