@@ -18,10 +18,11 @@ type Config struct {
 }
 
 type ConfigBOSH struct {
-	Target         string `json:"target"`
-	Username       string `json:"username"`
-	Password       string `json:"password"`
-	DirectorCACert string `json:"director_ca_cert"`
+	Target         string       `json:"target"`
+	Username       string       `json:"username"`
+	Password       string       `json:"password"`
+	DirectorCACert string       `json:"director_ca_cert"`
+	Errand         ConfigErrand `json:"errand"`
 }
 
 type ConfigAWS struct {
@@ -32,6 +33,11 @@ type ConfigAWS struct {
 	DefaultKeyName        string         `json:"default_key_name"`
 	DefaultSecurityGroups []string       `json:"default_security_groups"`
 	Region                string         `json:"region"`
+}
+
+type ConfigErrand struct {
+	DefaultVMType             string `json:"default_vm_type"`
+	DefaultPersistentDiskType string `json:"default_persistent_disk_type"`
 }
 
 type ConfigSubnet struct {

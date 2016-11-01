@@ -165,8 +165,6 @@ func DeployMultiAZConsul(deploymentPrefix string, client bosh.Client, config Con
 
 			awsConfig.Subnets = append(awsConfig.Subnets, iaas.AWSConfigSubnet{ID: subnet.ID, Range: subnet.Range, AZ: subnet.AZ, SecurityGroup: subnet.SecurityGroup})
 			manifestConfig.Networks = append(manifestConfig.Networks, consul.ConfigNetwork{IPRange: subnet.Range, Nodes: 1})
-			manifestConfig.PersistentDiskType = config.BOSH.Errand.DefaultPersistentDiskType
-			manifestConfig.VMType = config.BOSH.Errand.DefaultVMType
 		} else {
 			err = errors.New("AWSSubnet is required for AWS IAAS deployment")
 			return
