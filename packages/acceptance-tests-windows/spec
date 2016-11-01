@@ -2,7 +2,7 @@
 name: acceptance-tests-windows
 
 dependencies:
-  - golang1.6-windows
+  - golang1.7-windows
 
 files:
  - acceptance-tests/**/*
