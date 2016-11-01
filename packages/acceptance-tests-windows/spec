@@ -1,0 +1,9 @@
+---
+name: acceptance-tests-windows
+
+dependencies:
+  - golang1.6-windows
+
+files:
+ - acceptance-tests/**/*
+ - exiter.ps1
