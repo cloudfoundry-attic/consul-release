@@ -25,6 +25,14 @@ properties:
    description: "BOSH Director CA Cert"
    default: ""
 
+  consul.acceptance_tests.bosh.errand.default_persistent_disk_type:
+   description: "Default persistent disk type used by consul servers"
+   default: "1GB"
+
+  consul.acceptance_tests.bosh.errand.default_vm_type:
+   description: "Default vm type for all VMs"
+   default: "m3.medium"
+
   consul.acceptance_tests.aws.subnets:
    description: "Subnet ID for AWS deployments"
    default: ""
