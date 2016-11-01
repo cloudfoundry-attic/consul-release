@@ -70,6 +70,9 @@ func DeployTurbulence(client bosh.Client, config Config) (turbulence.Manifest, e
 			RegistryUsername:      config.Registry.Username,
 		}
 
+		manifestConfig.BOSH.PersistentDiskType = config.BOSH.Errand.DefaultPersistentDiskType
+		manifestConfig.BOSH.VMType = config.BOSH.Errand.DefaultVMType
+
 		if len(config.AWS.Subnets) > 0 {
 			subnet := config.AWS.Subnets[0]
 

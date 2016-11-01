@@ -52,6 +52,9 @@ func deployConsul(deploymentPrefix string, count int, client bosh.Client, config
 	var iaasConfig iaas.Config
 	switch info.CPI {
 	case "aws_cpi":
+		manifestConfig.PersistentDiskType = config.BOSH.Errand.DefaultPersistentDiskType
+		manifestConfig.VMType = config.BOSH.Errand.DefaultVMType
+
 		awsConfig := buildAWSConfig(config)
 		if len(config.AWS.Subnets) > 0 {
 			subnet := config.AWS.Subnets[0]
@@ -65,8 +68,6 @@ func deployConsul(deploymentPrefix string, count int, client bosh.Client, config
 
 			awsConfig.Subnets = append(awsConfig.Subnets, iaas.AWSConfigSubnet{ID: subnet.ID, Range: cidrBlock, AZ: subnet.AZ, SecurityGroup: subnet.SecurityGroup})
 			manifestConfig.AZs = append(manifestConfig.AZs, consul.ConfigAZ{IPRange: cidrBlock, Nodes: count, Name: "z1"})
-			manifestConfig.PersistentDiskType = config.BOSH.Errand.DefaultPersistentDiskType
-			manifestConfig.VMType = config.BOSH.Errand.DefaultVMType
 		} else {
 			err = errors.New("AWSSubnet is required for AWS IAAS deployment")
 			return
@@ -236,8 +237,8 @@ func DeployMultiAZConsulMigration(client bosh.Client, config Config, deploymentN
 	var iaasConfig iaas.Config
 	switch info.CPI {
 	case "aws_cpi":
-		manifestConfig.PersistentDiskType = "1GB"
-		manifestConfig.VMType = "m3.medium"
+		manifestConfig.PersistentDiskType = config.BOSH.Errand.DefaultPersistentDiskType
+		manifestConfig.VMType = config.BOSH.Errand.DefaultVMType
 
 		awsConfig := buildAWSConfig(config)
 		if len(config.AWS.CloudConfigSubnets) >= 2 {
@@ -250,8 +251,6 @@ func DeployMultiAZConsulMigration(client bosh.Client, config Config, deploymentN
 
 			awsConfig.Subnets = append(awsConfig.Subnets, iaas.AWSConfigSubnet{ID: subnet.ID, Range: subnet.Range, AZ: subnet.AZ, SecurityGroup: subnet.SecurityGroup})
 			manifestConfig.AZs = append(manifestConfig.AZs, consul.ConfigAZ{Name: "z2", IPRange: subnet.Range, Nodes: 1})
-			manifestConfig.PersistentDiskType = config.BOSH.Errand.DefaultPersistentDiskType
-			manifestConfig.VMType = config.BOSH.Errand.DefaultVMType
 		} else {
 			return consul.ManifestV2{}, errors.New("AWSSubnet is required for AWS IAAS deployment")
 		}
