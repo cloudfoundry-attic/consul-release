@@ -47,6 +47,7 @@ func deployConsul(deploymentPrefix string, count int, client bosh.Client, config
 		DirectorUUID:   info.UUID,
 		Name:           fmt.Sprintf("consul-%s-%s", deploymentPrefix, guid),
 		TurbulenceHost: config.TurbulenceHost,
+		WindowsClients: config.WindowsClients,
 	}
 
 	var iaasConfig iaas.Config
@@ -230,8 +231,9 @@ func DeployMultiAZConsulMigration(client bosh.Client, config Config, deploymentN
 	}
 
 	manifestConfig := consul.ConfigV2{
-		DirectorUUID: info.UUID,
-		Name:         deploymentName,
+		DirectorUUID:   info.UUID,
+		Name:           deploymentName,
+		WindowsClients: config.WindowsClients,
 	}
 
 	var iaasConfig iaas.Config

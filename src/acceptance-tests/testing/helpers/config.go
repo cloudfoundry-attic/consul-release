@@ -15,6 +15,7 @@ type Config struct {
 	ParallelNodes         int            `json:"parallel_nodes"`
 	TurbulenceReleaseName string
 	TurbulenceHost        string
+	WindowsClients        bool `json:"windows_clients"`
 }
 
 type ConfigBOSH struct {
