@@ -73,7 +73,7 @@ var _ = Describe("quorum loss", func() {
 
 				Eventually(func() ([]bosh.VM, error) {
 					return helpers.DeploymentVMs(boshClient, consulManifest.Name)
-				}, "4m", "10s").Should(ConsistOf(helpers.GetVMsFromManifest(consulManifest)))
+				}, "10m", "10s").Should(ConsistOf(helpers.GetVMsFromManifest(consulManifest)))
 
 				Eventually(func() ([]string, error) {
 					return lockedDeployments()
