@@ -81,6 +81,10 @@ var _ = Describe("recursor timeout", func() {
 					return dnsElapsedTime.Nanoseconds(), nil
 				}, TIMEOUT.String(), "100ms").Should(BeNumerically("<", 1*time.Second))
 
+				Eventually(func() ([]string, error) {
+					return lockedDeployments()
+				}, "10m", "30s").ShouldNot(ContainElement(consulManifest.Name))
+
 				err := boshClient.DeleteDeployment(consulManifest.Name)
 				Expect(err).NotTo(HaveOccurred())
 			}
