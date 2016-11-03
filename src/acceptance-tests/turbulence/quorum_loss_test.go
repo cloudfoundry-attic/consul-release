@@ -21,7 +21,7 @@ import (
 	turbulenceclient "github.com/pivotal-cf-experimental/bosh-test/turbulence"
 )
 
-var _ = Describe("quorum loss", func() {
+var _ = PDescribe("quorum loss", func() {
 	var (
 		turbulenceClient   turbulenceclient.Client
 		turbulenceManifest turbulence.Manifest
