@@ -92,3 +92,7 @@ properties:
   consul.acceptance_tests.enable_turbulence_tests:
    description: "Run tests in turbulence package"
    default: false
+
+  consul.acceptance_tests.windows_clients:
+   description: "Run consats with windows clients"
+   default: false
