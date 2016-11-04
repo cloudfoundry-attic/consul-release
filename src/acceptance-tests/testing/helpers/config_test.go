@@ -60,7 +60,8 @@ var _ = Describe("configuration", func() {
 						"username": "some-registry-username",
 						"password": "some-registry-password"
 					},
-					"parallel_nodes": 4
+					"parallel_nodes": 4,
+					"windows_clients": true
 				}`)
 				Expect(err).NotTo(HaveOccurred())
 			})
@@ -103,6 +104,7 @@ var _ = Describe("configuration", func() {
 					},
 					TurbulenceReleaseName: "turbulence",
 					ParallelNodes:         4,
+					WindowsClients:        true,
 				}))
 			})
 		})
