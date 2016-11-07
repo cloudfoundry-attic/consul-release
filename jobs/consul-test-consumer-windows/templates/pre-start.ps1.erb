@@ -18,6 +18,7 @@ try {
     Exit 1
 }
 
+Install-WindowsFeature DSC-Service
 <% if !p("consul-test-consumer.nameserver").empty? %>
 
   # Not Implemented:
@@ -89,17 +90,45 @@ try {
     }
   }
 
-  Install-WindowsFeature DSC-Service
   ConsulWindows
   Start-DscConfiguration -Wait -Path .\ConsulWindows -Force -Verbose
 
-<% else %>
-
-  # Go struggles to capture the exit codes of
-  # Windows commands/scripts that exit quickly
-  Start-Sleep -Seconds 5
-
 <% end %>
+
+  Configuration SetupFirewall {
+    Node "localhost" {
+
+      Script SetupFirewall
+      {
+        TestScript = {
+          $status = (Get-NetFirewallRule -Name CFAllowConsulConsumer -ErrorAction Ignore).PrimaryStatus
+          return ($status -eq "OK")
+        }
+        SetScript = {
+          $admins = New-Object System.Security.Principal.NTAccount("Administrators")
+          $adminsSid = $admins.Translate([System.Security.Principal.SecurityIdentifier])
+
+          $LocalUser = "D:(A;;CC;;;$adminsSid)"
+          $otherAdmins = Get-WmiObject win32_groupuser |
+            Where-Object { $_.GroupComponent -match 'administrators' } |
+            ForEach-Object { [wmi]$_.PartComponent }
+
+          foreach($admin in $otherAdmins)
+          {
+            $ntAccount = New-Object System.Security.Principal.NTAccount($admin.Name)
+            $sid = $ntAccount.Translate([System.Security.Principal.SecurityIdentifier]).Value
+            $LocalUser = $LocalUser + "(A;;CC;;;$sid)"
+          }
+          New-NetFirewallRule -Name CFAllowConsulConsumer -Description "Allow Consul-Consumer" `
+            -DisplayName "Allow Consul-Consumer" -Protocol TCP -LocalPort 6769 -Action allow -LocalUser $LocalUser
+        }
+        GetScript = { Get-NetFirewallProfile }
+      }
+    }
+  }
+
+  SetupFirewall
+  Start-DscConfiguration -Wait -Path .\SetupFirewall -Force -Verbose
 
 if ($Error) {
     Write-Host "Error summary:"
