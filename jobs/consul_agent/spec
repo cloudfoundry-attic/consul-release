@@ -3,6 +3,7 @@ name: consul_agent
 
 templates:
   agent_ctl.sh.erb: bin/agent_ctl
+  agent_ctl_wrapper.erb: bin/agent_ctl_wrapper
   join_ctl.sh.erb: bin/join_ctl
   pre-start.erb: bin/pre-start
   drain: bin/drain

@@ -40,20 +40,8 @@ function create_directories_and_chown_to_vcap() {
   chmod 640 ${CERT_DIR}/*.{crt,key}
 }
 
-function set_virtual_memory() {
-  # "Consul uses a significant amount of virtual memory, since LMDB uses
-  # mmap() underneath. It uses about 700MB of a 32bit system and 40GB on a
-  # 64bit system."
-  #
-  # this mainly applies to bosh-lite
-  ulimit -v unlimited
-  ulimit -n 4096
-}
-
 function main() {
   create_directories_and_chown_to_vcap
-
-  set_virtual_memory
 
   setup_resolvconf
   setcap cap_net_bind_service=+ep ${PKG_DIR}/consul/bin/consul
