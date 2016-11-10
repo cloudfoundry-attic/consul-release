@@ -357,8 +357,7 @@ The acceptance tests deploy a new consul cluster and exercise a variety of featu
 The following should be installed on the local machine:
 
 - jq
-- Consul
-- Golang (>= 1.5)
+- Golang (>= 1.7)
 
 If using homebrew, these can be installed with:
 
