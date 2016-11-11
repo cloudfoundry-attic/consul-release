@@ -1,7 +1,7 @@
 $Address = "http://127.0.0.1:6769/health_check"
 $ExitCode = 0
 try {
-    Invoke-WebRequest "${Address}"
+    Invoke-WebRequest -UseBasicParsing "${Address}"
 } catch {
     Write-Error "Error talking to: ${Address}"
     Write-Error $_.Exception.Message

@@ -1,4 +1,4 @@
-package deploy_test
+package dns_test
 
 import (
 	"fmt"
@@ -22,7 +22,7 @@ var _ = Describe("Health Check", func() {
 	BeforeEach(func() {
 		var err error
 
-		manifest, _, err = helpers.DeployConsulWithInstanceCount("health-check", 1, boshClient, config)
+		manifest, _, err = helpers.DeployConsulWithInstanceCount("health-check", 3, boshClient, config)
 		Expect(err).NotTo(HaveOccurred())
 
 		Eventually(func() ([]bosh.VM, error) {
@@ -103,16 +103,28 @@ var _ = Describe("Health Check", func() {
 	})
 
 	Context("with the default check script", func() {
+		var (
+			serviceName string
+		)
+
+		BeforeEach(func() {
+			serviceName = "consul-test-consumer"
+			if config.WindowsClients {
+				serviceName = "consul-test-consumer-windows"
+			}
+		})
+
 		It("deregisters a service if the health check fails", func() {
 			By("registering a service", func() {
 				manifest, err := manifest.SetInstanceCount("test_consumer", 3)
 				Expect(err).NotTo(HaveOccurred())
+
 				manifest.InstanceGroups[1].Properties = &core.JobProperties{
 					Consul: &core.JobPropertiesConsul{
 						Agent: core.JobPropertiesConsulAgent{
 							Mode: "client",
 							Services: core.JobPropertiesConsulAgentServices{
-								"consul-test-consumer": core.JobPropertiesConsulAgentService{},
+								serviceName: core.JobPropertiesConsulAgentService{},
 							},
 						},
 					},
@@ -136,7 +148,7 @@ var _ = Describe("Health Check", func() {
 
 			By("resolving the service address", func() {
 				Eventually(func() ([]string, error) {
-					return tcClient.DNS("consul-test-consumer.service.cf.internal")
+					return tcClient.DNS(fmt.Sprintf("%s.service.cf.internal", serviceName))
 				}, "1m", "10s").Should(ConsistOf(manifest.InstanceGroups[1].Networks[0].StaticIPs))
 			})
 
@@ -147,7 +159,7 @@ var _ = Describe("Health Check", func() {
 
 			By("the service should be deregistered", func() {
 				Eventually(func() ([]string, error) {
-					return tcClient.DNS("consul-test-consumer.service.cf.internal")
+					return tcClient.DNS(fmt.Sprintf("%s.service.cf.internal", serviceName))
 				}, "1m", "10s").Should(HaveLen(2))
 			})
 
@@ -158,7 +170,7 @@ var _ = Describe("Health Check", func() {
 
 			By("the service should be alive", func() {
 				Eventually(func() ([]string, error) {
-					return tcClient.DNS("consul-test-consumer.service.cf.internal")
+					return tcClient.DNS(fmt.Sprintf("%s.service.cf.internal", serviceName))
 				}, "1m", "10s").Should(ConsistOf(manifest.InstanceGroups[1].Networks[0].StaticIPs))
 			})
 		})

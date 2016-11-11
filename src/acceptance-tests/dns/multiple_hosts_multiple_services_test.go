@@ -1,4 +1,4 @@
-package deploy_test
+package dns_test
 
 import (
 	"fmt"

@@ -21,6 +21,8 @@ pushd "/var/vcap/data/tmp" > /dev/null
 
 <% if p('consul.acceptance_tests.enable_turbulence_tests') %>
   chpst -u vcap:vcap bash -c "${GOPATH}/src/github.com/cloudfoundry-incubator/consul-release/src/acceptance-tests/scripts/test-turbulence -nodes <%= p('consul.acceptance_tests.parallel_nodes') %>"
+<% elsif p('consul.acceptance_tests.windows_clients') %>
+  chpst -u vcap:vcap bash -c "${GOPATH}/src/github.com/cloudfoundry-incubator/consul-release/src/acceptance-tests/scripts/test -nodes <%= p('consul.acceptance_tests.parallel_nodes') %> dns"
 <% else %>
   chpst -u vcap:vcap bash -c "${GOPATH}/src/github.com/cloudfoundry-incubator/consul-release/src/acceptance-tests/scripts/test -nodes <%= p('consul.acceptance_tests.parallel_nodes') %>"
 <% end %>

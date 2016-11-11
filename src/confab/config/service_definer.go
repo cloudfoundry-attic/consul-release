@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 
 	"code.cloudfoundry.org/lager"
@@ -13,6 +14,7 @@ import (
 
 var createFile = os.Create
 var syncFile = syncFileFn
+var goos = runtime.GOOS
 
 func syncFileFn(f *os.File) error {
 	return f.Sync()
@@ -63,12 +65,18 @@ func (s ServiceDefiner) GenerateDefinitions(config Config) []ServiceDefinition {
 		s.Logger.Info("service-definer.generate-definitions.define", lager.Data{
 			"service": name,
 		})
+		var command string
+		if goos == "windows" {
+			command = "powershell -Command /var/vcap/jobs/%s/bin/dns_health_check.ps1; Exit $LASTEXITCODE"
+		} else {
+			command = "/var/vcap/jobs/%s/bin/dns_health_check"
+		}
 		definition := ServiceDefinition{
 			ServiceName: name,
 			Name:        strings.Replace(name, "_", "-", -1),
 			Check: &ServiceDefinitionCheck{
 				Name:     "dns_health_check",
-				Script:   fmt.Sprintf("/var/vcap/jobs/%s/bin/dns_health_check", name),
+				Script:   fmt.Sprintf(command, name),
 				Interval: "3s",
 			},
 			Checks:            service.Checks,

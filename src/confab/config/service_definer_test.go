@@ -72,32 +72,80 @@ var _ = Describe("ServiceDefiner", func() {
 			}))
 		})
 
-		It("generates a definition with the default values", func() {
-			definitions := definer.GenerateDefinitions(config.Config{
-				Node: config.ConfigNode{
-					Name:  "some_node",
-					Index: 0,
-				},
-				Consul: config.ConfigConsul{
-					Agent: config.ConfigConsulAgent{
-						Services: map[string]config.ServiceDefinition{
-							"router": {},
+		Context("when running on linux", func() {
+			BeforeEach(func() {
+				config.SetGOOS("linux")
+			})
+
+			AfterEach(func() {
+				config.ResetGOOS()
+			})
+
+			It("generates a definition with the default values", func() {
+				definitions := definer.GenerateDefinitions(config.Config{
+					Node: config.ConfigNode{
+						Name:  "some_node",
+						Index: 0,
+					},
+					Consul: config.ConfigConsul{
+						Agent: config.ConfigConsulAgent{
+							Services: map[string]config.ServiceDefinition{
+								"router": {},
+							},
 						},
 					},
-				},
-			})
-			Expect(definitions).To(ConsistOf([]config.ServiceDefinition{
-				{
-					ServiceName: "router",
-					Name:        "router",
-					Check: &config.ServiceDefinitionCheck{
-						Name:     "dns_health_check",
-						Script:   "/var/vcap/jobs/router/bin/dns_health_check",
-						Interval: "3s",
+				})
+				Expect(definitions).To(ConsistOf([]config.ServiceDefinition{
+					{
+						ServiceName: "router",
+						Name:        "router",
+						Check: &config.ServiceDefinitionCheck{
+							Name:     "dns_health_check",
+							Script:   "/var/vcap/jobs/router/bin/dns_health_check",
+							Interval: "3s",
+						},
+						Tags: []string{"some-node-0"},
 					},
-					Tags: []string{"some-node-0"},
-				},
-			}))
+				}))
+			})
+		})
+
+		Context("when running on windows", func() {
+			BeforeEach(func() {
+				config.SetGOOS("windows")
+			})
+
+			AfterEach(func() {
+				config.ResetGOOS()
+			})
+
+			It("generates a definition with the default values", func() {
+				definitions := definer.GenerateDefinitions(config.Config{
+					Node: config.ConfigNode{
+						Name:  "some_node",
+						Index: 0,
+					},
+					Consul: config.ConfigConsul{
+						Agent: config.ConfigConsulAgent{
+							Services: map[string]config.ServiceDefinition{
+								"router": {},
+							},
+						},
+					},
+				})
+				Expect(definitions).To(ConsistOf([]config.ServiceDefinition{
+					{
+						ServiceName: "router",
+						Name:        "router",
+						Check: &config.ServiceDefinitionCheck{
+							Name:     "dns_health_check",
+							Script:   "powershell -Command /var/vcap/jobs/router/bin/dns_health_check.ps1; Exit $LASTEXITCODE",
+							Interval: "3s",
+						},
+						Tags: []string{"some-node-0"},
+					},
+				}))
+			})
 		})
 
 		It("generates a definition with the service name dasherized", func() {
