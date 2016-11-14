@@ -62,3 +62,13 @@ properties:
 
   consul.encrypt_keys:
     description: "A list of passphrases that will be converted into encryption keys, the first key in the list is the active one"
+
+  syslog_daemon_config.address:
+    description: "Syslog host"
+    default: ""
+  syslog_daemon_config.port:
+    description: "Syslog port"
+    default: ""
+  syslog_daemon_config.transport:
+    description: "Syslog transport protocol (tcp or udp)"
+    default: "udp"
