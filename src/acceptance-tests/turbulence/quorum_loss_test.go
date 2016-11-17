@@ -21,7 +21,7 @@ import (
 	turbulenceclient "github.com/pivotal-cf-experimental/bosh-test/turbulence"
 )
 
-var _ = PDescribe("quorum loss", func() {
+var _ = Describe("quorum loss", func() {
 	var (
 		turbulenceClient   turbulenceclient.Client
 		turbulenceManifest turbulence.Manifest
@@ -64,12 +64,9 @@ var _ = PDescribe("quorum loss", func() {
 				yaml, err := consulManifest.ToYAML()
 				Expect(err).NotTo(HaveOccurred())
 
-				Eventually(func() ([]string, error) {
-					return lockedDeployments()
-				}, "10m", "30s").ShouldNot(ContainElement(consulManifest.Name))
-
-				err = boshClient.ScanAndFixAll(yaml)
-				Expect(err).NotTo(HaveOccurred())
+				Eventually(func() error {
+					return boshClient.ScanAndFixAll(yaml)
+				}, "10m", "30s").ShouldNot(HaveOccurred())
 
 				Eventually(func() ([]bosh.VM, error) {
 					return helpers.DeploymentVMs(boshClient, consulManifest.Name)
@@ -133,7 +130,7 @@ var _ = PDescribe("quorum loss", func() {
 
 				Eventually(func() error {
 					return boshClient.ScanAndFix(consulManifest.Name, "consul", []int{jobIndexToResurrect})
-				}, "5m", "1m").ShouldNot(HaveOccurred())
+				}, "10m", "1m").ShouldNot(HaveOccurred())
 
 				Eventually(func() ([]bosh.VM, error) {
 					return helpers.DeploymentVMs(boshClient, consulManifest.Name)
