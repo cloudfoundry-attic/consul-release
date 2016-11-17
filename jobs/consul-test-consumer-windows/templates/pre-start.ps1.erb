@@ -22,7 +22,7 @@ try {
     $ifindex = $routeable_interfaces[0].Index
     $interface = (Get-WmiObject Win32_NetworkAdapter | Where { $_.DeviceID -eq $ifindex }).netconnectionid
     $servers = DnsServers($interface)
-    if($servers[0] -eq "${nameserver}")
+    if($servers -Contains "${nameserver}")
     {
         Write-Host "DNS Servers are set correctly."
     }
@@ -36,7 +36,7 @@ try {
         $newDNS = $servers[0] + @("${nameserver}") + $servers[1..$servers.length]
         Set-DnsClientServerAddress -InterfaceAlias $interface -ServerAddresses ($newDNS -join ",")
         $servers = DnsServers($interface)
-        if($servers[0] -ne "${nameserver}") {
+        if($servers -NotContains "${nameserver}") {
             Write-Error "Failed to set the DNS Servers"
             Exit 1
         }

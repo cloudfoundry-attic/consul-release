@@ -38,6 +38,10 @@ var _ = Describe("Migrate instance groups", func() {
 
 	Describe("when migrating two instance groups from different AZs to a multi-AZ single instance group", func() {
 		It("deploys successfully with minimal interruption", func() {
+			if config.WindowsClients {
+				Skip("bosh 1.0 style manifests do not support windows vms")
+			}
+
 			By("deploying 3 node cluster across two AZs with BOSH 1.0 manifest", func() {
 				var err error
 				manifest, err = helpers.DeployMultiAZConsul("migrate-instance-group", boshClient, config)
