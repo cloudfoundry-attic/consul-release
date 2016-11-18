@@ -23,7 +23,7 @@ jobs:
   networks:
   - name: consul1
     static_ips:
-    - 10.0.20.4
+    - 10.0.16.4
   resource_pool: consul_z1
   templates:
   - name: consul_agent
@@ -38,8 +38,8 @@ jobs:
   networks:
   - name: consul2
     static_ips:
-    - 10.0.21.4
-    - 10.0.21.5
+    - 10.0.32.4
+    - 10.0.32.5
   resource_pool: consul_z2
   templates:
   - name: consul_agent
@@ -55,28 +55,28 @@ networks:
   subnets:
   - cloud_properties:
       name: "consul1"
-      subnet: "subnet-c8b76f90"
-    gateway: 10.0.20.1
-    range: 10.0.20.0/24
+      subnet: "subnet-b5b4ecc3"
+    gateway: 10.0.16.1
+    range: 10.0.16.0/20
     reserved:
-    - 10.0.20.2-10.0.20.3
-    - 10.0.20.12-10.0.20.254
+    - 10.0.16.2-10.0.16.3
+    - 10.0.16.12-10.0.16.254
     static:
-    - 10.0.20.4
+    - 10.0.16.4
   type: manual
 - name: consul2
   subnets:
   - cloud_properties:
       name: "consul2"
-      subnet: "subnet-4ac81f60"
-    gateway: 10.0.21.1
-    range: 10.0.21.0/24
+      subnet: "subnet-137b7a77"
+    gateway: 10.0.32.1
+    range: 10.0.32.0/20
     reserved:
-    - 10.0.21.2-10.0.21.3
-    - 10.0.21.12-10.0.21.254
+    - 10.0.32.2-10.0.32.3
+    - 10.0.32.12-10.0.32.254
     static:
-    - 10.0.21.4
-    - 10.0.21.5
+    - 10.0.32.4
+    - 10.0.32.5
   type: manual
 
 resource_pools:
@@ -116,9 +116,9 @@ properties:
       domain: cf.internal
       servers:
         lan:
-        - 10.0.20.4
-        - 10.0.21.4
-        - 10.0.21.5
+        - 10.0.16.4
+        - 10.0.32.4
+        - 10.0.32.5
     ca_cert: |+
       -----BEGIN CERTIFICATE-----
       MIIFAzCCAu2gAwIBAgIBATALBgkqhkiG9w0BAQswEzERMA8GA1UEAxMIY29uc3Vs
