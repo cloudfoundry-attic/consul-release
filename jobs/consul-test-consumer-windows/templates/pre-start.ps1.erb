@@ -17,7 +17,7 @@ function DnsServers($interface) {
   return (Get-DnsClientServerAddress -InterfaceAlias $interface -AddressFamily ipv4 -ErrorAction Stop).ServerAddresses
 }
 try {
-  $nameserver=<%= p("consul-test-consumer.nameserver") %>
+  $nameserver='<%= p("consul-test-consumer.nameserver") %>'
     [array]$routeable_interfaces = Get-WmiObject Win32_NetworkAdapterConfiguration | Where { $_.IpAddress -AND ($_.IpAddress | Where { $addr = [Net.IPAddress] $_; $addr.AddressFamily -eq "InterNetwork" -AND ($addr.address -BAND ([Net.IPAddress] "255.255.0.0").address) -ne ([Net.IPAddress] "169.254.0.0").address }) }
     $ifindex = $routeable_interfaces[0].Index
     $interface = (Get-WmiObject Win32_NetworkAdapter | Where { $_.DeviceID -eq $ifindex }).netconnectionid
@@ -33,8 +33,8 @@ try {
         #
         #   `sed -i -e "2i nameserver $nameserver" "${resolvconf_file}"`
         #
-        $newDNS = $servers[0] + @("${nameserver}") + $servers[1..$servers.length]
-        Set-DnsClientServerAddress -InterfaceAlias $interface -ServerAddresses ($newDNS -join ",")
+        $newDNS = $servers[0], $nameserver, $servers[1..$servers.length]
+        Set-DnsClientServerAddress -InterfaceAlias $interface -ServerAddresses $newDNS
         $servers = DnsServers($interface)
         if($servers -NotContains "${nameserver}") {
             Write-Error "Failed to set the DNS Servers"

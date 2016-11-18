@@ -27,9 +27,9 @@ try {
     else
     {
         Write-Host "Setting DNS Servers"
-        $newDNS = @("127.0.0.1") + $servers
+        $newDNS = "127.0.0.1", $servers
         Write-Host $newDNS
-        Set-DnsClientServerAddress -InterfaceAlias $interface -ServerAddresses ($newDNS -join ",")
+        Set-DnsClientServerAddress -InterfaceAlias $interface -ServerAddresses $newDNS
         $servers = DnsServers($interface)
         if($servers[0] -ne "127.0.0.1") {
             Write-Error "Failed to set the DNS Servers"

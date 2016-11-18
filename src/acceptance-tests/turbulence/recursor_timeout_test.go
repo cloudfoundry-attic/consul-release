@@ -98,12 +98,16 @@ var _ = Describe("recursor timeout", func() {
 
 	It("resolves long running DNS queries utilizing the consul recursor_timeout property", func() {
 		By("making sure my-fake-server resolves", func() {
-			address, err := tcClient.DNS("my-fake-server.fake.local")
+			addresses, err := tcClient.DNS("my-fake-server.fake.local")
 			Expect(err).NotTo(HaveOccurred())
 
 			// miekg/dns implementation responds with A and AAAA records regardless of the type of record requested
 			// therefore we're expected 4 IPs here
-			Expect(address).To(Equal([]string{"10.2.3.4", "10.2.3.4", "10.2.3.4", "10.2.3.4"}))
+			if config.WindowsClients {
+				Expect(addresses).To(Equal([]string{"10.2.3.4", "10.2.3.4"}))
+			} else {
+				Expect(addresses).To(Equal([]string{"10.2.3.4", "10.2.3.4", "10.2.3.4", "10.2.3.4"}))
+			}
 		})
 
 		By("delaying DNS queries with a network delay that is greater than the recursor timeout", func() {
@@ -163,7 +167,11 @@ var _ = Describe("recursor timeout", func() {
 
 			// miekg/dns implementation responds with A and AAAA records regardless of the type of record requested
 			// therefore we're expected 4 IPs here
-			Expect(addresses).To(Equal([]string{"10.2.3.4", "10.2.3.4", "10.2.3.4", "10.2.3.4"}))
+			if config.WindowsClients {
+				Expect(addresses).To(Equal([]string{"10.2.3.4", "10.2.3.4"}))
+			} else {
+				Expect(addresses).To(Equal([]string{"10.2.3.4", "10.2.3.4", "10.2.3.4", "10.2.3.4"}))
+			}
 		})
 	})
 })
