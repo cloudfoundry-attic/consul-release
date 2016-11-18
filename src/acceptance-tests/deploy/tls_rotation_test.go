@@ -1,9 +1,7 @@
 package deploy_test
 
 import (
-	"errors"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/cloudfoundry-incubator/consul-release/src/acceptance-tests/testing/consulclient"
@@ -247,30 +245,8 @@ var _ = Describe("TLS key rotation", func() {
 		})
 
 		By("reading from the consul kv store", func() {
-			spammerErrors := spammer.Check()
-			var errorSet helpers.ErrorSet
-
-			switch spammerErrors.(type) {
-			case helpers.ErrorSet:
-				errorSet = spammerErrors.(helpers.ErrorSet)
-			case nil:
-			default:
-				Fail(spammerErrors.Error())
-			}
-
-			noKnownConsulServersErrorCount := 0
-			otherErrors := helpers.ErrorSet{}
-
-			for err, occurrences := range errorSet {
-				switch {
-				case strings.Contains(err, "unexpected status: 500 Internal Server Error  No known Consul servers"):
-					noKnownConsulServersErrorCount += occurrences
-				default:
-					otherErrors.Add(errors.New(err))
-				}
-			}
-			Expect(otherErrors).To(HaveLen(0))
-			Expect(noKnownConsulServersErrorCount).To(BeNumerically("<=", 1))
+			err := spammer.Check()
+			Expect(err).NotTo(HaveOccurred())
 		})
 	})
 })
