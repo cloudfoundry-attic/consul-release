@@ -35,8 +35,8 @@ func (kv HTTPKV) Set(key, value string) error {
 	client := &http.Client{
 		Transport: &http.Transport{
 			Dial: (&net.Dialer{
-				Timeout:   10 * time.Millisecond,
-				KeepAlive: 10 * time.Millisecond,
+				Timeout:   1 * time.Second,
+				KeepAlive: 1 * time.Second,
 			}).Dial,
 		},
 	}
