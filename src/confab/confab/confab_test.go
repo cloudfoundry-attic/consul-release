@@ -219,6 +219,9 @@ var _ = Describe("confab", func() {
 		}
 
 		It("starts and stops the consul process as a daemon", func() {
+			if Windows {
+				Skip("On Windows Consul is ran as a foreground process")
+			}
 			start := exec.Command(pathToConfab,
 				"start",
 				"--recursor", "8.8.8.8",

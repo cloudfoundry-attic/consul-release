@@ -1,6 +1,8 @@
 package config_test
 
 import (
+	"path/filepath"
+
 	"github.com/cloudfoundry-incubator/consul-release/src/confab/config"
 
 	. "github.com/onsi/ginkgo"
@@ -102,6 +104,12 @@ var _ = Describe("Config", func() {
 				json := []byte(`{}`)
 				cfg, err := config.ConfigFromJSON(json)
 
+				cfg.Path.AgentPath = filepath.ToSlash(cfg.Path.AgentPath)
+				cfg.Path.ConsulConfigDir = filepath.ToSlash(cfg.Path.ConsulConfigDir)
+				cfg.Path.PIDFile = filepath.ToSlash(cfg.Path.PIDFile)
+				cfg.Path.KeyringFile = filepath.ToSlash(cfg.Path.KeyringFile)
+				cfg.Path.DataDir = filepath.ToSlash(cfg.Path.DataDir)
+
 				Expect(err).NotTo(HaveOccurred())
 				Expect(cfg).To(Equal(config.Config{
 					Path: config.ConfigPath{
@@ -137,8 +145,8 @@ var _ = Describe("Config", func() {
 				cfg, err := config.ConfigFromJSON(json)
 
 				Expect(err).NotTo(HaveOccurred())
-				Expect(cfg.Path.KeyringFile).To(Equal("/var/vcap/store/consul_agent/serf/local.keyring"))
-				Expect(cfg.Path.DataDir).To(Equal("/var/vcap/store/consul_agent"))
+				Expect(filepath.ToSlash(cfg.Path.KeyringFile)).To(Equal("/var/vcap/store/consul_agent/serf/local.keyring"))
+				Expect(filepath.ToSlash(cfg.Path.DataDir)).To(Equal("/var/vcap/store/consul_agent"))
 			})
 		})
 
