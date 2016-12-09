@@ -13,7 +13,7 @@ try
     $BOSH_INSTALL_TARGET = Resolve-Path "${env:BOSH_INSTALL_TARGET}"
 
     New-Item -ItemType "directory" -Force "${BOSH_INSTALL_TARGET}/bin"
-    Unzip "consul-windows/consul_0.7.0_windows_amd64.zip" "${BOSH_INSTALL_TARGET}/bin"
+    Unzip "consul-windows/consul_0.7.1_windows_amd64.zip" "${BOSH_INSTALL_TARGET}/bin"
 }
 catch
 {

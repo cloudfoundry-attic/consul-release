@@ -15,6 +15,10 @@ import (
 
 type ManifestGenerator func(consul.ConfigV2, iaas.Config) (consul.ManifestV2, error)
 
+func DeployConsulWithFakeDNSServer(deploymentPrefix string, count int, client bosh.Client, config Config) (manifest consul.ManifestV2, kv consulclient.HTTPKV, err error) {
+	return deployConsul(deploymentPrefix, count, client, config, ConsulReleaseVersion(), consul.NewManifestWithFakeDNSServer)
+}
+
 func DeployConsulWithTurbulence(deploymentPrefix string, count int, client bosh.Client, config Config) (manifest consul.ManifestV2, kv consulclient.HTTPKV, err error) {
 	return deployConsul(deploymentPrefix, count, client, config, ConsulReleaseVersion(), consul.NewManifestWithTurbulenceAgent)
 }
