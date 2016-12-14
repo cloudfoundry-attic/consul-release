@@ -37,9 +37,6 @@ else
 
 if (@(Get-DnsClientCache).Count -ne 0) {
     Clear-DnsClientCache
-    if (@(Get-DnsClientCache).Count -ne 0) {
-        Write-Error "Failed to clear DNS Client Cache"
-    }
 }
 
 $RegistryPath = "HKLM:\SYSTEM\CurrentControlSet\Services\Dnscache\Parameters"
