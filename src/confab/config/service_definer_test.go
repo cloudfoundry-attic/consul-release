@@ -86,6 +86,7 @@ var _ = Describe("ServiceDefiner", func() {
 					Node: config.ConfigNode{
 						Name:  "some_node",
 						Index: 0,
+						Zone:  "z1",
 					},
 					Consul: config.ConfigConsul{
 						Agent: config.ConfigConsulAgent{
@@ -104,7 +105,7 @@ var _ = Describe("ServiceDefiner", func() {
 							Script:   "/var/vcap/jobs/router/bin/dns_health_check",
 							Interval: "3s",
 						},
-						Tags: []string{"some-node-0"},
+						Tags: []string{"some-node-0", "z1"},
 					},
 				}))
 			})

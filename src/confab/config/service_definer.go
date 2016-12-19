@@ -71,6 +71,12 @@ func (s ServiceDefiner) GenerateDefinitions(config Config) []ServiceDefinition {
 		} else {
 			command = "/var/vcap/jobs/%s/bin/dns_health_check"
 		}
+		tags := []string{
+			fmt.Sprintf("%s-%d", strings.Replace(config.Node.Name, "_", "-", -1), config.Node.Index),
+		}
+		if config.Node.Zone != "" {
+			tags = append(tags, config.Node.Zone)
+		}
 		definition := ServiceDefinition{
 			ServiceName: name,
 			Name:        strings.Replace(name, "_", "-", -1),
@@ -80,7 +86,7 @@ func (s ServiceDefiner) GenerateDefinitions(config Config) []ServiceDefinition {
 				Interval: "3s",
 			},
 			Checks:            service.Checks,
-			Tags:              []string{fmt.Sprintf("%s-%d", strings.Replace(config.Node.Name, "_", "-", -1), config.Node.Index)},
+			Tags:              tags,
 			Address:           service.Address,
 			Port:              service.Port,
 			EnableTagOverride: service.EnableTagOverride,
