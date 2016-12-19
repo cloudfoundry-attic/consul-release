@@ -33,6 +33,7 @@ type ConfigNode struct {
 	Name       string `json:"name"`
 	Index      int    `json:"index"`
 	ExternalIP string `json:"external_ip"`
+	Zone       string `json:"zone"`
 }
 
 type ConfigConsulAgent struct {

@@ -17,7 +17,8 @@ var _ = Describe("Config", func() {
 					"node": {
 						"name": "nodename",
 						"index": 1234,
-						"external_ip": "10.0.0.1"
+						"external_ip": "10.0.0.1",
+						"zone": "z1"
 					},
 					"path": {
 						"agent_path": "/path/to/agent",
@@ -30,7 +31,7 @@ var _ = Describe("Config", func() {
 						"agent": {
 							"services": {
 								"myservice": {
-									"name" : "myservicename"	
+									"name" : "myservicename"
 								}
 							},
 							"mode": "server",
@@ -68,6 +69,7 @@ var _ = Describe("Config", func() {
 						Name:       "nodename",
 						Index:      1234,
 						ExternalIP: "10.0.0.1",
+						Zone:       "z1",
 					},
 					Consul: config.ConfigConsul{
 						Agent: config.ConfigConsulAgent{
