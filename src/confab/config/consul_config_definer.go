@@ -34,7 +34,9 @@ type ConsulConfig struct {
 }
 
 type ConsulConfigPorts struct {
-	DNS int `json:"dns,omitempty"`
+	DNS   int `json:"dns,omitempty"`
+	HTTP  int `json:"http,omitempty"`
+	HTTPS int `json:"https,omitempty"`
 }
 
 type ConsulConfigDnsConfig struct {
@@ -83,6 +85,11 @@ func GenerateConfiguration(config Config, configDir, nodeName string) ConsulConf
 		Performance: ConsulConfigPerformance{
 			RaftMultiplier: 1,
 		},
+	}
+
+	if config.Consul.Agent.RequireSSL {
+		consulConfig.Ports.HTTP = -1
+		consulConfig.Ports.HTTPS = 8500
 	}
 
 	consulConfig.VerifyOutgoing = boolPtr(true)

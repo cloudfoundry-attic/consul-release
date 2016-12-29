@@ -47,6 +47,7 @@ type ConfigConsulAgent struct {
 	DnsConfig       ConfigConsulAgentDnsConfig   `json:"dns_config"`
 	Bootstrap       bool                         `json:"bootstrap"`
 	NodeName        string                       `json:"node_name"`
+	RequireSSL      bool                         `json:"require_ssl"`
 }
 
 type ConfigConsulAgentDnsConfig struct {

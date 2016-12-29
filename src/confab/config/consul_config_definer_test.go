@@ -209,9 +209,35 @@ var _ = Describe("ConsulConfigDefiner", func() {
 			})
 		})
 
-		Describe("DNS port", func() {
-			It("defaults to 53", func() {
-				Expect(consulConfig.Ports.DNS).To(Equal(53))
+		Describe("ports", func() {
+			Describe("DNS port", func() {
+				It("defaults to 53", func() {
+					Expect(consulConfig.Ports.DNS).To(Equal(53))
+				})
+			})
+
+			Context("when `consul.agent.require_ssl` is true", func() {
+				BeforeEach(func() {
+					consulConfig = config.GenerateConfiguration(config.Config{
+						Consul: config.ConfigConsul{
+							Agent: config.ConfigConsulAgent{
+								RequireSSL: true,
+							},
+						},
+					}, configDir, "")
+				})
+
+				Describe("HTTP port", func() {
+					It("is disabled", func() {
+						Expect(consulConfig.Ports.HTTP).To(Equal(-1))
+					})
+				})
+
+				Describe("HTTPS port", func() {
+					It("defaults to 8500", func() {
+						Expect(consulConfig.Ports.HTTPS).To(Equal(8500))
+					})
+				})
 			})
 		})
 

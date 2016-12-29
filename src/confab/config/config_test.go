@@ -46,7 +46,8 @@ var _ = Describe("Config", func() {
 								"allow_stale": true,
 								"max_stale": "15s",
 								"recursor_timeout": "15s"
-							}
+							},
+							"require_ssl": true
 						},
 						"encrypt_keys": ["key-1", "key-2"]
 					},
@@ -91,6 +92,7 @@ var _ = Describe("Config", func() {
 								MaxStale:        "15s",
 								RecursorTimeout: "15s",
 							},
+							RequireSSL: true,
 						},
 						EncryptKeys: []string{"key-1", "key-2"},
 					},

@@ -47,6 +47,10 @@ properties:
   consul.agent.domain:
     description: "Domain suffix for DNS"
 
+  consul.agent.require_ssl:
+    description: "Require SSL to talk with the local agent"
+    default: true
+
   consul.rewrite_resolv:
     description: "When set to true this property will rewrite the resolv.conf file and add 127.0.0.1 as the first entry"
     default: true
