@@ -1,23 +1,21 @@
-try {
-  $RUN_DIR="C:\var\vcap\sys\run\consul-test-consumer-windows"
-  $LOG_DIR="C:\var\vcap\sys\log\consul-test-consumer-windows"
-  $PKG_DIR="C:\var\vcap\packages\acceptance-tests-windows"
-  New-Item -ItemType Directory -Force -Path "${RUN_DIR}"
-  New-Item -ItemType Directory -Force -Path "${LOG_DIR}"
-  New-Item -ItemType Directory -Force -Path "${PKG_DIR}"
-} catch {
-    Write-Error "Exception (consul-test-consumer-windows): pre-start.ps1"
-    Write-Error $_.Exception.Message
-    Exit 1
-}
+$ErrorActionPreference = "Stop";
+trap { $host.SetShouldExit(1) }
+
+$RUN_DIR="C:\var\vcap\sys\run\consul-test-consumer-windows"
+$LOG_DIR="C:\var\vcap\sys\log\consul-test-consumer-windows"
+$PKG_DIR="C:\var\vcap\packages\acceptance-tests-windows"
+New-Item -ItemType Directory -Force -Path "${RUN_DIR}"
+New-Item -ItemType Directory -Force -Path "${LOG_DIR}"
+New-Item -ItemType Directory -Force -Path "${PKG_DIR}"
+
 <% if !p("consul-test-consumer.nameserver").empty? %>
-  # Not Implemented:
-  #  - echo "options timeout:30" >> "${resolvconf_file}"
-function DnsServers($interface) {
-  return (Get-DnsClientServerAddress -InterfaceAlias $interface -AddressFamily ipv4 -ErrorAction Stop).ServerAddresses
-}
-try {
-  $nameserver='<%= p("consul-test-consumer.nameserver") %>'
+    # Not Implemented:
+    #  - echo "options timeout:30" >> "${resolvconf_file}"
+    function DnsServers($interface) {
+      return (Get-DnsClientServerAddress -InterfaceAlias $interface -AddressFamily ipv4 -ErrorAction Stop).ServerAddresses
+    }
+
+    $nameserver='<%= p("consul-test-consumer.nameserver") %>'
     [array]$routeable_interfaces = Get-WmiObject Win32_NetworkAdapterConfiguration | Where { $_.IpAddress -AND ($_.IpAddress | Where { $addr = [Net.IPAddress] $_; $addr.AddressFamily -eq "InterNetwork" -AND ($addr.address -BAND ([Net.IPAddress] "255.255.0.0").address) -ne ([Net.IPAddress] "169.254.0.0").address }) }
     $ifindex = $routeable_interfaces[0].Index
     $interface = (Get-WmiObject Win32_NetworkAdapter | Where { $_.DeviceID -eq $ifindex }).netconnectionid
@@ -41,38 +39,28 @@ try {
             Exit 1
         }
     }
-} catch {
-    Write-Error "Exception (consul-test-consumer-windows): pre-start.ps1"
-    Write-Error $_.Exception.Message
-    Exit 1
-}
 <% end %>
-try {
+
+$status = (Get-NetFirewallRule -Name CFAllowConsulConsumer -ErrorAction Ignore).PrimaryStatus
+if ($status -ne "OK") {
+    $admins = New-Object System.Security.Principal.NTAccount("Administrators")
+    $adminsSid = $admins.Translate([System.Security.Principal.SecurityIdentifier])
+    $LocalUser = "D:(A;;CC;;;$adminsSid)"
+    $otherAdmins = Get-WmiObject win32_groupuser |
+        Where-Object { $_.GroupComponent -match 'administrators' } |
+        ForEach-Object { [wmi]$_.PartComponent }
+    foreach($admin in $otherAdmins)
+    {
+        $ntAccount = New-Object System.Security.Principal.NTAccount($admin.Name)
+        $sid = $ntAccount.Translate([System.Security.Principal.SecurityIdentifier]).Value
+        $LocalUser = $LocalUser + "(A;;CC;;;$sid)"
+    }
+    New-NetFirewallRule -Name CFAllowConsulConsumer -Description "Allow Consul-Consumer" `
+        -DisplayName "Allow Consul-Consumer" -Protocol TCP -LocalPort 6769 -Action allow -LocalUser $LocalUser
     $status = (Get-NetFirewallRule -Name CFAllowConsulConsumer -ErrorAction Ignore).PrimaryStatus
     if ($status -ne "OK") {
-        $admins = New-Object System.Security.Principal.NTAccount("Administrators")
-        $adminsSid = $admins.Translate([System.Security.Principal.SecurityIdentifier])
-        $LocalUser = "D:(A;;CC;;;$adminsSid)"
-        $otherAdmins = Get-WmiObject win32_groupuser |
-            Where-Object { $_.GroupComponent -match 'administrators' } |
-            ForEach-Object { [wmi]$_.PartComponent }
-        foreach($admin in $otherAdmins)
-        {
-            $ntAccount = New-Object System.Security.Principal.NTAccount($admin.Name)
-            $sid = $ntAccount.Translate([System.Security.Principal.SecurityIdentifier]).Value
-            $LocalUser = $LocalUser + "(A;;CC;;;$sid)"
-        }
-        New-NetFirewallRule -Name CFAllowConsulConsumer -Description "Allow Consul-Consumer" `
-            -DisplayName "Allow Consul-Consumer" -Protocol TCP -LocalPort 6769 -Action allow -LocalUser $LocalUser
-        $status = (Get-NetFirewallRule -Name CFAllowConsulConsumer -ErrorAction Ignore).PrimaryStatus
-        if ($status -ne "OK") {
-            Write-Error "Failed to Create CFAllowConsulConsumer Firewall rule"
-      Exit 1
+        Write-Error "Failed to Create CFAllowConsulConsumer Firewall rule"
     }
-    }
-} catch {
-    Write-Error "Exception (consul-test-consumer-windows): pre-start.ps1"
-    Write-Error $_.Exception.Message
-    Exit 1
 }
+
 Exit 0
