@@ -5,8 +5,10 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"net/http"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"time"
 
 	"code.cloudfoundry.org/clock"
@@ -96,7 +98,27 @@ func main() {
 		Logger:    logger,
 	}
 
-	consulAPIClient, err := api.NewClient(api.DefaultConfig())
+	clientConfig := api.DefaultConfig()
+	if cfg.Consul.Agent.RequireSSL {
+		clientConfig.Scheme = "https"
+		certsDir := filepath.Join(cfg.Path.ConsulConfigDir, "certs")
+		tlsConfig := api.TLSConfig{
+			Address:  clientConfig.Address,
+			CAFile:   filepath.Join(certsDir, "ca.crt"),
+			CertFile: filepath.Join(certsDir, "agent.crt"),
+			KeyFile:  filepath.Join(certsDir, "agent.key"),
+		}
+		tlsClientConfig, err := api.SetupTLSConfig(&tlsConfig)
+		if err != nil {
+			stderr.Printf("error setting up TLS config: %s", err)
+			os.Exit(1)
+		}
+		if transport, ok := clientConfig.HttpClient.Transport.(*http.Transport); ok {
+			transport.TLSClientConfig = tlsClientConfig
+		}
+	}
+
+	consulAPIClient, err := api.NewClient(clientConfig)
 	if err != nil {
 		panic(err) // not tested, NewClient never errors
 	}
