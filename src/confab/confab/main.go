@@ -110,7 +110,8 @@ func main() {
 		}
 		tlsClientConfig, err := api.SetupTLSConfig(&tlsConfig)
 		if err != nil {
-			panic(err)
+			stderr.Printf("error setting up TLS config: %s", err)
+			os.Exit(1)
 		}
 		if transport, ok := clientConfig.HttpClient.Transport.(*http.Transport); ok {
 			transport.TLSClientConfig = tlsClientConfig
