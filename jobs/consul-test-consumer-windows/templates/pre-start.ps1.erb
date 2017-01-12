@@ -4,9 +4,11 @@ trap { $host.SetShouldExit(1) }
 $RUN_DIR="C:\var\vcap\sys\run\consul-test-consumer-windows"
 $LOG_DIR="C:\var\vcap\sys\log\consul-test-consumer-windows"
 $PKG_DIR="C:\var\vcap\packages\acceptance-tests-windows"
+$RUN_DIR="/var/vcap/sys/run"
 New-Item -ItemType Directory -Force -Path "${RUN_DIR}"
 New-Item -ItemType Directory -Force -Path "${LOG_DIR}"
 New-Item -ItemType Directory -Force -Path "${PKG_DIR}"
+New-Item -ItemType Directory -Force -Path "${RUN_DIR}"
 
 <% if !p("consul-test-consumer.nameserver").empty? %>
     # Not Implemented:
@@ -15,7 +17,24 @@ New-Item -ItemType Directory -Force -Path "${PKG_DIR}"
       return (Get-DnsClientServerAddress -InterfaceAlias $interface -AddressFamily ipv4 -ErrorAction Stop).ServerAddresses
     }
 
+    function WaitForDNSLock() {
+        while ($true) {
+          try {
+            New-Item C:\var\vcap\sys\run\consul-dns.lock -type file
+            return
+          } catch {
+            Write-Host "DNS lock exists..."
+          }
+          Start-Sleep 1
+        }
+    }
+
+    function ReleaseDNSLock() {
+      Remove-Item C:\var\vcap\sys\run\consul-dns.lock
+    }
+
     $nameserver='<%= p("consul-test-consumer.nameserver") %>'
+    WaitForDNSLock
     [array]$routeable_interfaces = Get-WmiObject Win32_NetworkAdapterConfiguration | Where { $_.IpAddress -AND ($_.IpAddress | Where { $addr = [Net.IPAddress] $_; $addr.AddressFamily -eq "InterNetwork" -AND ($addr.address -BAND ([Net.IPAddress] "255.255.0.0").address) -ne ([Net.IPAddress] "169.254.0.0").address }) }
     $ifindex = $routeable_interfaces[0].Index
     $interface = (Get-WmiObject Win32_NetworkAdapter | Where { $_.DeviceID -eq $ifindex }).netconnectionid
@@ -39,6 +58,7 @@ New-Item -ItemType Directory -Force -Path "${PKG_DIR}"
             Exit 1
         }
     }
+    ReleaseDNSLock
 <% end %>
 
 $status = (Get-NetFirewallRule -Name CFAllowConsulConsumer -ErrorAction Ignore).PrimaryStatus

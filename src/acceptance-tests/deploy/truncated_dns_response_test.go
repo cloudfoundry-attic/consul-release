@@ -46,15 +46,24 @@ var _ = Describe("given large DNS response", func() {
 	It("does not error out", func() {
 		addresses, err := testConsumerClient.DNS("large-dns-response.fake.local")
 		Expect(err).NotTo(HaveOccurred())
-		Expect(addresses).To(Equal([]string{
-			"1.2.3.0", "1.2.3.0",
-			"1.2.3.1", "1.2.3.1",
-			"1.2.3.2", "1.2.3.2",
-			"1.2.3.3", "1.2.3.3",
-			"1.2.3.0", "1.2.3.0",
-			"1.2.3.1", "1.2.3.1",
-			"1.2.3.2", "1.2.3.2",
-			"1.2.3.3", "1.2.3.3",
-		}))
+		if config.WindowsClients {
+			Expect(addresses).To(Equal([]string{
+				"1.2.3.0", "1.2.3.0",
+				"1.2.3.1", "1.2.3.1",
+				"1.2.3.2", "1.2.3.2",
+				"1.2.3.3", "1.2.3.3",
+			}))
+		} else {
+			Expect(addresses).To(Equal([]string{
+				"1.2.3.0", "1.2.3.0",
+				"1.2.3.1", "1.2.3.1",
+				"1.2.3.2", "1.2.3.2",
+				"1.2.3.3", "1.2.3.3",
+				"1.2.3.0", "1.2.3.0",
+				"1.2.3.1", "1.2.3.1",
+				"1.2.3.2", "1.2.3.2",
+				"1.2.3.3", "1.2.3.3",
+			}))
+		}
 	})
 })
