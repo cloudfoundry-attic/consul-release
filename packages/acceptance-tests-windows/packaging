@@ -11,7 +11,7 @@ $env:PATH = "${env:GOROOT}\bin;${env:PATH}"
 
 # acceptance-tests
 
-Robocopy.exe /CREATE "${BOSH_INSTALL_TARGET}/src/github.com/cloudfoundry-incubator/consul-release/src/acceptance-tests"
+New-Item -path "${BOSH_INSTALL_TARGET}/src/github.com/cloudfoundry-incubator/consul-release/src/acceptance-tests" -type directory -force
 if ($LASTEXITCODE -ge 8) {
     Write-Error "Robocopy.exe /CREATE ${BOSH_INSTALL_TARGET}/src/github.com/cloudfoundry-incubator/consul-release/src/acceptance-tests"
 }
@@ -22,7 +22,7 @@ if ($LASTEXITCODE -ge 8) {
 }
 
 # check-a-record
-Robocopy.exe /CREATE "${BOSH_INSTALL_TARGET}/src/github.com/cloudfoundry-incubator/check-a-record"
+New-Item -path "${BOSH_INSTALL_TARGET}/src/github.com/cloudfoundry-incubator/check-a-record" -type directory -force
 if ($LASTEXITCODE -ge 8) {
     Write-Error "Robocopy.exe /CREATE ${BOSH_INSTALL_TARGET}/src/github.com/cloudfoundry-incubator/check-a-record"
 }
