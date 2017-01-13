@@ -11,3 +11,6 @@ properties:
   consul-test-consumer.nameserver:
     description: "Nameserver to use to mock out responses/response times"
     default: ""
+  consul-test-consumer.require_ssl:
+    description: "Require SSL to talk with local consul agent"
+    default: false
