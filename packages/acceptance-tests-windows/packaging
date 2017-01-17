@@ -13,7 +13,7 @@ $env:PATH = "${env:GOROOT}\bin;${env:PATH}"
 
 New-Item -path "${BOSH_INSTALL_TARGET}/src/github.com/cloudfoundry-incubator/consul-release/src/acceptance-tests" -type directory -force
 if ($LASTEXITCODE -ge 8) {
-    Write-Error "Robocopy.exe /CREATE ${BOSH_INSTALL_TARGET}/src/github.com/cloudfoundry-incubator/consul-release/src/acceptance-tests"
+    Write-Error "New-Item -path "${BOSH_INSTALL_TARGET}/src/github.com/cloudfoundry-incubator/consul-release/src/acceptance-tests" -type directory -force"
 }
 
 Robocopy.exe /E "${PWD}/acceptance-tests" "${BOSH_INSTALL_TARGET}/src/github.com/cloudfoundry-incubator/consul-release/src/acceptance-tests"
@@ -24,7 +24,7 @@ if ($LASTEXITCODE -ge 8) {
 # check-a-record
 New-Item -path "${BOSH_INSTALL_TARGET}/src/github.com/cloudfoundry-incubator/check-a-record" -type directory -force
 if ($LASTEXITCODE -ge 8) {
-    Write-Error "Robocopy.exe /CREATE ${BOSH_INSTALL_TARGET}/src/github.com/cloudfoundry-incubator/check-a-record"
+    Write-Error "New-Item -path "${BOSH_INSTALL_TARGET}/src/github.com/cloudfoundry-incubator/check-a-record" -type directory -force"
 }
 
 Robocopy.exe /E "${PWD}/acceptance-tests/vendor/github.com/cloudfoundry-incubator/check-a-record" "${BOSH_INSTALL_TARGET}/src/github.com/cloudfoundry-incubator"

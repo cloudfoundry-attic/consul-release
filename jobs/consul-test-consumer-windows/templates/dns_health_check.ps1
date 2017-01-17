@@ -1,5 +1,5 @@
 $ErrorActionPreference = "Stop";
-trap { $host.SetShouldExit(1) }
+trap { $host.SetShouldExit(2) }
 
 $Address = "http://127.0.0.1:6769/health_check"
 Invoke-WebRequest -UseBasicParsing "${Address}"
