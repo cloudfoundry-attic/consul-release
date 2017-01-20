@@ -246,14 +246,7 @@ var _ = Describe("TLS key rotation", func() {
 
 		By("reading from the consul kv store", func() {
 			err := spammer.Check()
-			if config.WindowsClients {
-				if err != nil {
-					Expect(err).To(HaveLen(1))
-					Expect(err).To(HaveKey("unexpected status: 500 Internal Server Error  No known Consul servers"))
-				}
-			} else {
-				Expect(err).NotTo(HaveOccurred())
-			}
+			Expect(err).NotTo(HaveOccurred())
 		})
 	})
 })

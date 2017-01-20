@@ -15,8 +15,10 @@ func SpamConsul(chan struct{}, *sync.WaitGroup, consulclient.HTTPKV) chan map[st
 }
 
 const (
-	SUCCESSFUL_KEY_WRITE_THRESHOLD = 0.75
-	MAX_SUCCESSIVE_RPC_ERROR_COUNT = 6
+	SUCCESSFUL_KEY_WRITE_THRESHOLD   = 0.75
+	MAX_SUCCESSIVE_RPC_ERROR_COUNT   = 6
+	MAX_CONNECTION_RESET_ERROR_COUNT = 3
+	MAX_NO_KNOWN_CONSUL_ERROR_COUNT  = 3
 )
 
 type ErrorSet map[string]int
@@ -73,8 +75,10 @@ func (s *Spammer) Spam() {
 
 	go func() {
 		var counts struct {
-			attempts  int
-			rpcErrors int
+			attempts              int
+			rpcErrors             int
+			connectionResetErrors int
+			noKnownConsulErrors   int
 		}
 		for {
 			select {
@@ -102,6 +106,16 @@ func (s *Spammer) Spam() {
 						// failures to connect to the test consumer should not count as failed key writes
 						// this typically happens when the test-consumer vm is rolled
 						counts.attempts--
+					case strings.Contains(err.Error(), "read: connection reset by peer"):
+						counts.connectionResetErrors++
+						if counts.connectionResetErrors > MAX_CONNECTION_RESET_ERROR_COUNT {
+							s.errors.Add(err)
+						}
+					case err.Error() == "unexpected status: 500 Internal Server Error  No known Consul servers":
+						counts.noKnownConsulErrors++
+						if counts.noKnownConsulErrors > MAX_NO_KNOWN_CONSUL_ERROR_COUNT {
+							s.errors.Add(err)
+						}
 					case strings.Contains(err.Error(), "unexpected status: 502 Bad Gateway"):
 					case strings.Contains(err.Error(), "http: proxy error"):
 					default:
