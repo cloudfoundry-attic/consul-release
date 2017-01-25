@@ -163,6 +163,11 @@ properties:
       -----END RSA PRIVATE KEY-----
 ```
 
+### Rotating Certificates and Keys
+
+Reference the [Security Configuration for Consul](https://docs.cloudfoundry.org/deploying/common/consul-security.html#rotating-certs)
+in the CloudFoundry Docs for steps on rotating certificates and keys.
+
 ### Defining a Service
 
 This Consul release allows consumers to declare services provided by jobs that
