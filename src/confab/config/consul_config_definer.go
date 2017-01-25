@@ -62,6 +62,11 @@ func GenerateConfiguration(config Config, configDir, nodeName string) ConsulConf
 
 	isServer := config.Consul.Agent.Mode == "server"
 
+	dns := config.Consul.Agent.Ports.DNS
+	if dns == 0 {
+		dns = 53
+	}
+
 	consulConfig := ConsulConfig{
 		Server:             isServer,
 		Domain:             config.Consul.Agent.Domain,
@@ -75,7 +80,7 @@ func GenerateConfiguration(config Config, configDir, nodeName string) ConsulConf
 		DisableUpdateCheck: true,
 		Protocol:           config.Consul.Agent.ProtocolVersion,
 		Ports: ConsulConfigPorts{
-			DNS: 53,
+			DNS: dns,
 		},
 		DnsConfig: ConsulConfigDnsConfig{
 			AllowStale:      config.Consul.Agent.DnsConfig.AllowStale,

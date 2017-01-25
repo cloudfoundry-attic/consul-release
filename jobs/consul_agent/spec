@@ -23,6 +23,10 @@ properties:
     description: "Mode to run the agent in. (client or server)"
     default: client
 
+  consul.agent.ports.dns:
+      description: "DNS server port"
+      default: 53
+
   consul.agent.servers.lan:
     description: "LAN server addresses to join on start."
     default: []

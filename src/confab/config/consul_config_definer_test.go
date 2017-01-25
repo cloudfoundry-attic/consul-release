@@ -214,6 +214,21 @@ var _ = Describe("ConsulConfigDefiner", func() {
 				It("defaults to 53", func() {
 					Expect(consulConfig.Ports.DNS).To(Equal(53))
 				})
+
+				Context("when `consul.agent.ports.dns` is set", func() {
+					It("uses those values", func() {
+						consulConfig = config.GenerateConfiguration(config.Config{
+							Consul: config.ConfigConsul{
+								Agent: config.ConfigConsulAgent{
+									Ports: config.ConfigConsulAgentPorts{
+										DNS: 5300,
+									},
+								},
+							},
+						}, configDir, "")
+						Expect(consulConfig.Ports.DNS).To(Equal(5300))
+					})
+				})
 			})
 
 			Context("when `consul.agent.require_ssl` is true", func() {
