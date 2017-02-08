@@ -92,12 +92,18 @@ func defaultConfig() Config {
 	}
 }
 
-func ConfigFromJSON(configData []byte) (Config, error) {
+func ConfigFromJSON(configData, configConsulLinkData []byte) (Config, error) {
 	config := defaultConfig()
 
 	if err := json.Unmarshal(configData, &config); err != nil {
 		return Config{}, err
 	}
+
+	configConsul, err := mergedConsulConfig(config.Consul, configConsulLinkData)
+	if err != nil {
+		return Config{}, err
+	}
+	config.Consul = configConsul
 
 	if config.Path.DataDir == "" {
 		if config.Consul.Agent.Mode == "server" {
@@ -112,4 +118,14 @@ func ConfigFromJSON(configData []byte) (Config, error) {
 	}
 
 	return config, nil
+}
+
+func mergedConsulConfig(configConsul ConfigConsul, configConsulLinkData []byte) (ConfigConsul, error) {
+	if len(configConsulLinkData) > 0 {
+		if err := json.Unmarshal(configConsulLinkData, &configConsul); err != nil {
+			return ConfigConsul{}, err
+		}
+	}
+
+	return configConsul, nil
 }

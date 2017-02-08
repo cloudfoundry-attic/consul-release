@@ -23,11 +23,12 @@ const POLL_INTERVAL = time.Millisecond * 250
 
 var _ = Describe("confab", func() {
 	var (
-		tempDir         string
-		dataDir         string
-		consulConfigDir string
-		pidFile         *os.File
-		configFile      *os.File
+		tempDir              string
+		dataDir              string
+		consulConfigDir      string
+		pidFile              *os.File
+		configFile           *os.File
+		configConsulLinkFile *os.File
 	)
 
 	BeforeEach(func() {
@@ -56,6 +57,14 @@ var _ = Describe("confab", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		writeConfigurationFile(configFile.Name(), map[string]interface{}{})
+
+		configConsulLinkFile, err = ioutil.TempFile(tempDir, "config-consul-link-file")
+		Expect(err).NotTo(HaveOccurred())
+
+		err = configConsulLinkFile.Close()
+		Expect(err).NotTo(HaveOccurred())
+
+		writeConfigurationFile(configConsulLinkFile.Name(), map[string]interface{}{})
 
 		options := []byte(`{"Members": ["member-1", "member-2", "member-3"]}`)
 		err = ioutil.WriteFile(filepath.Join(consulConfigDir, "options.json"), options, 0600)
@@ -126,6 +135,7 @@ var _ = Describe("confab", func() {
 			stop := exec.Command(pathToConfab,
 				"stop",
 				"--config-file", configFile.Name(),
+				"--config-consul-link-file", configConsulLinkFile.Name(),
 			)
 			Eventually(stop.Run, COMMAND_TIMEOUT, COMMAND_TIMEOUT).Should(Succeed())
 
@@ -227,6 +237,7 @@ var _ = Describe("confab", func() {
 				"--recursor", "8.8.8.8",
 				"--recursor", "10.0.2.3",
 				"--config-file", configFile.Name(),
+				"--config-consul-link-file", configConsulLinkFile.Name(),
 			)
 			Eventually(start.Run, COMMAND_TIMEOUT, COMMAND_TIMEOUT).Should(Succeed())
 
@@ -244,6 +255,7 @@ var _ = Describe("confab", func() {
 				"--recursor", "8.8.8.8",
 				"--recursor", "10.0.2.3",
 				"--config-file", configFile.Name(),
+				"--config-consul-link-file", configConsulLinkFile.Name(),
 			)
 			Eventually(start.Start, COMMAND_TIMEOUT, COMMAND_TIMEOUT).Should(Succeed())
 
@@ -276,6 +288,7 @@ var _ = Describe("confab", func() {
 				"--recursor", "8.8.8.8",
 				"--recursor", "10.0.2.3",
 				"--config-file", configFile.Name(),
+				"--config-consul-link-file", configConsulLinkFile.Name(),
 			)
 			Eventually(start.Start, COMMAND_TIMEOUT, COMMAND_TIMEOUT).Should(Succeed())
 
@@ -336,6 +349,7 @@ var _ = Describe("confab", func() {
 				cmd := exec.Command(pathToConfab,
 					"start",
 					"--config-file", configFile.Name(),
+					"--config-consul-link-file", configConsulLinkFile.Name(),
 				)
 				Eventually(cmd.Run, COMMAND_TIMEOUT, COMMAND_TIMEOUT).Should(Succeed())
 
@@ -384,6 +398,7 @@ var _ = Describe("confab", func() {
 				cmd := exec.Command(pathToConfab,
 					"start",
 					"--config-file", configFile.Name(),
+					"--config-consul-link-file", configConsulLinkFile.Name(),
 				)
 				Eventually(cmd.Run, COMMAND_TIMEOUT, COMMAND_TIMEOUT).Should(Succeed())
 
@@ -457,6 +472,7 @@ var _ = Describe("confab", func() {
 				cmd := exec.Command(pathToConfab,
 					"start",
 					"--config-file", configFile.Name(),
+					"--config-consul-link-file", configConsulLinkFile.Name(),
 				)
 
 				start := time.Now()
@@ -499,6 +515,7 @@ var _ = Describe("confab", func() {
 			cmd := exec.Command(pathToConfab,
 				"start",
 				"--config-file", configFile.Name(),
+				"--config-consul-link-file", configConsulLinkFile.Name(),
 			)
 			Eventually(cmd.Run, COMMAND_TIMEOUT, COMMAND_TIMEOUT).Should(Succeed())
 
@@ -516,6 +533,7 @@ var _ = Describe("confab", func() {
 			cmd = exec.Command(pathToConfab,
 				"stop",
 				"--config-file", configFile.Name(),
+				"--config-consul-link-file", configConsulLinkFile.Name(),
 			)
 			Eventually(cmd.Run, COMMAND_TIMEOUT, COMMAND_TIMEOUT).Should(Succeed())
 
@@ -580,6 +598,7 @@ var _ = Describe("confab", func() {
 				cmd := exec.Command(pathToConfab,
 					"--recursor=8.8.8.8",
 					"--config-file", configFile.Name(),
+					"--config-consul-link-file", configConsulLinkFile.Name(),
 				)
 				buffer := bytes.NewBuffer([]byte{})
 				cmd.Stderr = buffer
@@ -592,7 +611,8 @@ var _ = Describe("confab", func() {
 		Context("when an invalid command is provided", func() {
 			It("returns a non-zero status code and prints usage", func() {
 				cmd := exec.Command(pathToConfab, "banana",
-					"--config-file", configFile.Name())
+					"--config-file", configFile.Name(),
+					"--config-consul-link-file", configConsulLinkFile.Name())
 				buffer := bytes.NewBuffer([]byte{})
 				cmd.Stderr = buffer
 				Eventually(cmd.Run, COMMAND_TIMEOUT, COMMAND_TIMEOUT).ShouldNot(Succeed())
@@ -604,7 +624,8 @@ var _ = Describe("confab", func() {
 		Context("expected-member is missing", func() {
 			It("prints an error and usage", func() {
 				cmd := exec.Command(pathToConfab, "start",
-					"--config-file", configFile.Name())
+					"--config-file", configFile.Name(),
+					"--config-consul-link-file", configConsulLinkFile.Name())
 				buffer := bytes.NewBuffer([]byte{})
 				cmd.Stderr = buffer
 				Eventually(cmd.Run, COMMAND_TIMEOUT, COMMAND_TIMEOUT).ShouldNot(Succeed())
@@ -634,7 +655,8 @@ var _ = Describe("confab", func() {
 
 			It("prints an error and usage", func() {
 				cmd := exec.Command(pathToConfab, "start",
-					"--config-file", configFile.Name())
+					"--config-file", configFile.Name(),
+					"--config-consul-link-file", configConsulLinkFile.Name())
 				buffer := bytes.NewBuffer([]byte{})
 				cmd.Stderr = buffer
 				Eventually(cmd.Run, COMMAND_TIMEOUT, COMMAND_TIMEOUT).ShouldNot(Succeed())
@@ -664,7 +686,8 @@ var _ = Describe("confab", func() {
 
 			It("prints an error and usage", func() {
 				cmd := exec.Command(pathToConfab, "start",
-					"--config-file", configFile.Name())
+					"--config-file", configFile.Name(),
+					"--config-consul-link-file", configConsulLinkFile.Name())
 				buffer := bytes.NewBuffer([]byte{})
 				cmd.Stderr = buffer
 				Eventually(cmd.Run, COMMAND_TIMEOUT, COMMAND_TIMEOUT).ShouldNot(Succeed())
@@ -694,7 +717,8 @@ var _ = Describe("confab", func() {
 
 			It("prints an error and usage", func() {
 				cmd := exec.Command(pathToConfab, "start",
-					"--config-file", configFile.Name())
+					"--config-file", configFile.Name(),
+					"--config-consul-link-file", configConsulLinkFile.Name())
 				buffer := bytes.NewBuffer([]byte{})
 				cmd.Stderr = buffer
 				Eventually(cmd.Run, COMMAND_TIMEOUT, COMMAND_TIMEOUT).ShouldNot(Succeed())
@@ -726,12 +750,14 @@ var _ = Describe("confab", func() {
 				cmd := exec.Command(pathToConfab,
 					"start",
 					"--config-file", configFile.Name(),
+					"--config-consul-link-file", configConsulLinkFile.Name(),
 				)
 				Eventually(cmd.Run, COMMAND_TIMEOUT, COMMAND_TIMEOUT).Should(Succeed())
 
 				cmd = exec.Command(pathToConfab,
 					"start",
 					"--config-file", configFile.Name(),
+					"--config-consul-link-file", configConsulLinkFile.Name(),
 				)
 
 				stdout := bytes.NewBuffer([]byte{})
@@ -780,6 +806,7 @@ var _ = Describe("confab", func() {
 				cmd := exec.Command(pathToConfab,
 					"start",
 					"--config-file", configFile.Name(),
+					"--config-consul-link-file", configConsulLinkFile.Name(),
 				)
 				buffer := bytes.NewBuffer([]byte{})
 				cmd.Stderr = buffer
@@ -832,6 +859,7 @@ var _ = Describe("confab", func() {
 				cmd := exec.Command(pathToConfab,
 					"start",
 					"--config-file", tmpFile.Name(),
+					"--config-consul-link-file", configConsulLinkFile.Name(),
 				)
 				buffer := bytes.NewBuffer([]byte{})
 				cmd.Stderr = buffer
@@ -879,6 +907,7 @@ var _ = Describe("confab", func() {
 				cmd := exec.Command(pathToConfab,
 					"start",
 					"--config-file", configFile.Name(),
+					"--config-consul-link-file", configConsulLinkFile.Name(),
 				)
 				buffer := bytes.NewBuffer([]byte{})
 				cmd.Stderr = buffer

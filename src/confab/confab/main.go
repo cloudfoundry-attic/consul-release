@@ -42,9 +42,10 @@ func (ss *stringSlice) Set(value string) error {
 }
 
 var (
-	recursors  stringSlice
-	configFile string
-	foreground bool
+	recursors            stringSlice
+	configFile           string
+	configConsulLinkFile string
+	foreground           bool
 
 	stdout = log.New(os.Stdout, "", 0)
 	stderr = log.New(os.Stderr, "", 0)
@@ -54,6 +55,7 @@ func main() {
 	flagSet := flag.NewFlagSet("flags", flag.ContinueOnError)
 	flagSet.Var(&recursors, "recursor", "specifies the address of an upstream DNS `server`, may be specified multiple times")
 	flagSet.StringVar(&configFile, "config-file", "", "specifies the config `file`")
+	flagSet.StringVar(&configConsulLinkFile, "config-consul-link-file", "", "specifies the consul link config `file`")
 	flagSet.BoolVar(&foreground, "foreground", false, "if true confab will wait for consul to exit")
 
 	if len(os.Args) < 2 {
@@ -70,7 +72,13 @@ func main() {
 		os.Exit(1)
 	}
 
-	cfg, err := config.ConfigFromJSON(configFileContents)
+	configConsulLinkFileContents, err := ioutil.ReadFile(configConsulLinkFile)
+	if err != nil {
+		stderr.Printf("error reading configuration file: %s", err)
+		os.Exit(1)
+	}
+
+	cfg, err := config.ConfigFromJSON(configFileContents, configConsulLinkFileContents)
 	if err != nil {
 		stderr.Printf("error reading configuration file: %s", err)
 		os.Exit(1)
