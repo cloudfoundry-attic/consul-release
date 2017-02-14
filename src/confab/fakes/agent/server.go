@@ -9,6 +9,7 @@ import (
 
 	"github.com/hashicorp/consul/api"
 	"github.com/hashicorp/consul/command/agent"
+	"github.com/hashicorp/consul/logger"
 )
 
 type Server struct {
@@ -93,7 +94,7 @@ func (s *Server) ServeTCP() {
 		})
 	}
 
-	agentRPCServer := agent.NewAgentRPC(mockAgent, s.TCPListener, os.Stderr, agent.NewLogWriter(42))
+	agentRPCServer := agent.NewAgentRPC(mockAgent, s.TCPListener, os.Stderr, logger.NewLogWriter(42))
 
 	var (
 		useKeyCallCount     int

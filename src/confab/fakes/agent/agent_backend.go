@@ -10,8 +10,8 @@ import (
 )
 
 type FakeAgentBackend struct {
-	rpcMutex              sync.RWMutex
 	ForceLeaveStub        func(string) error
+	forceLeaveMutex       sync.RWMutex
 	forceLeaveArgsForCall []struct {
 		arg1 string
 	}
@@ -19,6 +19,7 @@ type FakeAgentBackend struct {
 		result1 error
 	}
 	JoinWANStub        func([]string) (int, error)
+	joinWANMutex       sync.RWMutex
 	joinWANArgsForCall []struct {
 		arg1 []string
 	}
@@ -27,6 +28,7 @@ type FakeAgentBackend struct {
 		result2 error
 	}
 	JoinLANStub        func([]string) (int, error)
+	joinLANMutex       sync.RWMutex
 	joinLANArgsForCall []struct {
 		arg1 []string
 	}
@@ -35,73 +37,95 @@ type FakeAgentBackend struct {
 		result2 error
 	}
 	LANMembersStub        func() []serf.Member
+	lANMembersMutex       sync.RWMutex
 	lANMembersArgsForCall []struct{}
 	lANMembersReturns     struct {
 		result1 []serf.Member
 	}
 	WANMembersStub        func() []serf.Member
+	wANMembersMutex       sync.RWMutex
 	wANMembersArgsForCall []struct{}
 	wANMembersReturns     struct {
 		result1 []serf.Member
 	}
 	LeaveStub        func() error
+	leaveMutex       sync.RWMutex
 	leaveArgsForCall []struct{}
 	leaveReturns     struct {
 		result1 error
 	}
 	ShutdownStub        func() error
+	shutdownMutex       sync.RWMutex
 	shutdownArgsForCall []struct{}
 	shutdownReturns     struct {
 		result1 error
 	}
 	StatsStub        func() map[string]map[string]string
+	statsMutex       sync.RWMutex
 	statsArgsForCall []struct{}
 	statsReturns     struct {
 		result1 map[string]map[string]string
 	}
-	ListKeysStub        func(string) (*structs.KeyringResponses, error)
+	ListKeysStub        func(string, uint8) (*structs.KeyringResponses, error)
+	listKeysMutex       sync.RWMutex
 	listKeysArgsForCall []struct {
 		arg1 string
+		arg2 uint8
 	}
 	listKeysReturns struct {
 		result1 *structs.KeyringResponses
 		result2 error
 	}
-	InstallKeyStub        func(string, string) (*structs.KeyringResponses, error)
+	InstallKeyStub        func(string, string, uint8) (*structs.KeyringResponses, error)
+	installKeyMutex       sync.RWMutex
 	installKeyArgsForCall []struct {
 		arg1 string
 		arg2 string
+		arg3 uint8
 	}
 	installKeyReturns struct {
 		result1 *structs.KeyringResponses
 		result2 error
 	}
-	UseKeyStub        func(string, string) (*structs.KeyringResponses, error)
+	UseKeyStub        func(string, string, uint8) (*structs.KeyringResponses, error)
+	useKeyMutex       sync.RWMutex
 	useKeyArgsForCall []struct {
 		arg1 string
 		arg2 string
+		arg3 uint8
 	}
 	useKeyReturns struct {
 		result1 *structs.KeyringResponses
 		result2 error
 	}
-	RemoveKeyStub        func(string, string) (*structs.KeyringResponses, error)
+	RemoveKeyStub        func(string, string, uint8) (*structs.KeyringResponses, error)
+	removeKeyMutex       sync.RWMutex
 	removeKeyArgsForCall []struct {
 		arg1 string
 		arg2 string
+		arg3 uint8
 	}
 	removeKeyReturns struct {
 		result1 *structs.KeyringResponses
 		result2 error
 	}
+	LogStub        func(string, ...interface{})
+	logMutex       sync.RWMutex
+	logArgsForCall []struct {
+		arg1 string
+		arg2 []interface{}
+	}
+	invocations      map[string][][]interface{}
+	invocationsMutex sync.RWMutex
 }
 
 func (fake *FakeAgentBackend) ForceLeave(arg1 string) error {
-	fake.rpcMutex.Lock()
+	fake.forceLeaveMutex.Lock()
 	fake.forceLeaveArgsForCall = append(fake.forceLeaveArgsForCall, struct {
 		arg1 string
 	}{arg1})
-	fake.rpcMutex.Unlock()
+	fake.recordInvocation("ForceLeave", []interface{}{arg1})
+	fake.forceLeaveMutex.Unlock()
 	if fake.ForceLeaveStub != nil {
 		return fake.ForceLeaveStub(arg1)
 	} else {
@@ -110,14 +134,14 @@ func (fake *FakeAgentBackend) ForceLeave(arg1 string) error {
 }
 
 func (fake *FakeAgentBackend) ForceLeaveCallCount() int {
-	fake.rpcMutex.RLock()
-	defer fake.rpcMutex.RUnlock()
+	fake.forceLeaveMutex.RLock()
+	defer fake.forceLeaveMutex.RUnlock()
 	return len(fake.forceLeaveArgsForCall)
 }
 
 func (fake *FakeAgentBackend) ForceLeaveArgsForCall(i int) string {
-	fake.rpcMutex.RLock()
-	defer fake.rpcMutex.RUnlock()
+	fake.forceLeaveMutex.RLock()
+	defer fake.forceLeaveMutex.RUnlock()
 	return fake.forceLeaveArgsForCall[i].arg1
 }
 
@@ -129,11 +153,17 @@ func (fake *FakeAgentBackend) ForceLeaveReturns(result1 error) {
 }
 
 func (fake *FakeAgentBackend) JoinWAN(arg1 []string) (int, error) {
-	fake.rpcMutex.Lock()
+	var arg1Copy []string
+	if arg1 != nil {
+		arg1Copy = make([]string, len(arg1))
+		copy(arg1Copy, arg1)
+	}
+	fake.joinWANMutex.Lock()
 	fake.joinWANArgsForCall = append(fake.joinWANArgsForCall, struct {
 		arg1 []string
-	}{arg1})
-	fake.rpcMutex.Unlock()
+	}{arg1Copy})
+	fake.recordInvocation("JoinWAN", []interface{}{arg1Copy})
+	fake.joinWANMutex.Unlock()
 	if fake.JoinWANStub != nil {
 		return fake.JoinWANStub(arg1)
 	} else {
@@ -142,14 +172,14 @@ func (fake *FakeAgentBackend) JoinWAN(arg1 []string) (int, error) {
 }
 
 func (fake *FakeAgentBackend) JoinWANCallCount() int {
-	fake.rpcMutex.RLock()
-	defer fake.rpcMutex.RUnlock()
+	fake.joinWANMutex.RLock()
+	defer fake.joinWANMutex.RUnlock()
 	return len(fake.joinWANArgsForCall)
 }
 
 func (fake *FakeAgentBackend) JoinWANArgsForCall(i int) []string {
-	fake.rpcMutex.RLock()
-	defer fake.rpcMutex.RUnlock()
+	fake.joinWANMutex.RLock()
+	defer fake.joinWANMutex.RUnlock()
 	return fake.joinWANArgsForCall[i].arg1
 }
 
@@ -162,11 +192,17 @@ func (fake *FakeAgentBackend) JoinWANReturns(result1 int, result2 error) {
 }
 
 func (fake *FakeAgentBackend) JoinLAN(arg1 []string) (int, error) {
-	fake.rpcMutex.Lock()
+	var arg1Copy []string
+	if arg1 != nil {
+		arg1Copy = make([]string, len(arg1))
+		copy(arg1Copy, arg1)
+	}
+	fake.joinLANMutex.Lock()
 	fake.joinLANArgsForCall = append(fake.joinLANArgsForCall, struct {
 		arg1 []string
-	}{arg1})
-	fake.rpcMutex.Unlock()
+	}{arg1Copy})
+	fake.recordInvocation("JoinLAN", []interface{}{arg1Copy})
+	fake.joinLANMutex.Unlock()
 	if fake.JoinLANStub != nil {
 		return fake.JoinLANStub(arg1)
 	} else {
@@ -175,14 +211,14 @@ func (fake *FakeAgentBackend) JoinLAN(arg1 []string) (int, error) {
 }
 
 func (fake *FakeAgentBackend) JoinLANCallCount() int {
-	fake.rpcMutex.RLock()
-	defer fake.rpcMutex.RUnlock()
+	fake.joinLANMutex.RLock()
+	defer fake.joinLANMutex.RUnlock()
 	return len(fake.joinLANArgsForCall)
 }
 
 func (fake *FakeAgentBackend) JoinLANArgsForCall(i int) []string {
-	fake.rpcMutex.RLock()
-	defer fake.rpcMutex.RUnlock()
+	fake.joinLANMutex.RLock()
+	defer fake.joinLANMutex.RUnlock()
 	return fake.joinLANArgsForCall[i].arg1
 }
 
@@ -195,9 +231,10 @@ func (fake *FakeAgentBackend) JoinLANReturns(result1 int, result2 error) {
 }
 
 func (fake *FakeAgentBackend) LANMembers() []serf.Member {
-	fake.rpcMutex.Lock()
+	fake.lANMembersMutex.Lock()
 	fake.lANMembersArgsForCall = append(fake.lANMembersArgsForCall, struct{}{})
-	fake.rpcMutex.Unlock()
+	fake.recordInvocation("LANMembers", []interface{}{})
+	fake.lANMembersMutex.Unlock()
 	if fake.LANMembersStub != nil {
 		return fake.LANMembersStub()
 	} else {
@@ -206,8 +243,8 @@ func (fake *FakeAgentBackend) LANMembers() []serf.Member {
 }
 
 func (fake *FakeAgentBackend) LANMembersCallCount() int {
-	fake.rpcMutex.RLock()
-	defer fake.rpcMutex.RUnlock()
+	fake.lANMembersMutex.RLock()
+	defer fake.lANMembersMutex.RUnlock()
 	return len(fake.lANMembersArgsForCall)
 }
 
@@ -219,9 +256,10 @@ func (fake *FakeAgentBackend) LANMembersReturns(result1 []serf.Member) {
 }
 
 func (fake *FakeAgentBackend) WANMembers() []serf.Member {
-	fake.rpcMutex.Lock()
+	fake.wANMembersMutex.Lock()
 	fake.wANMembersArgsForCall = append(fake.wANMembersArgsForCall, struct{}{})
-	fake.rpcMutex.Unlock()
+	fake.recordInvocation("WANMembers", []interface{}{})
+	fake.wANMembersMutex.Unlock()
 	if fake.WANMembersStub != nil {
 		return fake.WANMembersStub()
 	} else {
@@ -230,8 +268,8 @@ func (fake *FakeAgentBackend) WANMembers() []serf.Member {
 }
 
 func (fake *FakeAgentBackend) WANMembersCallCount() int {
-	fake.rpcMutex.RLock()
-	defer fake.rpcMutex.RUnlock()
+	fake.wANMembersMutex.RLock()
+	defer fake.wANMembersMutex.RUnlock()
 	return len(fake.wANMembersArgsForCall)
 }
 
@@ -243,9 +281,10 @@ func (fake *FakeAgentBackend) WANMembersReturns(result1 []serf.Member) {
 }
 
 func (fake *FakeAgentBackend) Leave() error {
-	fake.rpcMutex.Lock()
+	fake.leaveMutex.Lock()
 	fake.leaveArgsForCall = append(fake.leaveArgsForCall, struct{}{})
-	fake.rpcMutex.Unlock()
+	fake.recordInvocation("Leave", []interface{}{})
+	fake.leaveMutex.Unlock()
 	if fake.LeaveStub != nil {
 		return fake.LeaveStub()
 	} else {
@@ -254,8 +293,8 @@ func (fake *FakeAgentBackend) Leave() error {
 }
 
 func (fake *FakeAgentBackend) LeaveCallCount() int {
-	fake.rpcMutex.RLock()
-	defer fake.rpcMutex.RUnlock()
+	fake.leaveMutex.RLock()
+	defer fake.leaveMutex.RUnlock()
 	return len(fake.leaveArgsForCall)
 }
 
@@ -267,9 +306,10 @@ func (fake *FakeAgentBackend) LeaveReturns(result1 error) {
 }
 
 func (fake *FakeAgentBackend) Shutdown() error {
-	fake.rpcMutex.Lock()
+	fake.shutdownMutex.Lock()
 	fake.shutdownArgsForCall = append(fake.shutdownArgsForCall, struct{}{})
-	fake.rpcMutex.Unlock()
+	fake.recordInvocation("Shutdown", []interface{}{})
+	fake.shutdownMutex.Unlock()
 	if fake.ShutdownStub != nil {
 		return fake.ShutdownStub()
 	} else {
@@ -278,8 +318,8 @@ func (fake *FakeAgentBackend) Shutdown() error {
 }
 
 func (fake *FakeAgentBackend) ShutdownCallCount() int {
-	fake.rpcMutex.RLock()
-	defer fake.rpcMutex.RUnlock()
+	fake.shutdownMutex.RLock()
+	defer fake.shutdownMutex.RUnlock()
 	return len(fake.shutdownArgsForCall)
 }
 
@@ -291,9 +331,10 @@ func (fake *FakeAgentBackend) ShutdownReturns(result1 error) {
 }
 
 func (fake *FakeAgentBackend) Stats() map[string]map[string]string {
-	fake.rpcMutex.Lock()
+	fake.statsMutex.Lock()
 	fake.statsArgsForCall = append(fake.statsArgsForCall, struct{}{})
-	fake.rpcMutex.Unlock()
+	fake.recordInvocation("Stats", []interface{}{})
+	fake.statsMutex.Unlock()
 	if fake.StatsStub != nil {
 		return fake.StatsStub()
 	} else {
@@ -302,8 +343,8 @@ func (fake *FakeAgentBackend) Stats() map[string]map[string]string {
 }
 
 func (fake *FakeAgentBackend) StatsCallCount() int {
-	fake.rpcMutex.RLock()
-	defer fake.rpcMutex.RUnlock()
+	fake.statsMutex.RLock()
+	defer fake.statsMutex.RUnlock()
 	return len(fake.statsArgsForCall)
 }
 
@@ -314,29 +355,31 @@ func (fake *FakeAgentBackend) StatsReturns(result1 map[string]map[string]string)
 	}{result1}
 }
 
-func (fake *FakeAgentBackend) ListKeys(arg1 string) (*structs.KeyringResponses, error) {
-	fake.rpcMutex.Lock()
+func (fake *FakeAgentBackend) ListKeys(arg1 string, arg2 uint8) (*structs.KeyringResponses, error) {
+	fake.listKeysMutex.Lock()
 	fake.listKeysArgsForCall = append(fake.listKeysArgsForCall, struct {
 		arg1 string
-	}{arg1})
-	fake.rpcMutex.Unlock()
+		arg2 uint8
+	}{arg1, arg2})
+	fake.recordInvocation("ListKeys", []interface{}{arg1, arg2})
+	fake.listKeysMutex.Unlock()
 	if fake.ListKeysStub != nil {
-		return fake.ListKeysStub(arg1)
+		return fake.ListKeysStub(arg1, arg2)
 	} else {
 		return fake.listKeysReturns.result1, fake.listKeysReturns.result2
 	}
 }
 
 func (fake *FakeAgentBackend) ListKeysCallCount() int {
-	fake.rpcMutex.RLock()
-	defer fake.rpcMutex.RUnlock()
+	fake.listKeysMutex.RLock()
+	defer fake.listKeysMutex.RUnlock()
 	return len(fake.listKeysArgsForCall)
 }
 
-func (fake *FakeAgentBackend) ListKeysArgsForCall(i int) string {
-	fake.rpcMutex.RLock()
-	defer fake.rpcMutex.RUnlock()
-	return fake.listKeysArgsForCall[i].arg1
+func (fake *FakeAgentBackend) ListKeysArgsForCall(i int) (string, uint8) {
+	fake.listKeysMutex.RLock()
+	defer fake.listKeysMutex.RUnlock()
+	return fake.listKeysArgsForCall[i].arg1, fake.listKeysArgsForCall[i].arg2
 }
 
 func (fake *FakeAgentBackend) ListKeysReturns(result1 *structs.KeyringResponses, result2 error) {
@@ -347,30 +390,32 @@ func (fake *FakeAgentBackend) ListKeysReturns(result1 *structs.KeyringResponses,
 	}{result1, result2}
 }
 
-func (fake *FakeAgentBackend) InstallKey(arg1 string, arg2 string) (*structs.KeyringResponses, error) {
-	fake.rpcMutex.Lock()
+func (fake *FakeAgentBackend) InstallKey(arg1 string, arg2 string, arg3 uint8) (*structs.KeyringResponses, error) {
+	fake.installKeyMutex.Lock()
 	fake.installKeyArgsForCall = append(fake.installKeyArgsForCall, struct {
 		arg1 string
 		arg2 string
-	}{arg1, arg2})
-	fake.rpcMutex.Unlock()
+		arg3 uint8
+	}{arg1, arg2, arg3})
+	fake.recordInvocation("InstallKey", []interface{}{arg1, arg2, arg3})
+	fake.installKeyMutex.Unlock()
 	if fake.InstallKeyStub != nil {
-		return fake.InstallKeyStub(arg1, arg2)
+		return fake.InstallKeyStub(arg1, arg2, arg3)
 	} else {
 		return fake.installKeyReturns.result1, fake.installKeyReturns.result2
 	}
 }
 
 func (fake *FakeAgentBackend) InstallKeyCallCount() int {
-	fake.rpcMutex.RLock()
-	defer fake.rpcMutex.RUnlock()
+	fake.installKeyMutex.RLock()
+	defer fake.installKeyMutex.RUnlock()
 	return len(fake.installKeyArgsForCall)
 }
 
-func (fake *FakeAgentBackend) InstallKeyArgsForCall(i int) (string, string) {
-	fake.rpcMutex.RLock()
-	defer fake.rpcMutex.RUnlock()
-	return fake.installKeyArgsForCall[i].arg1, fake.installKeyArgsForCall[i].arg2
+func (fake *FakeAgentBackend) InstallKeyArgsForCall(i int) (string, string, uint8) {
+	fake.installKeyMutex.RLock()
+	defer fake.installKeyMutex.RUnlock()
+	return fake.installKeyArgsForCall[i].arg1, fake.installKeyArgsForCall[i].arg2, fake.installKeyArgsForCall[i].arg3
 }
 
 func (fake *FakeAgentBackend) InstallKeyReturns(result1 *structs.KeyringResponses, result2 error) {
@@ -381,30 +426,32 @@ func (fake *FakeAgentBackend) InstallKeyReturns(result1 *structs.KeyringResponse
 	}{result1, result2}
 }
 
-func (fake *FakeAgentBackend) UseKey(arg1 string, arg2 string) (*structs.KeyringResponses, error) {
-	fake.rpcMutex.Lock()
+func (fake *FakeAgentBackend) UseKey(arg1 string, arg2 string, arg3 uint8) (*structs.KeyringResponses, error) {
+	fake.useKeyMutex.Lock()
 	fake.useKeyArgsForCall = append(fake.useKeyArgsForCall, struct {
 		arg1 string
 		arg2 string
-	}{arg1, arg2})
-	fake.rpcMutex.Unlock()
+		arg3 uint8
+	}{arg1, arg2, arg3})
+	fake.recordInvocation("UseKey", []interface{}{arg1, arg2, arg3})
+	fake.useKeyMutex.Unlock()
 	if fake.UseKeyStub != nil {
-		return fake.UseKeyStub(arg1, arg2)
+		return fake.UseKeyStub(arg1, arg2, arg3)
 	} else {
 		return fake.useKeyReturns.result1, fake.useKeyReturns.result2
 	}
 }
 
 func (fake *FakeAgentBackend) UseKeyCallCount() int {
-	fake.rpcMutex.RLock()
-	defer fake.rpcMutex.RUnlock()
+	fake.useKeyMutex.RLock()
+	defer fake.useKeyMutex.RUnlock()
 	return len(fake.useKeyArgsForCall)
 }
 
-func (fake *FakeAgentBackend) UseKeyArgsForCall(i int) (string, string) {
-	fake.rpcMutex.RLock()
-	defer fake.rpcMutex.RUnlock()
-	return fake.useKeyArgsForCall[i].arg1, fake.useKeyArgsForCall[i].arg2
+func (fake *FakeAgentBackend) UseKeyArgsForCall(i int) (string, string, uint8) {
+	fake.useKeyMutex.RLock()
+	defer fake.useKeyMutex.RUnlock()
+	return fake.useKeyArgsForCall[i].arg1, fake.useKeyArgsForCall[i].arg2, fake.useKeyArgsForCall[i].arg3
 }
 
 func (fake *FakeAgentBackend) UseKeyReturns(result1 *structs.KeyringResponses, result2 error) {
@@ -415,30 +462,32 @@ func (fake *FakeAgentBackend) UseKeyReturns(result1 *structs.KeyringResponses, r
 	}{result1, result2}
 }
 
-func (fake *FakeAgentBackend) RemoveKey(arg1 string, arg2 string) (*structs.KeyringResponses, error) {
-	fake.rpcMutex.Lock()
+func (fake *FakeAgentBackend) RemoveKey(arg1 string, arg2 string, arg3 uint8) (*structs.KeyringResponses, error) {
+	fake.removeKeyMutex.Lock()
 	fake.removeKeyArgsForCall = append(fake.removeKeyArgsForCall, struct {
 		arg1 string
 		arg2 string
-	}{arg1, arg2})
-	fake.rpcMutex.Unlock()
+		arg3 uint8
+	}{arg1, arg2, arg3})
+	fake.recordInvocation("RemoveKey", []interface{}{arg1, arg2, arg3})
+	fake.removeKeyMutex.Unlock()
 	if fake.RemoveKeyStub != nil {
-		return fake.RemoveKeyStub(arg1, arg2)
+		return fake.RemoveKeyStub(arg1, arg2, arg3)
 	} else {
 		return fake.removeKeyReturns.result1, fake.removeKeyReturns.result2
 	}
 }
 
 func (fake *FakeAgentBackend) RemoveKeyCallCount() int {
-	fake.rpcMutex.RLock()
-	defer fake.rpcMutex.RUnlock()
+	fake.removeKeyMutex.RLock()
+	defer fake.removeKeyMutex.RUnlock()
 	return len(fake.removeKeyArgsForCall)
 }
 
-func (fake *FakeAgentBackend) RemoveKeyArgsForCall(i int) (string, string) {
-	fake.rpcMutex.RLock()
-	defer fake.rpcMutex.RUnlock()
-	return fake.removeKeyArgsForCall[i].arg1, fake.removeKeyArgsForCall[i].arg2
+func (fake *FakeAgentBackend) RemoveKeyArgsForCall(i int) (string, string, uint8) {
+	fake.removeKeyMutex.RLock()
+	defer fake.removeKeyMutex.RUnlock()
+	return fake.removeKeyArgsForCall[i].arg1, fake.removeKeyArgsForCall[i].arg2, fake.removeKeyArgsForCall[i].arg3
 }
 
 func (fake *FakeAgentBackend) RemoveKeyReturns(result1 *structs.KeyringResponses, result2 error) {
@@ -447,6 +496,75 @@ func (fake *FakeAgentBackend) RemoveKeyReturns(result1 *structs.KeyringResponses
 		result1 *structs.KeyringResponses
 		result2 error
 	}{result1, result2}
+}
+
+func (fake *FakeAgentBackend) Log(arg1 string, arg2 ...interface{}) {
+	fake.logMutex.Lock()
+	fake.logArgsForCall = append(fake.logArgsForCall, struct {
+		arg1 string
+		arg2 []interface{}
+	}{arg1, arg2})
+	fake.recordInvocation("log", []interface{}{arg1, arg2})
+	fake.logMutex.Unlock()
+	if fake.LogStub != nil {
+		fake.LogStub(arg1, arg2...)
+	}
+}
+
+func (fake *FakeAgentBackend) LogCallCount() int {
+	fake.logMutex.RLock()
+	defer fake.logMutex.RUnlock()
+	return len(fake.logArgsForCall)
+}
+
+func (fake *FakeAgentBackend) LogArgsForCall(i int) (string, []interface{}) {
+	fake.logMutex.RLock()
+	defer fake.logMutex.RUnlock()
+	return fake.logArgsForCall[i].arg1, fake.logArgsForCall[i].arg2
+}
+
+func (fake *FakeAgentBackend) Invocations() map[string][][]interface{} {
+	fake.invocationsMutex.RLock()
+	defer fake.invocationsMutex.RUnlock()
+	fake.forceLeaveMutex.RLock()
+	defer fake.forceLeaveMutex.RUnlock()
+	fake.joinWANMutex.RLock()
+	defer fake.joinWANMutex.RUnlock()
+	fake.joinLANMutex.RLock()
+	defer fake.joinLANMutex.RUnlock()
+	fake.lANMembersMutex.RLock()
+	defer fake.lANMembersMutex.RUnlock()
+	fake.wANMembersMutex.RLock()
+	defer fake.wANMembersMutex.RUnlock()
+	fake.leaveMutex.RLock()
+	defer fake.leaveMutex.RUnlock()
+	fake.shutdownMutex.RLock()
+	defer fake.shutdownMutex.RUnlock()
+	fake.statsMutex.RLock()
+	defer fake.statsMutex.RUnlock()
+	fake.listKeysMutex.RLock()
+	defer fake.listKeysMutex.RUnlock()
+	fake.installKeyMutex.RLock()
+	defer fake.installKeyMutex.RUnlock()
+	fake.useKeyMutex.RLock()
+	defer fake.useKeyMutex.RUnlock()
+	fake.removeKeyMutex.RLock()
+	defer fake.removeKeyMutex.RUnlock()
+	fake.logMutex.RLock()
+	defer fake.logMutex.RUnlock()
+	return fake.invocations
+}
+
+func (fake *FakeAgentBackend) recordInvocation(key string, args []interface{}) {
+	fake.invocationsMutex.Lock()
+	defer fake.invocationsMutex.Unlock()
+	if fake.invocations == nil {
+		fake.invocations = map[string][][]interface{}{}
+	}
+	if fake.invocations[key] == nil {
+		fake.invocations[key] = [][]interface{}{}
+	}
+	fake.invocations[key] = append(fake.invocations[key], args)
 }
 
 var _ agent.AgentBackend = new(FakeAgentBackend)
