@@ -22,7 +22,7 @@ func HandleRPCErrors(info []agent.KeyringInfo) error {
 }
 
 func (c RPCClient) ListKeys() ([]string, error) {
-	response, err := c.RPCClient.ListKeys("")
+	response, err := c.RPCClient.ListKeys("", 0)
 	if err != nil {
 		return nil, err
 	}
@@ -43,7 +43,7 @@ func (c RPCClient) ListKeys() ([]string, error) {
 }
 
 func (c RPCClient) InstallKey(key string) error {
-	response, err := c.RPCClient.InstallKey(key, keyringToken)
+	response, err := c.RPCClient.InstallKey(key, keyringToken, 0)
 	if err != nil {
 		return err
 	}
@@ -57,7 +57,7 @@ func (c RPCClient) InstallKey(key string) error {
 }
 
 func (c RPCClient) UseKey(key string) error {
-	response, err := c.RPCClient.UseKey(key, keyringToken)
+	response, err := c.RPCClient.UseKey(key, keyringToken, 0)
 	if err != nil {
 		return err
 	}
@@ -71,7 +71,7 @@ func (c RPCClient) UseKey(key string) error {
 }
 
 func (c RPCClient) RemoveKey(key string) error {
-	response, err := c.RPCClient.RemoveKey(key, keyringToken)
+	response, err := c.RPCClient.RemoveKey(key, keyringToken, 0)
 	if err != nil {
 		return err
 	}

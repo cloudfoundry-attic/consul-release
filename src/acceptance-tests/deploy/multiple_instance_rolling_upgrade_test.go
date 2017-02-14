@@ -13,7 +13,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = PDescribe("Multiple instance rolling upgrade", func() {
+var _ = Describe("Multiple instance rolling upgrade", func() {
 	var (
 		manifest consul.ManifestV2
 		kv       consulclient.HTTPKV

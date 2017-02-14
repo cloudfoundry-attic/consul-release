@@ -64,3 +64,6 @@
 [submodule "src/acceptance-tests/testing/fake-dns-server/vendor/github.com/miekg/dns"]
 	path = src/acceptance-tests/testing/fake-dns-server/vendor/github.com/miekg/dns
 	url = https://github.com/miekg/dns.git
+[submodule "src/confab/vendor/github.com/hashicorp/go-sockaddr"]
+	path = src/confab/vendor/github.com/hashicorp/go-sockaddr
+	url = https://github.com/hashicorp/go-sockaddr
