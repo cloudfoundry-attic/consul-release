@@ -1,0 +1,7 @@
+<%=
+  consul_hash = {}
+  respond_to?(:if_link) && if_link('consul') do |consul_link|
+    consul_hash = consul_link.p('consul')
+  end
+  consul_hash.to_json
+%>
