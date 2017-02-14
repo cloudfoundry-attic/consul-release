@@ -14,6 +14,6 @@ function Unzip
 $BOSH_INSTALL_TARGET = Resolve-Path "${env:BOSH_INSTALL_TARGET}"
 
 New-Item -ItemType "directory" -Force "${BOSH_INSTALL_TARGET}/bin"
-Unzip "consul-windows/consul_0.7.1_windows_amd64.zip" "${BOSH_INSTALL_TARGET}/bin"
+Unzip "consul-windows/consul_0.7.4_windows_amd64.zip" "${BOSH_INSTALL_TARGET}/bin"
 
 Exit 0
