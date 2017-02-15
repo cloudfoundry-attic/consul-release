@@ -22,6 +22,11 @@ const (
 	TIMEOUT = 30 * time.Second
 )
 
+type dnsCallResponse struct {
+	addresses          []string
+	isGreaterThanDelay bool
+}
+
 var _ = Describe("recursor timeout", func() {
 	var (
 		turbulenceClient   turbulenceclient.Client
@@ -152,26 +157,32 @@ var _ = Describe("recursor timeout", func() {
 		})
 
 		By("successfully making a DNS query", func() {
-			var addresses []string
-
-			Eventually(func() (int64, error) {
-				var err error
-				dnsStartTime := time.Now()
-				addresses, err = tcClient.DNS("my-fake-server.fake.local")
-				if err != nil {
-					return 0, err
-				}
-				dnsElapsedTime := time.Since(dnsStartTime)
-				return dnsElapsedTime.Nanoseconds(), nil
-			}, "30s", "100ms").Should(BeNumerically(">", DELAY))
+			var expectedAddresses []string
 
 			// miekg/dns implementation responds with A and AAAA records regardless of the type of record requested
 			// therefore we're expected 4 IPs here
 			if config.WindowsClients {
-				Expect(addresses).To(Equal([]string{"10.2.3.4", "10.2.3.4"}))
+				expectedAddresses = []string{"10.2.3.4", "10.2.3.4"}
 			} else {
-				Expect(addresses).To(Equal([]string{"10.2.3.4", "10.2.3.4", "10.2.3.4", "10.2.3.4"}))
+				expectedAddresses = []string{"10.2.3.4", "10.2.3.4", "10.2.3.4", "10.2.3.4"}
 			}
+
+			Eventually(func() (dnsCallResponse, error) {
+				var err error
+				dnsStartTime := time.Now()
+				addresses, err := tcClient.DNS("my-fake-server.fake.local")
+				if err != nil {
+					return dnsCallResponse{}, err
+				}
+				dnsElapsedTime := time.Since(dnsStartTime)
+				return dnsCallResponse{
+					addresses:          addresses,
+					isGreaterThanDelay: dnsElapsedTime.Nanoseconds() > int64(DELAY),
+				}, nil
+			}, "1m", "100ms").Should(Equal(dnsCallResponse{
+				addresses:          expectedAddresses,
+				isGreaterThanDelay: true,
+			}))
 		})
 	})
 })
