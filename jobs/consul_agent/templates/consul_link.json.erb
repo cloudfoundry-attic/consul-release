@@ -3,6 +3,7 @@
 
   respond_to?(:if_link) && if_link('consul') do |consul_link|
     consul_hash = consul_link.p('consul')
+    consul_hash['agent']['servers']['lan'] = consul_link.instances.map(&:address)
   end
 
   consul_hash.to_json
