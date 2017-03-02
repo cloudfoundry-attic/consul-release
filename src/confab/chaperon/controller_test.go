@@ -269,17 +269,9 @@ var _ = Describe("Controller", func() {
 	})
 
 	Describe("StopAgent", func() {
-		var rpcClient *consulagent.RPCClient
-
-		BeforeEach(func() {
-			rpcClient = &consulagent.RPCClient{}
-		})
-
 		It("tells client to leave the cluster and waits for the agent to stop", func() {
-			controller.StopAgent(rpcClient)
+			controller.StopAgent()
 			Expect(agentClient.LeaveCall.CallCount).To(Equal(1))
-			Expect(agentClient.SetConsulRPCClientCall.CallCount).To(Equal(1))
-			Expect(agentClient.SetConsulRPCClientCall.Receives.ConsulRPCClient).To(Equal(&agent.RPCClient{*rpcClient}))
 			Expect(agentRunner.WaitCall.CallCount).To(Equal(1))
 			Expect(agentRunner.CleanupCall.CallCount).To(Equal(1))
 			Expect(logger.Messages()).To(ContainSequence([]fakes.LoggerMessage{
@@ -304,7 +296,7 @@ var _ = Describe("Controller", func() {
 			})
 
 			It("tells the runner to stop the agent", func() {
-				controller.StopAgent(rpcClient)
+				controller.StopAgent()
 				Expect(agentRunner.StopCall.CallCount).To(Equal(1))
 				Expect(agentRunner.WaitCall.CallCount).To(Equal(1))
 				Expect(agentRunner.CleanupCall.CallCount).To(Equal(1))
@@ -337,7 +329,7 @@ var _ = Describe("Controller", func() {
 				})
 
 				It("logs the error", func() {
-					controller.StopAgent(rpcClient)
+					controller.StopAgent()
 					Expect(logger.Messages()).To(ContainSequence([]fakes.LoggerMessage{
 						{
 							Action: "controller.stop-agent.leave",
@@ -373,7 +365,7 @@ var _ = Describe("Controller", func() {
 			})
 
 			It("logs the error", func() {
-				controller.StopAgent(rpcClient)
+				controller.StopAgent()
 				Expect(logger.Messages()).To(ContainSequence([]fakes.LoggerMessage{
 					{
 						Action: "controller.stop-agent.leave",
@@ -401,7 +393,7 @@ var _ = Describe("Controller", func() {
 			})
 
 			It("logs the error", func() {
-				controller.StopAgent(rpcClient)
+				controller.StopAgent()
 				Expect(logger.Messages()).To(ContainSequence([]fakes.LoggerMessage{
 					{
 						Action: "controller.stop-agent.leave",

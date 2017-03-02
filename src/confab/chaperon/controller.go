@@ -34,6 +34,10 @@ type agentClient interface {
 	SetConsulRPCClient(agent.ConsulRPCClient)
 	JoinMembers() error
 	Self() error
+	ListKeys() ([]string, error)
+	InstallKey(key string) error
+	UseKey(key string) error
+	RemoveKey(key string) error
 }
 
 type serviceDefiner interface {
@@ -146,11 +150,7 @@ func (c Controller) ConfigureClient() error {
 	return nil
 }
 
-func (c Controller) StopAgent(rpcClient *consulagent.RPCClient) {
-	if rpcClient != nil {
-		c.AgentClient.SetConsulRPCClient(&agent.RPCClient{*rpcClient})
-	}
-
+func (c Controller) StopAgent() {
 	c.Logger.Info("controller.stop-agent.leave")
 	if err := c.AgentClient.Leave(); err != nil {
 		c.Logger.Error("controller.stop-agent.leave.failed", err)

@@ -67,6 +67,40 @@ type AgentClient struct {
 			Errors []error
 		}
 	}
+	ListKeysCall struct {
+		CallCount int
+		Returns   struct {
+			Keys  []string
+			Error error
+		}
+	}
+	InstallKeyCall struct {
+		CallCount int
+		Receives  struct {
+			Key string
+		}
+		Returns struct {
+			Error error
+		}
+	}
+	UseKeyCall struct {
+		CallCount int
+		Receives  struct {
+			Key string
+		}
+		Returns struct {
+			Error error
+		}
+	}
+	RemoveKeyCall struct {
+		CallCount int
+		Receives  struct {
+			Key string
+		}
+		Returns struct {
+			Error error
+		}
+	}
 }
 
 func (c *AgentClient) Self() error {
@@ -120,4 +154,27 @@ func (c *AgentClient) Members(wan bool) ([]*api.AgentMember, error) {
 func (c *AgentClient) JoinMembers() error {
 	c.JoinMembersCall.CallCount++
 	return c.JoinMembersCall.Returns.Error
+}
+
+func (c *AgentClient) ListKeys() ([]string, error) {
+	c.ListKeysCall.CallCount++
+	return c.ListKeysCall.Returns.Keys, c.ListKeysCall.Returns.Error
+}
+
+func (c *AgentClient) InstallKey(key string) error {
+	c.InstallKeyCall.CallCount++
+	c.InstallKeyCall.Receives.Key = key
+	return c.InstallKeyCall.Returns.Error
+}
+
+func (c *AgentClient) UseKey(key string) error {
+	c.UseKeyCall.CallCount++
+	c.UseKeyCall.Receives.Key = key
+	return c.UseKeyCall.Returns.Error
+}
+
+func (c *AgentClient) RemoveKey(key string) error {
+	c.RemoveKeyCall.CallCount++
+	c.RemoveKeyCall.Receives.Key = key
+	return c.RemoveKeyCall.Returns.Error
 }

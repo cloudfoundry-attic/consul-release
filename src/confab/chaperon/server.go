@@ -11,7 +11,7 @@ type controller interface {
 	BootAgent(utils.Timeout) error
 	ConfigureServer(utils.Timeout, *agent.RPCClient) error
 	ConfigureClient() error
-	StopAgent(*agent.RPCClient)
+	StopAgent()
 }
 
 type configWriter interface {
@@ -60,9 +60,7 @@ func (s Server) Start(cfg config.Config, timeout utils.Timeout) error {
 	}
 
 	if cfg.Consul.Agent.Bootstrap {
-		if err := s.Stop(); err != nil {
-			return err
-		}
+		s.Stop()
 		if err := s.configWriter.Write(cfg); err != nil {
 			return err
 		}
@@ -83,9 +81,6 @@ func (s Server) Start(cfg config.Config, timeout utils.Timeout) error {
 	return nil
 }
 
-func (s Server) Stop() error {
-	rpcClient, err := s.newRPCClient("localhost:8400")
-	s.controller.StopAgent(rpcClient)
-
-	return err
+func (s Server) Stop() {
+	s.controller.StopAgent()
 }

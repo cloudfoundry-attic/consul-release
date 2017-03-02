@@ -44,9 +44,6 @@ type Controller struct {
 
 	StopAgentCall struct {
 		CallCount int
-		Receives  struct {
-			RPCClient *agent.RPCClient
-		}
 	}
 }
 
@@ -81,7 +78,6 @@ func (c *Controller) ConfigureClient() error {
 	return c.ConfigureClientCall.Returns.Error
 }
 
-func (c *Controller) StopAgent(rpcClient *agent.RPCClient) {
+func (c *Controller) StopAgent() {
 	c.StopAgentCall.CallCount++
-	c.StopAgentCall.Receives.RPCClient = rpcClient
 }

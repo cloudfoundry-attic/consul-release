@@ -100,7 +100,6 @@ var _ = Describe("Server", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(controller.StopAgentCall.CallCount).To(Equal(1))
-				Expect(controller.StopAgentCall.Receives.RPCClient).To(Equal(rpcClient))
 				Expect(rpcEndpoint).To(Equal("localhost:8400"))
 
 				Expect(controller.ConfigureServerCall.CallCount).To(Equal(1))
@@ -119,19 +118,6 @@ var _ = Describe("Server", func() {
 					err := server.Start(cfg, timeout)
 					Expect(err).To(MatchError("failed to check"))
 
-					Expect(configWriter.WriteCall.CallCount).To(Equal(1))
-					Expect(controller.WriteServiceDefinitionsCall.CallCount).To(Equal(1))
-					Expect(controller.BootAgentCall.CallCount).To(Equal(1))
-					Expect(controller.ConfigureServerCall.CallCount).To(Equal(0))
-				})
-
-				It("returns an error when the consul agent fails to stop", func() {
-					server = chaperon.NewServer(controller, configWriter, func(string) (*consulagent.RPCClient, error) {
-						return nil, errors.New("failed to create rpc client")
-					}, bootstrapChecker)
-
-					err := server.Start(cfg, timeout)
-					Expect(err).To(MatchError(errors.New("failed to create rpc client")))
 					Expect(configWriter.WriteCall.CallCount).To(Equal(1))
 					Expect(controller.WriteServiceDefinitionsCall.CallCount).To(Equal(1))
 					Expect(controller.BootAgentCall.CallCount).To(Equal(1))
@@ -226,26 +212,9 @@ var _ = Describe("Server", func() {
 	})
 
 	Describe("Stop", func() {
-		It("sets up an RPC client", func() {
-			err := server.Stop()
-			Expect(err).NotTo(HaveOccurred())
+		It("calls stop agent", func() {
+			server.Stop()
 			Expect(controller.StopAgentCall.CallCount).To(Equal(1))
-			Expect(controller.StopAgentCall.Receives.RPCClient).To(Equal(rpcClient))
-			Expect(rpcEndpoint).To(Equal("localhost:8400"))
-		})
-
-		Context("failure cases", func() {
-			Context("when constructing an RPC client fails", func() {
-				It("returns an error", func() {
-					server = chaperon.NewServer(controller, configWriter, func(string) (*consulagent.RPCClient, error) {
-						return nil, errors.New("failed to create rpc client")
-					}, bootstrapChecker)
-
-					err := server.Stop()
-					Expect(err).To(MatchError(errors.New("failed to create rpc client")))
-					Expect(controller.StopAgentCall.CallCount).To(Equal(1))
-				})
-			})
 		})
 	})
 })

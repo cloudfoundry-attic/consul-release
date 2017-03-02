@@ -26,7 +26,7 @@ import (
 
 type runner interface {
 	Start(config.Config, utils.Timeout) error
-	Stop() error
+	Stop()
 }
 
 type stringSlice []string
@@ -132,10 +132,11 @@ func main() {
 	}
 
 	agentClient := &agent.Client{
-		ExpectedMembers: cfg.Consul.Agent.Servers.LAN,
-		ConsulAPIAgent:  consulAPIClient.Agent(),
-		ConsulRPCClient: nil,
-		Logger:          logger,
+		ExpectedMembers:   cfg.Consul.Agent.Servers.LAN,
+		ConsulAPIAgent:    consulAPIClient.Agent(),
+		ConsulAPIOperator: consulAPIClient.Operator(),
+		ConsulRPCClient:   nil,
+		Logger:            logger,
 	}
 
 	retrier := utils.NewRetrier(clock.NewClock(), 1*time.Second)
@@ -154,7 +155,7 @@ func main() {
 	keyringRemover := chaperon.NewKeyringRemover(cfg.Path.KeyringFile, logger)
 	configWriter := chaperon.NewConfigWriter(cfg.Path.ConsulConfigDir, logger)
 
-	var r runner = chaperon.NewClient(controller, consulagent.NewRPCClient, keyringRemover, configWriter)
+	var r runner = chaperon.NewClient(controller, keyringRemover, configWriter)
 	if controller.Config.Consul.Agent.Mode == "server" {
 		bootstrapChecker := chaperon.NewBootstrapChecker(logger, agentClient, status.Client{ConsulAPIStatus: consulAPIClient.Status()}, time.Sleep)
 		r = chaperon.NewServer(controller, configWriter, consulagent.NewRPCClient, bootstrapChecker)
@@ -192,10 +193,7 @@ func main() {
 			}
 		}
 	case "stop":
-		if err := r.Stop(); err != nil {
-			stderr.Printf("error during stop: %s", err)
-			os.Exit(1)
-		}
+		r.Stop()
 	default:
 		printUsageAndExit(fmt.Sprintf("invalid COMMAND %q", os.Args[1]), flagSet)
 	}

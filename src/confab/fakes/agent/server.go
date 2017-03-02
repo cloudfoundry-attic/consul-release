@@ -50,6 +50,12 @@ func (s *Server) Serve() error {
 }
 
 func (s *Server) ServeHTTP() {
+	var (
+		useKeyCallCount     int
+		installKeyCallCount int
+		leaveCallCount      int
+	)
+
 	mux := http.NewServeMux()
 	mux.HandleFunc("/v1/agent/members", func(w http.ResponseWriter, req *http.Request) {
 		var members []api.AgentMember
@@ -70,9 +76,34 @@ func (s *Server) ServeHTTP() {
 	mux.HandleFunc("/v1/agent/join/", func(w http.ResponseWriter, req *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	})
+	mux.HandleFunc("/v1/agent/leave", func(w http.ResponseWriter, req *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		leaveCallCount++
+		s.OutputWriter.LeaveCalled()
+		s.DidLeave = true
+	})
 	mux.HandleFunc("/v1/status/leader", func(w http.ResponseWriter, req *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte(`""`)) //s.Members[0]
+	})
+	mux.HandleFunc("/v1/operator/keyring", func(w http.ResponseWriter, req *http.Request) {
+		switch req.Method {
+		case "GET":
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte(`[]`))
+		case "POST":
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte(`[]`))
+			installKeyCallCount++
+			s.OutputWriter.InstallKeyCalled()
+		case "PUT":
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte(`[]`))
+			useKeyCallCount++
+			s.OutputWriter.UseKeyCalled()
+		case "DELETE":
+			w.WriteHeader(http.StatusInternalServerError)
+		}
 	})
 
 	server := &http.Server{
@@ -97,25 +128,13 @@ func (s *Server) ServeTCP() {
 	agentRPCServer := agent.NewAgentRPC(mockAgent, s.TCPListener, os.Stderr, logger.NewLogWriter(42))
 
 	var (
-		useKeyCallCount     int
-		installKeyCallCount int
-		leaveCallCount      int
-		statsCallCount      int
+		statsCallCount int
 	)
 
 	for {
 		switch {
-		case mockAgent.UseKeyCallCount() > useKeyCallCount:
-			useKeyCallCount++
-			s.OutputWriter.UseKeyCalled()
-		case mockAgent.InstallKeyCallCount() > installKeyCallCount:
-			installKeyCallCount++
-			s.OutputWriter.InstallKeyCalled()
-		case mockAgent.LeaveCallCount() > leaveCallCount:
-			leaveCallCount++
-			s.OutputWriter.LeaveCalled()
+		case mockAgent.LeaveCallCount() > 0:
 			agentRPCServer.Shutdown()
-			s.DidLeave = true
 		case mockAgent.StatsCallCount() > statsCallCount:
 			statsCallCount++
 			s.OutputWriter.StatsCalled()
