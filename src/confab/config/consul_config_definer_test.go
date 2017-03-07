@@ -38,6 +38,27 @@ var _ = Describe("ConsulConfigDefiner", func() {
 			})
 		})
 
+		Describe("telemetry", func() {
+			It("defaults to a nil value", func() {
+				Expect(consulConfig.Telemetry).To(BeNil())
+			})
+
+			Context("when the `consul.agent.telemetry.statsd_address` property is set", func() {
+				It("uses that value", func() {
+					consulConfig = config.GenerateConfiguration(config.Config{
+						Consul: config.ConfigConsul{
+							Agent: config.ConfigConsulAgent{
+								Telemetry: config.ConfigConsulTelemetry{
+									StatsdAddress: "some-statsd-address",
+								},
+							},
+						},
+					}, configDir, "")
+					Expect(consulConfig.Telemetry.StatsdAddress).To(Equal("some-statsd-address"))
+				})
+			})
+		})
+
 		Describe("domain", func() {
 			It("it gets the domain suffix from the config", func() {
 				config := config.GenerateConfiguration(config.Config{

@@ -45,6 +45,7 @@ type ConfigConsulAgent struct {
 	LogLevel        string                       `json:"log_level"`
 	ProtocolVersion int                          `json:"protocol_version"`
 	DnsConfig       ConfigConsulAgentDnsConfig   `json:"dns_config"`
+	Telemetry       ConfigConsulTelemetry        `json:"telemetry"`
 	Bootstrap       bool                         `json:"bootstrap"`
 	NodeName        string                       `json:"node_name"`
 	RequireSSL      bool                         `json:"require_ssl"`
@@ -59,6 +60,10 @@ type ConfigConsulAgentDnsConfig struct {
 	AllowStale      bool   `json:"allow_stale"`
 	MaxStale        string `json:"max_stale"`
 	RecursorTimeout string `json:"recursor_timeout"`
+}
+
+type ConfigConsulTelemetry struct {
+	StatsdAddress string `json:"statsd_address"`
 }
 
 type ConfigConsulAgentServers struct {

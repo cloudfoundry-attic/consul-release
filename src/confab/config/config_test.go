@@ -42,6 +42,9 @@ var _ = Describe("Config", func() {
 								"lan": ["server1", "server2", "server3"],
 								"wan": ["wan-server1", "wan-server2", "wan-server3"]
 							},
+							"telemetry": {
+								"statsd_address": "myhost:8125"
+							},
 							"dns_config": {
 								"allow_stale": true,
 								"max_stale": "15s",
@@ -86,6 +89,9 @@ var _ = Describe("Config", func() {
 							Servers: config.ConfigConsulAgentServers{
 								LAN: []string{"server1", "server2", "server3"},
 								WAN: []string{"wan-server1", "wan-server2", "wan-server3"},
+							},
+							Telemetry: config.ConfigConsulTelemetry{
+								StatsdAddress: "myhost:8125",
 							},
 							DnsConfig: config.ConfigConsulAgentDnsConfig{
 								AllowStale:      true,
@@ -174,9 +180,9 @@ var _ = Describe("Config", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(cfg.Consul).To(Equal(config.ConfigConsul{
 					Agent: config.ConfigConsulAgent{
-						Mode:            "server",
-						Datacenter:      "dc1000",
-						LogLevel:        "debug",
+						Mode:       "server",
+						Datacenter: "dc1000",
+						LogLevel:   "debug",
 						Servers: config.ConfigConsulAgentServers{
 							LAN: []string{"server1", "server2", "server3"},
 							WAN: []string{"wan-server1", "wan-server2", "wan-server3"},

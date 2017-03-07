@@ -31,6 +31,7 @@ type ConsulConfig struct {
 	DnsConfig            ConsulConfigDnsConfig   `json:"dns_config"`
 	Bootstrap            *bool                   `json:"bootstrap,omitempty"`
 	Performance          ConsulConfigPerformance `json:"performance"`
+	Telemetry            *ConsulConfigTelemetry  `json:"telemetry,omitempty"`
 }
 
 type ConsulConfigPorts struct {
@@ -47,6 +48,10 @@ type ConsulConfigDnsConfig struct {
 
 type ConsulConfigPerformance struct {
 	RaftMultiplier int `json:"raft_multiplier"`
+}
+
+type ConsulConfigTelemetry struct {
+	StatsdAddress string `json:"statsd_address,omitempty"`
 }
 
 func GenerateConfiguration(config Config, configDir, nodeName string) ConsulConfig {
@@ -90,6 +95,12 @@ func GenerateConfiguration(config Config, configDir, nodeName string) ConsulConf
 		Performance: ConsulConfigPerformance{
 			RaftMultiplier: 1,
 		},
+	}
+
+	if config.Consul.Agent.Telemetry.StatsdAddress != "" {
+		consulConfig.Telemetry = &ConsulConfigTelemetry{
+			StatsdAddress: config.Consul.Agent.Telemetry.StatsdAddress,
+		}
 	}
 
 	if config.Consul.Agent.RequireSSL {
