@@ -553,6 +553,14 @@ var _ = Describe("Client", func() {
 					},
 				}))
 
+				msgs := logger.Messages()
+				Expect(len(msgs)).Should(BeNumerically(">=", 2))
+				Expect(msgs[0].Action).To(Equal("agent-client.set-keys.list-keys.request"))
+				Expect(msgs[1].Action).To(Equal("agent-client.set-keys.list-keys.response"))
+				Expect(len(msgs[1].Data)).To(Equal(1))
+				Expect(msgs[1].Data[0]).To(HaveKey("keys"))
+				Expect(msgs[1].Data[0]["keys"]).To(ConsistOf([]string{"key3", "key4"}))
+
 				Expect(logger.Messages()).To(ContainSequence([]fakes.LoggerMessage{
 					{
 						Action: "agent-client.set-keys.remove-key.request",

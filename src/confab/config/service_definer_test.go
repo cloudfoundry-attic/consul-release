@@ -788,7 +788,7 @@ var _ = Describe("ServiceDefiner", func() {
 				if Windows {
 					errMsg = "The handle is invalid."
 				} else {
-					errMsg = "bad file descriptor"
+					errMsg = "file already closed"
 				}
 
 				Expect(err).To(MatchError(ContainSubstring(errMsg)))
