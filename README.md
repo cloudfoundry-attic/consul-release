@@ -260,7 +260,20 @@ In the `check` section of that definition, we can see that it assumes a script
 called `dns_health_check` is located in the `/var/vcap/jobs/SERVICE_NAME/bin`
 directory. Not providing this script, and not explicitly defining some other
 check in your service definition will result in a failing health check for the
-service.
+service. If you wish to disable the health check for a service, you can specify
+an empty `check` section. For example:
+
+```
+jobs:
+- name: database
+  ...
+  properties:
+    consul:
+      agent:
+        services:
+          database:
+            check: {}
+```
 
 ## Known Issues
 
