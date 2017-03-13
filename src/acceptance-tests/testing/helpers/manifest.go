@@ -66,11 +66,12 @@ func GetVMIPs(boshClient bosh.Client, deploymentName, jobName string) ([]string,
 		return []string{}, err
 	}
 
+	ips := []string{}
 	for _, vm := range vms {
 		if vm.JobName == jobName {
-			return vm.IPs, nil
+			ips = append(ips, vm.IPs...)
 		}
 	}
 
-	return []string{}, nil
+	return ips, nil
 }
