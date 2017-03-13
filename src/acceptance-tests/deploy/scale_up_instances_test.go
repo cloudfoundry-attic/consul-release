@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/cloudfoundry-incubator/consul-release/src/acceptance-tests/testing/consulclient"
 	"github.com/cloudfoundry-incubator/consul-release/src/acceptance-tests/testing/helpers"
-	"github.com/greenhouse-org/consul-release/src/acceptance-tests/testing/consulclient"
 	"github.com/pivotal-cf-experimental/bosh-test/bosh"
 	"github.com/pivotal-cf-experimental/destiny/ops"
 
