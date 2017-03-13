@@ -3,6 +3,7 @@ package helpers
 import (
 	"github.com/pivotal-cf-experimental/bosh-test/bosh"
 	"github.com/pivotal-cf-experimental/destiny/consul"
+	"github.com/pivotal-cf-experimental/destiny/ops"
 )
 
 func DeploymentVMs(boshClient bosh.Client, deploymentName string) ([]bosh.VM, error) {
