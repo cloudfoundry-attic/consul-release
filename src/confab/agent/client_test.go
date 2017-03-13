@@ -541,18 +541,6 @@ var _ = Describe("Client", func() {
 
 				Expect(client.SetKeys([]string{"key1", "key2"})).To(Succeed())
 
-				Expect(logger.Messages()).To(ContainSequence([]fakes.LoggerMessage{
-					{
-						Action: "agent-client.set-keys.list-keys.request",
-					},
-					{
-						Action: "agent-client.set-keys.list-keys.response",
-						Data: []lager.Data{{
-							"keys": []string{"key3", "key4"},
-						}},
-					},
-				}))
-
 				msgs := logger.Messages()
 				Expect(len(msgs)).Should(BeNumerically(">=", 2))
 				Expect(msgs[0].Action).To(Equal("agent-client.set-keys.list-keys.request"))
