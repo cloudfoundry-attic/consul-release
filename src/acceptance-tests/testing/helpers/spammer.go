@@ -106,6 +106,12 @@ func (s *Spammer) Spam() {
 						// failures to connect to the test consumer should not count as failed key writes
 						// this typically happens when the test-consumer vm is rolled
 						counts.attempts--
+					case strings.Contains(err.Error(), "unexpected status: 502 Bad Gateway"):
+						// failure to connect to local consul agent via test consumer should be ignored
+						// this typically happens when the local consul agent goes down before test-consumer
+						counts.attempts--
+					case strings.Contains(err.Error(), "http: proxy error"):
+						counts.attempts--
 					case strings.Contains(err.Error(), "read: connection reset by peer"):
 						counts.connectionResetErrors++
 						if counts.connectionResetErrors > MAX_CONNECTION_RESET_ERROR_COUNT {
@@ -116,15 +122,13 @@ func (s *Spammer) Spam() {
 						if counts.noKnownConsulErrors > MAX_NO_KNOWN_CONSUL_ERROR_COUNT {
 							s.errors.Add(err)
 						}
-					case strings.Contains(err.Error(), "unexpected status: 502 Bad Gateway"):
-					case strings.Contains(err.Error(), "http: proxy error"):
 					default:
 						s.errors.Add(err)
 					}
-					continue
+				} else {
+					counts.rpcErrors = 0
+					s.store[key] = value
 				}
-				counts.rpcErrors = 0
-				s.store[key] = value
 			}
 		}
 	}()
@@ -150,12 +154,11 @@ func (s *Spammer) Check() error {
 		value, err := s.kv.Get(k)
 		if err != nil {
 			s.errors.Add(err)
-			break
+			continue
 		}
 
 		if v != value {
 			s.errors.Add(fmt.Errorf("value for key %q does not match: expected %q, got %q", k, v, value))
-			break
 		}
 	}
 

@@ -15,7 +15,7 @@ import (
 type service struct {
 	Name  string
 	Check serviceCheck
-	Tags  []string
+	Tags  []string `yaml:"tags,omitempty"`
 }
 
 type serviceCheck struct {
