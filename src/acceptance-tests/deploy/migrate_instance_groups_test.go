@@ -56,6 +56,7 @@ var _ = Describe("Migrate instance groups", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				kv = consulclient.NewHTTPKV(fmt.Sprintf("http://%s:6769", testConsumerIPs[0]))
+
 				spammer = helpers.NewSpammer(kv, 1*time.Second, "testconsumer")
 
 				spammer.Spam()
