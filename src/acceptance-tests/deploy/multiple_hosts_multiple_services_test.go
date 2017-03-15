@@ -94,10 +94,20 @@ var _ = Describe("Multiple hosts multiple services", func() {
 			deploymentVMs, err := boshClient.DeploymentVMs(manifestName)
 			Expect(err).NotTo(HaveOccurred())
 
-			var consulVMs []bosh.VM
+			var consulVM0 bosh.VM
+			var consulVM1 bosh.VM
+			var consulVM2 bosh.VM
+
 			for _, vm := range deploymentVMs {
 				if vm.JobName == "consul" {
-					consulVMs = append(consulVMs, vm)
+					switch vm.Index {
+					case 0:
+						consulVM0 = vm
+					case 1:
+						consulVM1 = vm
+					case 2:
+						consulVM2 = vm
+					}
 				}
 			}
 
@@ -107,15 +117,15 @@ var _ = Describe("Multiple hosts multiple services", func() {
 
 			Eventually(func() ([]string, error) {
 				return tcClient.DNS("consul-0.some-service-name.service.cf.internal")
-			}, "2m", "10s").Should(ConsistOf(consulVMs[0].IPs))
+			}, "2m", "10s").Should(ConsistOf(consulVM0.IPs))
 
 			Eventually(func() ([]string, error) {
 				return tcClient.DNS("consul-1.some-service-name.service.cf.internal")
-			}, "2m", "10s").Should(ConsistOf(consulVMs[1].IPs))
+			}, "2m", "10s").Should(ConsistOf(consulVM1.IPs))
 
 			Eventually(func() ([]string, error) {
 				return tcClient.DNS("consul-2.some-service-name.service.cf.internal")
-			}, "2m", "10s").Should(ConsistOf(consulVMs[2].IPs))
+			}, "2m", "10s").Should(ConsistOf(consulVM2.IPs))
 
 			Eventually(func() ([]string, error) {
 				return tcClient.DNS("some-other-service-name.service.cf.internal")
@@ -123,15 +133,15 @@ var _ = Describe("Multiple hosts multiple services", func() {
 
 			Eventually(func() ([]string, error) {
 				return tcClient.DNS("consul-0.some-other-service-name.service.cf.internal")
-			}, "2m", "10s").Should(ConsistOf(consulVMs[0].IPs))
+			}, "2m", "10s").Should(ConsistOf(consulVM0.IPs))
 
 			Eventually(func() ([]string, error) {
 				return tcClient.DNS("consul-1.some-other-service-name.service.cf.internal")
-			}, "2m", "10s").Should(ConsistOf(consulVMs[1].IPs))
+			}, "2m", "10s").Should(ConsistOf(consulVM1.IPs))
 
 			Eventually(func() ([]string, error) {
 				return tcClient.DNS("consul-2.some-other-service-name.service.cf.internal")
-			}, "2m", "10s").Should(ConsistOf(consulVMs[2].IPs))
+			}, "2m", "10s").Should(ConsistOf(consulVM2.IPs))
 		})
 	})
 })
