@@ -96,7 +96,7 @@ func (s *Spammer) Spam() {
 					case strings.Contains(err.Error(), "rpc error"):
 						counts.rpcErrors++
 						if counts.rpcErrors > MAX_SUCCESSIVE_RPC_ERROR_COUNT {
-							s.errors.Add(err)
+							s.errors.Add(fmt.Errorf("Error writing key %q: %s", key, err.Error()))
 						}
 					case strings.Contains(err.Error(), s.testConsumerConnectionDroppedErrorMessage):
 						// failures to connect to the test consumer should not count as failed key writes
@@ -115,15 +115,15 @@ func (s *Spammer) Spam() {
 					case strings.Contains(err.Error(), "read: connection reset by peer"):
 						counts.connectionResetErrors++
 						if counts.connectionResetErrors > MAX_CONNECTION_RESET_ERROR_COUNT {
-							s.errors.Add(err)
+							s.errors.Add(fmt.Errorf("Error writing key %q: %s", key, err.Error()))
 						}
 					case err.Error() == "unexpected status: 500 Internal Server Error  No known Consul servers":
 						counts.noKnownConsulErrors++
 						if counts.noKnownConsulErrors > MAX_NO_KNOWN_CONSUL_ERROR_COUNT {
-							s.errors.Add(err)
+							s.errors.Add(fmt.Errorf("Error writing key %q: %s", key, err.Error()))
 						}
 					default:
-						s.errors.Add(err)
+						s.errors.Add(fmt.Errorf("Error writing key %q: %s", key, err.Error()))
 					}
 				} else {
 					counts.rpcErrors = 0
