@@ -158,8 +158,10 @@ var _ = Describe("Scaling down instances", func() {
 				value, err := kv.Get(testKey)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(value).To(Equal(testValue))
+			})
 
-				err = spammer.Check()
+			By("checking the spammer for errors during the deploy", func() {
+				err := spammer.Check()
 				Expect(err).NotTo(HaveOccurred())
 			})
 		})
