@@ -5,7 +5,7 @@ import (
 
 	"github.com/cloudfoundry-incubator/consul-release/src/acceptance-tests/testing/helpers"
 	"github.com/pivotal-cf-experimental/bosh-test/bosh"
-	"github.com/pivotal-cf-experimental/destiny/consul"
+	"github.com/pivotal-cf-experimental/destiny/ops"
 
 	testconsumerclient "github.com/cloudfoundry-incubator/consul-release/src/acceptance-tests/testing/testconsumer/client"
 
@@ -13,21 +13,99 @@ import (
 	. "github.com/onsi/gomega"
 )
 
+type instanceGroup struct {
+	Name               string
+	Instances          int
+	AZs                []string
+	VMType             string `yaml:"vm_type"`
+	Stemcell           string
+	PersistentDiskType string `yaml:"persistent_disk_type"`
+	Networks           []instanceGroupNetwork
+	Jobs               []instanceGroupJob
+}
+
+type instanceGroupNetwork struct {
+	Name string
+}
+
+type instanceGroupJob struct {
+	Name     string
+	Release  string
+	Provides instanceGroupJobLink
+}
+
+type instanceGroupJobLink struct {
+	DNS map[string]string `yaml:"dns"`
+}
+
 var _ = Describe("given large DNS response", func() {
 	var (
-		consulManifest     consul.ManifestV2
+		manifest     string
+		manifestName string
+
 		testConsumerClient testconsumerclient.Client
-		err                error
 	)
+
 	BeforeEach(func() {
-		consulManifest, _, err = helpers.DeployConsulWithFakeDNSServer("large-dns-response", 1, boshClient, config)
+		var err error
+		manifest, err = helpers.NewConsulManifestWithOpsWithInstanceCount("large-dns-response", 1, boshClient)
+		Expect(err).NotTo(HaveOccurred())
+
+		manifestName, err = ops.ManifestName(manifest)
+		Expect(err).NotTo(HaveOccurred())
+
+		manifest, err = ops.ApplyOps(manifest, []ops.Op{
+			{
+				Type: "replace",
+				Path: "/instance_groups/name=fake-dns-server?",
+				Value: instanceGroup{
+					Name:               "fake-dns-server",
+					Instances:          1,
+					AZs:                []string{"z1"},
+					VMType:             "default",
+					Stemcell:           "default",
+					PersistentDiskType: "1GB",
+					Networks: []instanceGroupNetwork{
+						{
+							Name: "private",
+						},
+					},
+					Jobs: []instanceGroupJob{
+						{
+							Name:    "fake-dns-server",
+							Release: "consul",
+							Provides: instanceGroupJobLink{
+								DNS: map[string]string{
+									"as": "fake-dns-server",
+								},
+							},
+						},
+					},
+				},
+			},
+			{
+				Type: "replace",
+				Path: "/instance_groups/name=testconsumer/jobs/name=consul-test-consumer/consumes?",
+				Value: instanceGroupJobLink{
+					DNS: map[string]string{
+						"from": "fake-dns-server",
+					},
+				},
+			},
+		})
+		Expect(err).NotTo(HaveOccurred())
+
+		_, err = boshClient.Deploy([]byte(manifest))
 		Expect(err).NotTo(HaveOccurred())
 
 		Eventually(func() ([]bosh.VM, error) {
-			return helpers.DeploymentVMs(boshClient, consulManifest.Name)
-		}, "1m", "10s").Should(ConsistOf(helpers.GetVMsFromManifest(consulManifest)))
+			return helpers.DeploymentVMs(boshClient, manifestName)
+		}, "1m", "10s").Should(ConsistOf(helpers.GetVMsFromManifestV2(manifest)))
 
-		testConsumerClient = testconsumerclient.New(fmt.Sprintf("http://%s:6769", consulManifest.InstanceGroups[1].Networks[0].StaticIPs[0]))
+		testConsumerIPs, err := helpers.GetVMIPs(boshClient, manifestName, "testconsumer")
+		Expect(err).NotTo(HaveOccurred())
+
+		testConsumerClient = testconsumerclient.New(fmt.Sprintf("http://%s:6769", testConsumerIPs[0]))
 	})
 
 	AfterEach(func() {
@@ -35,9 +113,9 @@ var _ = Describe("given large DNS response", func() {
 			if !CurrentGinkgoTestDescription().Failed {
 				Eventually(func() ([]string, error) {
 					return lockedDeployments()
-				}, "10m", "30s").ShouldNot(ContainElement(consulManifest.Name))
+				}, "10m", "30s").ShouldNot(ContainElement(manifestName))
 
-				err := boshClient.DeleteDeployment(consulManifest.Name)
+				err := boshClient.DeleteDeployment(manifestName)
 				Expect(err).NotTo(HaveOccurred())
 			}
 		})
@@ -46,6 +124,7 @@ var _ = Describe("given large DNS response", func() {
 	It("does not error out", func() {
 		addresses, err := testConsumerClient.DNS("large-dns-response.fake.local")
 		Expect(err).NotTo(HaveOccurred())
+
 		if config.WindowsClients {
 			Expect(addresses).To(Equal([]string{
 				"1.2.3.0", "1.2.3.0",
