@@ -65,17 +65,17 @@ var _ = Describe("Encryption key rotation", func() {
 
 		By("adding a new primary encryption key", func() {
 			var err error
-			manifest, err = ops.ApplyOp(manifest, ops.Op{
-				Type:  "replace",
-				Path:  "/instance_groups/name=consul/properties/consul/encrypt_keys/0",
-				Value: "banana",
-			})
-			Expect(err).NotTo(HaveOccurred())
-
-			manifest, err = ops.ApplyOp(manifest, ops.Op{
-				Type:  "replace",
-				Path:  "/instance_groups/name=consul/properties/consul/encrypt_keys/-",
-				Value: "Twas brillig, and the slithy toves Did gyre and gimble in the wabe; All mimsy were the borogoves, And the mome raths outgrabe.",
+			manifest, err = ops.ApplyOps(manifest, []ops.Op{
+				{
+					Type:  "replace",
+					Path:  "/instance_groups/name=consul/properties/consul/encrypt_keys/0",
+					Value: "banana",
+				},
+				{
+					Type:  "replace",
+					Path:  "/instance_groups/name=consul/properties/consul/encrypt_keys/-",
+					Value: "Twas brillig, and the slithy toves Did gyre and gimble in the wabe; All mimsy were the borogoves, And the mome raths outgrabe.",
+				},
 			})
 			Expect(err).NotTo(HaveOccurred())
 		})
