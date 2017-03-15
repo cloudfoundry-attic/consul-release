@@ -8,9 +8,8 @@ import (
 	"github.com/pivotal-cf-experimental/destiny/ops"
 )
 
-func DeployConsulWithOpsWithInstanceCount(deploymentPrefix string, instanceCount int, boshClient bosh.Client) (string, error) {
+func DeployConsulWithOpsWithInstanceCountAndReleaseVersion(deploymentPrefix string, instanceCount int, boshClient bosh.Client, releaseVersion string) (string, error) {
 	manifestName := fmt.Sprintf("consul-%s", deploymentPrefix)
-	releaseVersion := ConsulReleaseVersion()
 
 	info, err := boshClient.Info()
 	if err != nil {
@@ -62,4 +61,8 @@ func DeployConsulWithOpsWithInstanceCount(deploymentPrefix string, instanceCount
 	//}
 
 	return string(manifestYAML), nil
+}
+
+func DeployConsulWithOpsWithInstanceCount(deploymentPrefix string, instanceCount int, boshClient bosh.Client) (string, error) {
+	return DeployConsulWithOpsWithInstanceCountAndReleaseVersion(deploymentPrefix, instanceCount, boshClient, ConsulReleaseVersion())
 }
