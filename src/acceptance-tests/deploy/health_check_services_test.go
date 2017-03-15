@@ -171,18 +171,18 @@ var _ = Describe("Health Check", func() {
 		It("deregisters a service if the health check fails", func() {
 			By("registering a service", func() {
 				var err error
-				manifest, err = ops.ApplyOp(manifest, ops.Op{
-					Type:  "replace",
-					Path:  "/instance_groups/name=testconsumer/instances",
-					Value: 3,
-				})
-				Expect(err).NotTo(HaveOccurred())
-
 				var emptyObject struct{}
-				manifest, err = ops.ApplyOp(manifest, ops.Op{
-					Type:  "replace",
-					Path:  fmt.Sprintf("/instance_groups/name=testconsumer/properties?/consul/agent/services/%s", serviceName),
-					Value: emptyObject,
+				manifest, err = ops.ApplyOps(manifest, []ops.Op{
+					{
+						Type:  "replace",
+						Path:  "/instance_groups/name=testconsumer/instances",
+						Value: 3,
+					},
+					{
+						Type:  "replace",
+						Path:  fmt.Sprintf("/instance_groups/name=testconsumer/properties?/consul/agent/services/%s", serviceName),
+						Value: emptyObject,
+					},
 				})
 				Expect(err).NotTo(HaveOccurred())
 			})

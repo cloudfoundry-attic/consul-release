@@ -64,18 +64,18 @@ var _ = Describe("Migrate instance groups", func() {
 
 			By("deploying 3 node cluster across two AZs with name consul_new", func() {
 				var err error
-				manifest, err = ops.ApplyOp(manifest, ops.Op{
-					Type:  "replace",
-					Path:  "/instance_groups/name=consul/name",
-					Value: "consul_new",
-				})
-				Expect(err).NotTo(HaveOccurred())
-
-				manifest, err = ops.ApplyOp(manifest, ops.Op{
-					Type: "replace",
-					Path: "/instance_groups/name=consul_new/migrated_from?/-",
-					Value: map[string]string{
-						"name": "consul",
+				manifest, err = ops.ApplyOps(manifest, []ops.Op{
+					{
+						Type:  "replace",
+						Path:  "/instance_groups/name=consul/name",
+						Value: "consul_new",
+					},
+					{
+						Type: "replace",
+						Path: "/instance_groups/name=consul_new/migrated_from?/-",
+						Value: map[string]string{
+							"name": "consul",
+						},
 					},
 				})
 				Expect(err).NotTo(HaveOccurred())
