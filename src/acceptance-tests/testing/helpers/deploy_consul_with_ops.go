@@ -8,7 +8,7 @@ import (
 	"github.com/pivotal-cf-experimental/destiny/ops"
 )
 
-func DeployConsulWithOpsWithInstanceCountAndReleaseVersion(deploymentPrefix string, instanceCount int, boshClient bosh.Client, releaseVersion string) (string, error) {
+func NewConsulManifestWithOpsWithInstanceCountAndReleaseVersion(deploymentPrefix string, instanceCount int, boshClient bosh.Client, releaseVersion string) (string, error) {
 	manifestName := fmt.Sprintf("consul-%s", deploymentPrefix)
 
 	info, err := boshClient.Info()
@@ -49,18 +49,25 @@ func DeployConsulWithOpsWithInstanceCountAndReleaseVersion(deploymentPrefix stri
 		return "", err
 	}
 
-	_, err = boshClient.Deploy(manifestYAML)
+	return string(manifestYAML), nil
+}
+
+func NewConsulManifestWithOpsWithInstanceCount(deploymentPrefix string, instanceCount int, boshClient bosh.Client) (string, error) {
+	return NewConsulManifestWithOpsWithInstanceCountAndReleaseVersion(deploymentPrefix, instanceCount, boshClient, ConsulReleaseVersion())
+}
+
+func DeployConsulWithOpsWithInstanceCountAndReleaseVersion(deploymentPrefix string, instanceCount int, boshClient bosh.Client, releaseVersion string) (string, error) {
+	manifest, err := NewConsulManifestWithOpsWithInstanceCountAndReleaseVersion(deploymentPrefix, instanceCount, boshClient, releaseVersion)
 	if err != nil {
 		return "", err
 	}
 
-	//TODO: What is this for?
-	//err = VerifyDeploymentRelease(boshClient, manifestName, releaseVersion)
-	//if err != nil {
-	//return "", err
-	//}
+	_, err = boshClient.Deploy([]byte(manifest))
+	if err != nil {
+		return "", err
+	}
 
-	return string(manifestYAML), nil
+	return manifest, nil
 }
 
 func DeployConsulWithOpsWithInstanceCount(deploymentPrefix string, instanceCount int, boshClient bosh.Client) (string, error) {
