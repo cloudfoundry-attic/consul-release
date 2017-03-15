@@ -7,7 +7,7 @@ import (
 	"github.com/cloudfoundry-incubator/consul-release/src/acceptance-tests/testing/consulclient"
 	"github.com/cloudfoundry-incubator/consul-release/src/acceptance-tests/testing/helpers"
 	"github.com/pivotal-cf-experimental/bosh-test/bosh"
-	"github.com/pivotal-cf-experimental/destiny/consul"
+	"github.com/pivotal-cf-experimental/destiny/ops"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -151,26 +151,36 @@ ZYZoj/Us3wH3CQQWzTOyw0w1CIJsYHWC9GQoq3AoJJmfRj5HdFUd
 
 var _ = Describe("TLS key rotation", func() {
 	var (
-		manifest consul.ManifestV2
-		kv       consulclient.HTTPKV
-		spammer  *helpers.Spammer
+		manifest     string
+		manifestName string
+
+		kv      consulclient.HTTPKV
+		spammer *helpers.Spammer
 	)
 
 	BeforeEach(func() {
 		var err error
-		manifest, kv, err = helpers.DeployConsulWithInstanceCount("tls-key-rotation", 3, boshClient, config)
+		manifest, err = helpers.DeployConsulWithOpsWithInstanceCount("tls-key-rotation", 3, boshClient)
+		Expect(err).NotTo(HaveOccurred())
+
+		manifestName, err = ops.ManifestName(manifest)
 		Expect(err).NotTo(HaveOccurred())
 
 		Eventually(func() ([]bosh.VM, error) {
-			return helpers.DeploymentVMs(boshClient, manifest.Name)
-		}, "1m", "10s").Should(ConsistOf(helpers.GetVMsFromManifest(manifest)))
+			return helpers.DeploymentVMs(boshClient, manifestName)
+		}, "1m", "10s").Should(ConsistOf(helpers.GetVMsFromManifestV2(manifest)))
 
-		spammer = helpers.NewSpammer(kv, 1*time.Second, "test-consumer-0")
+		testConsumerIPs, err := helpers.GetVMIPs(boshClient, manifestName, "testconsumer")
+		Expect(err).NotTo(HaveOccurred())
+
+		kv = consulclient.NewHTTPKV(fmt.Sprintf("http://%s:6769", testConsumerIPs[0]))
+
+		spammer = helpers.NewSpammer(kv, 1*time.Second, "testconsumer")
 	})
 
 	AfterEach(func() {
 		if !CurrentGinkgoTestDescription().Failed {
-			err := boshClient.DeleteDeployment(manifest.Name)
+			err := boshClient.DeleteDeployment(manifestName)
 			Expect(err).NotTo(HaveOccurred())
 		}
 	})
@@ -181,63 +191,79 @@ var _ = Describe("TLS key rotation", func() {
 		})
 
 		By("adding a new ca cert", func() {
-			manifest.Properties.Consul.CACert = fmt.Sprintf("%s\n%s", manifest.Properties.Consul.CACert, newCACert)
+			oldCACert, err := ops.FindOp(manifest, "/instance_groups/name=consul/properties/consul/ca_cert")
+			Expect(err).NotTo(HaveOccurred())
+
+			manifest, err = ops.ApplyOp(manifest, ops.Op{
+				Type:  "replace",
+				Path:  "/instance_groups/name=consul/properties/consul/ca_cert",
+				Value: fmt.Sprintf("%s\n%s", oldCACert.(string), newCACert),
+			})
+			Expect(err).NotTo(HaveOccurred())
 		})
 
 		By("deploying with the new ca cert", func() {
-			yaml, err := manifest.ToYAML()
-			Expect(err).NotTo(HaveOccurred())
-
-			yaml, err = boshClient.ResolveManifestVersions(yaml)
-			Expect(err).NotTo(HaveOccurred())
-
-			_, err = boshClient.Deploy(yaml)
+			_, err := boshClient.Deploy([]byte(manifest))
 			Expect(err).NotTo(HaveOccurred())
 
 			Eventually(func() ([]bosh.VM, error) {
-				return helpers.DeploymentVMs(boshClient, manifest.Name)
-			}, "1m", "10s").Should(ConsistOf(helpers.GetVMsFromManifest(manifest)))
+				return helpers.DeploymentVMs(boshClient, manifestName)
+			}, "1m", "10s").Should(ConsistOf(helpers.GetVMsFromManifestV2(manifest)))
 		})
 
 		By("replace agent and server keys and certs", func() {
-			manifest.Properties.Consul.AgentCert = newAgentCert
-			manifest.Properties.Consul.ServerCert = newServerCert
-			manifest.Properties.Consul.AgentKey = newAgentKey
-			manifest.Properties.Consul.ServerKey = newServerKey
+			var err error
+			manifest, err = ops.ApplyOps(manifest, []ops.Op{
+				{
+					Type:  "replace",
+					Path:  "/instance_groups/name=consul/properties/consul/agent_cert",
+					Value: newAgentCert,
+				},
+				{
+					Type:  "replace",
+					Path:  "/instance_groups/name=consul/properties/consul/server_cert",
+					Value: newServerCert,
+				},
+				{
+					Type:  "replace",
+					Path:  "/instance_groups/name=consul/properties/consul/agent_key",
+					Value: newAgentKey,
+				},
+				{
+					Type:  "replace",
+					Path:  "/instance_groups/name=consul/properties/consul/server_key",
+					Value: newServerKey,
+				},
+			})
+			Expect(err).NotTo(HaveOccurred())
 		})
 
 		By("deploying with the new agent and server keys and certs", func() {
-			yaml, err := manifest.ToYAML()
-			Expect(err).NotTo(HaveOccurred())
-
-			yaml, err = boshClient.ResolveManifestVersions(yaml)
-			Expect(err).NotTo(HaveOccurred())
-
-			_, err = boshClient.Deploy(yaml)
+			_, err := boshClient.Deploy([]byte(manifest))
 			Expect(err).NotTo(HaveOccurred())
 
 			Eventually(func() ([]bosh.VM, error) {
-				return helpers.DeploymentVMs(boshClient, manifest.Name)
-			}, "1m", "10s").Should(ConsistOf(helpers.GetVMsFromManifest(manifest)))
+				return helpers.DeploymentVMs(boshClient, manifestName)
+			}, "1m", "10s").Should(ConsistOf(helpers.GetVMsFromManifestV2(manifest)))
 		})
 
 		By("removing the old ca cert", func() {
-			manifest.Properties.Consul.CACert = newCACert
+			var err error
+			manifest, err = ops.ApplyOp(manifest, ops.Op{
+				Type:  "replace",
+				Path:  "/instance_groups/name=consul/properties/consul/ca_cert",
+				Value: newCACert,
+			})
+			Expect(err).NotTo(HaveOccurred())
 		})
 
 		By("deploying with the old ca cert removed", func() {
-			yaml, err := manifest.ToYAML()
-			Expect(err).NotTo(HaveOccurred())
-
-			yaml, err = boshClient.ResolveManifestVersions(yaml)
-			Expect(err).NotTo(HaveOccurred())
-
-			_, err = boshClient.Deploy(yaml)
+			_, err := boshClient.Deploy([]byte(manifest))
 			Expect(err).NotTo(HaveOccurred())
 
 			Eventually(func() ([]bosh.VM, error) {
-				return helpers.DeploymentVMs(boshClient, manifest.Name)
-			}, "1m", "10s").Should(ConsistOf(helpers.GetVMsFromManifest(manifest)))
+				return helpers.DeploymentVMs(boshClient, manifestName)
+			}, "1m", "10s").Should(ConsistOf(helpers.GetVMsFromManifestV2(manifest)))
 		})
 
 		By("stopping the spammer", func() {
