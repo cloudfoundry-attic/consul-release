@@ -71,6 +71,7 @@ var _ = Describe("Encryption key rotation", func() {
 				Value: "banana",
 			})
 			Expect(err).NotTo(HaveOccurred())
+
 			manifest, err = ops.ApplyOp(manifest, ops.Op{
 				Type:  "replace",
 				Path:  "/instance_groups/name=consul/properties/consul/encrypt_keys/-",
