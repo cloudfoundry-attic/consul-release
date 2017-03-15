@@ -70,6 +70,7 @@ var _ = Describe("Multiple instance rolling deploys", func() {
 				Path:  "/instance_groups/name=consul/properties/consul/agent/log_level?",
 				Value: "trace",
 			})
+			Expect(err).NotTo(HaveOccurred())
 
 			spammer.Spam()
 
