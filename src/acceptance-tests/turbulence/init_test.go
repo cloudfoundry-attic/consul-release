@@ -32,6 +32,7 @@ var _ = BeforeSuite(func() {
 	consulReleaseVersion = helpers.ConsulReleaseVersion()
 	boshClient = bosh.NewClient(bosh.Config{
 		URL:              fmt.Sprintf("https://%s:25555", config.BOSH.Target),
+		Host:             config.BOSH.Target,
 		Username:         config.BOSH.Username,
 		Password:         config.BOSH.Password,
 		AllowInsecureSSL: true,

@@ -1,14 +1,14 @@
 package turbulence_test
 
 import (
+	"fmt"
 	"math/rand"
 	"time"
 
 	"github.com/cloudfoundry-incubator/consul-release/src/acceptance-tests/testing/consulclient"
 	"github.com/cloudfoundry-incubator/consul-release/src/acceptance-tests/testing/helpers"
 	"github.com/pivotal-cf-experimental/bosh-test/bosh"
-	"github.com/pivotal-cf-experimental/destiny/consul"
-	"github.com/pivotal-cf-experimental/destiny/turbulence"
+	"github.com/pivotal-cf-experimental/destiny/ops"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -18,11 +18,14 @@ import (
 
 var _ = Describe("KillVm", func() {
 	var (
-		turbulenceClient   turbulenceclient.Client
-		turbulenceManifest turbulence.Manifest
-		consulManifest     consul.ManifestV2
-		kv                 consulclient.HTTPKV
+		turbulenceClient       turbulenceclient.Client
+		turbulenceManifest     string
+		turbulenceManifestName string
 
+		consulManifest     string
+		consulManifestName string
+
+		kv        consulclient.HTTPKV
 		spammer   *helpers.Spammer
 		testKey   string
 		testValue string
@@ -31,14 +34,23 @@ var _ = Describe("KillVm", func() {
 	BeforeEach(func() {
 		By("deploying turbulence", func() {
 			var err error
-			turbulenceManifest, err = helpers.DeployTurbulence(boshClient, config)
+			turbulenceManifest, err = helpers.DeployTurbulenceWithOps(boshClient)
+			Expect(err).NotTo(HaveOccurred())
+
+			turbulenceManifestName, err = ops.ManifestName(turbulenceManifest)
 			Expect(err).NotTo(HaveOccurred())
 
 			Eventually(func() ([]bosh.VM, error) {
-				return helpers.DeploymentVMs(boshClient, turbulenceManifest.Name)
-			}, "1m", "10s").Should(ConsistOf(helpers.GetTurbulenceVMsFromManifest(turbulenceManifest)))
+				return helpers.DeploymentVMs(boshClient, turbulenceManifestName)
+			}, "1m", "10s").Should(ConsistOf(helpers.GetVMsFromManifestV2(turbulenceManifest)))
 
-			turbulenceClient = helpers.NewTurbulenceClient(turbulenceManifest)
+			turbulencePassword, err := ops.FindOp(turbulenceManifest, "/instance_groups/name=api/properties/turbulence_api/password")
+			Expect(err).NotTo(HaveOccurred())
+
+			turbulenceIPs, err := helpers.GetVMIPs(boshClient, turbulenceManifestName, "api")
+			Expect(err).NotTo(HaveOccurred())
+
+			turbulenceClient = turbulenceclient.NewClient(fmt.Sprintf("https://turbulence:%s@%s:8080", turbulencePassword, turbulenceIPs[0]), 5*time.Minute, 2*time.Second)
 		})
 
 		By("deploying consul", func() {
@@ -48,12 +60,20 @@ var _ = Describe("KillVm", func() {
 			testKey = "consul-key-" + guid
 			testValue = "consul-value-" + guid
 
-			consulManifest, kv, err = helpers.DeployConsulWithInstanceCount("kill-vm", 3, boshClient, config)
+			consulManifest, err = helpers.DeployConsulWithOpsWithInstanceCount("kill-vm", 3, boshClient)
+			Expect(err).NotTo(HaveOccurred())
+
+			consulManifestName, err = ops.ManifestName(consulManifest)
 			Expect(err).NotTo(HaveOccurred())
 
 			Eventually(func() ([]bosh.VM, error) {
-				return helpers.DeploymentVMs(boshClient, consulManifest.Name)
-			}, "1m", "10s").Should(ConsistOf(helpers.GetVMsFromManifest(consulManifest)))
+				return helpers.DeploymentVMs(boshClient, consulManifestName)
+			}, "1m", "10s").Should(ConsistOf(helpers.GetVMsFromManifestV2(consulManifest)))
+
+			testConsumerIPs, err := helpers.GetVMIPs(boshClient, consulManifestName, "testconsumer")
+			Expect(err).NotTo(HaveOccurred())
+
+			kv = consulclient.NewHTTPKV(fmt.Sprintf("http://%s:6769", testConsumerIPs[0]))
 
 			spammer = helpers.NewSpammer(kv, 1*time.Second, "test-consumer-0")
 		})
@@ -61,33 +81,33 @@ var _ = Describe("KillVm", func() {
 
 	AfterEach(func() {
 		By("fixing the deployment", func() {
-			yaml, err := consulManifest.ToYAML()
-			Expect(err).NotTo(HaveOccurred())
-
 			Eventually(func() ([]string, error) {
 				return lockedDeployments()
-			}, "5m", "30s").ShouldNot(ContainElement(consulManifest.Name))
+			}, "5m", "30s").ShouldNot(ContainElement(consulManifestName))
 
-			err = boshClient.ScanAndFixAll(yaml)
+			err := boshClient.ScanAndFixAll([]byte(consulManifest))
 			Expect(err).NotTo(HaveOccurred())
 
 			Eventually(func() ([]bosh.VM, error) {
-				return helpers.DeploymentVMs(boshClient, consulManifest.Name)
-			}, "1m", "10s").Should(ConsistOf(helpers.GetVMsFromManifest(consulManifest)))
+				return helpers.DeploymentVMs(boshClient, consulManifestName)
+			}, "1m", "10s").Should(ConsistOf(helpers.GetVMsFromManifestV2(consulManifest)))
 		})
 
 		By("deleting the deployment", func() {
 			if !CurrentGinkgoTestDescription().Failed {
-				err := boshClient.DeleteDeployment(consulManifest.Name)
+				err := boshClient.DeleteDeployment(consulManifestName)
 				Expect(err).NotTo(HaveOccurred())
 			}
 		})
 
 		By("deleting turbulence", func() {
-			err := boshClient.DeleteDeployment(turbulenceManifest.Name)
-			Expect(err).NotTo(HaveOccurred())
+			if !CurrentGinkgoTestDescription().Failed {
+				err := boshClient.DeleteDeployment(turbulenceManifestName)
+				Expect(err).NotTo(HaveOccurred())
+			}
 		})
 	})
+
 	Context("when a consul node is killed", func() {
 		It("is still able to function on healthy vms", func() {
 			By("setting a persistent value", func() {
@@ -98,19 +118,16 @@ var _ = Describe("KillVm", func() {
 			By("killing indices", func() {
 				spammer.Spam()
 
-				err := turbulenceClient.KillIndices(consulManifest.Name, "consul", []int{rand.Intn(3)})
+				err := turbulenceClient.KillIndices(consulManifestName, "consul", []int{rand.Intn(3)})
 				Expect(err).ToNot(HaveOccurred())
 
-				yaml, err := consulManifest.ToYAML()
-				Expect(err).NotTo(HaveOccurred())
-
 				Eventually(func() error {
-					return boshClient.ScanAndFixAll(yaml)
+					return boshClient.ScanAndFixAll([]byte(consulManifest))
 				}, "5m", "1m").ShouldNot(HaveOccurred())
 
 				Eventually(func() ([]bosh.VM, error) {
-					return helpers.DeploymentVMs(boshClient, consulManifest.Name)
-				}, "5m", "10s").Should(ConsistOf(helpers.GetVMsFromManifest(consulManifest)))
+					return helpers.DeploymentVMs(boshClient, consulManifestName)
+				}, "5m", "10s").Should(ConsistOf(helpers.GetVMsFromManifestV2(consulManifest)))
 
 				spammer.Stop()
 			})
@@ -119,8 +136,10 @@ var _ = Describe("KillVm", func() {
 				value, err := kv.Get(testKey)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(value).To(Equal(testValue))
+			})
 
-				err = spammer.Check()
+			By("checking the spammer for errors", func() {
+				err := spammer.Check()
 				Expect(err).NotTo(HaveOccurred())
 			})
 		})
