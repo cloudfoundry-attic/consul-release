@@ -12,8 +12,7 @@ import (
 	"github.com/cloudfoundry-incubator/consul-release/src/acceptance-tests/testing/consulclient"
 	"github.com/cloudfoundry-incubator/consul-release/src/acceptance-tests/testing/helpers"
 	"github.com/pivotal-cf-experimental/bosh-test/bosh"
-	"github.com/pivotal-cf-experimental/destiny/consul"
-	"github.com/pivotal-cf-experimental/destiny/turbulence"
+	"github.com/pivotal-cf-experimental/destiny/ops"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -23,33 +22,54 @@ import (
 
 var _ = Describe("quorum loss", func() {
 	var (
-		turbulenceClient   turbulenceclient.Client
-		turbulenceManifest turbulence.Manifest
-		consulManifest     consul.ManifestV2
-		kv                 consulclient.HTTPKV
+		turbulenceClient       turbulenceclient.Client
+		turbulenceManifest     string
+		turbulenceManifestName string
+
+		consulManifest     string
+		consulManifestName string
+
+		kv consulclient.HTTPKV
 	)
 
 	BeforeEach(func() {
 		By("deploying turbulence", func() {
 			var err error
-			turbulenceManifest, err = helpers.DeployTurbulence(boshClient, config)
+			turbulenceManifest, err = helpers.DeployTurbulenceWithOps("quorum-loss", boshClient)
+			Expect(err).NotTo(HaveOccurred())
+
+			turbulenceManifestName, err = ops.ManifestName(turbulenceManifest)
 			Expect(err).NotTo(HaveOccurred())
 
 			Eventually(func() ([]bosh.VM, error) {
-				return helpers.DeploymentVMs(boshClient, turbulenceManifest.Name)
-			}, "1m", "10s").Should(ConsistOf(helpers.GetTurbulenceVMsFromManifest(turbulenceManifest)))
+				return helpers.DeploymentVMs(boshClient, turbulenceManifestName)
+			}, "1m", "10s").Should(ConsistOf(helpers.GetVMsFromManifestV2(turbulenceManifest)))
 
-			turbulenceClient = helpers.NewTurbulenceClient(turbulenceManifest)
+			turbulencePassword, err := ops.FindOp(turbulenceManifest, "/instance_groups/name=api/properties/turbulence_api/password")
+			Expect(err).NotTo(HaveOccurred())
+
+			turbulenceIPs, err := helpers.GetVMIPs(boshClient, turbulenceManifestName, "api")
+			Expect(err).NotTo(HaveOccurred())
+
+			turbulenceClient = turbulenceclient.NewClient(fmt.Sprintf("https://turbulence:%s@%s:8080", turbulencePassword, turbulenceIPs[0]), 5*time.Minute, 2*time.Second)
 		})
 
 		By("deploying consul", func() {
 			var err error
-			consulManifest, kv, err = helpers.DeployConsulWithInstanceCount("quorum-loss", 5, boshClient, config)
+			consulManifest, err = helpers.DeployConsulWithOpsWithInstanceCount("quorum-loss", 5, boshClient)
+			Expect(err).NotTo(HaveOccurred())
+
+			consulManifestName, err = ops.ManifestName(consulManifest)
 			Expect(err).NotTo(HaveOccurred())
 
 			Eventually(func() ([]bosh.VM, error) {
-				return helpers.DeploymentVMs(boshClient, consulManifest.Name)
-			}, "1m", "10s").Should(ConsistOf(helpers.GetVMsFromManifest(consulManifest)))
+				return helpers.DeploymentVMs(boshClient, consulManifestName)
+			}, "1m", "10s").Should(ConsistOf(helpers.GetVMsFromManifestV2(consulManifest)))
+
+			testConsumerIPs, err := helpers.GetVMIPs(boshClient, consulManifestName, "testconsumer")
+			Expect(err).NotTo(HaveOccurred())
+
+			kv = consulclient.NewHTTPKV(fmt.Sprintf("http://%s:6769", testConsumerIPs[0]))
 		})
 	})
 
@@ -57,33 +77,32 @@ var _ = Describe("quorum loss", func() {
 		By("deleting the deployment", func() {
 			if !CurrentGinkgoTestDescription().Failed {
 				for i := 0; i < 5; i++ {
-					err := boshClient.SetVMResurrection(consulManifest.Name, "consul", i, true)
+					err := boshClient.SetVMResurrection(consulManifestName, "consul", i, true)
 					Expect(err).NotTo(HaveOccurred())
 				}
 
-				yaml, err := consulManifest.ToYAML()
-				Expect(err).NotTo(HaveOccurred())
-
 				Eventually(func() error {
-					return boshClient.ScanAndFixAll(yaml)
+					return boshClient.ScanAndFixAll([]byte(consulManifest))
 				}, "10m", "30s").ShouldNot(HaveOccurred())
 
 				Eventually(func() ([]bosh.VM, error) {
-					return helpers.DeploymentVMs(boshClient, consulManifest.Name)
-				}, "10m", "10s").Should(ConsistOf(helpers.GetVMsFromManifest(consulManifest)))
+					return helpers.DeploymentVMs(boshClient, consulManifestName)
+				}, "10m", "10s").Should(ConsistOf(helpers.GetVMsFromManifestV2(consulManifest)))
 
 				Eventually(func() ([]string, error) {
 					return lockedDeployments()
-				}, "5m", "10s").ShouldNot(ContainElement(consulManifest.Name))
+				}, "5m", "10s").ShouldNot(ContainElement(consulManifestName))
 
-				err = boshClient.DeleteDeployment(consulManifest.Name)
+				err := boshClient.DeleteDeployment(consulManifestName)
 				Expect(err).NotTo(HaveOccurred())
 			}
 		})
 
 		By("deleting turbulence", func() {
-			err := boshClient.DeleteDeployment(turbulenceManifest.Name)
-			Expect(err).NotTo(HaveOccurred())
+			if !CurrentGinkgoTestDescription().Failed {
+				err := boshClient.DeleteDeployment(turbulenceManifestName)
+				Expect(err).NotTo(HaveOccurred())
+			}
 		})
 	})
 
@@ -92,6 +111,7 @@ var _ = Describe("quorum loss", func() {
 			By("setting and getting a value", func() {
 				guid, err := helpers.NewGUID()
 				Expect(err).NotTo(HaveOccurred())
+
 				testKey := "consul-key-" + guid
 				testValue := "consul-value-" + guid
 
@@ -105,11 +125,11 @@ var _ = Describe("quorum loss", func() {
 
 			By("killing indices", func() {
 				for i := 0; i < 5; i++ {
-					err := boshClient.SetVMResurrection(consulManifest.Name, "consul", i, false)
+					err := boshClient.SetVMResurrection(consulManifestName, "consul", i, false)
 					Expect(err).NotTo(HaveOccurred())
 				}
 
-				leader, err := jobIndexOfLeader(kv, boshClient, consulManifest.Name)
+				leader, err := jobIndexOfLeader(kv, boshClient, consulManifestName)
 				Expect(err).ToNot(HaveOccurred())
 
 				rand.Seed(time.Now().Unix())
@@ -122,24 +142,25 @@ var _ = Describe("quorum loss", func() {
 
 				jobIndexToResurrect := startingIndex + 1
 
-				err = turbulenceClient.KillIndices(consulManifest.Name, "consul", instances)
+				err = turbulenceClient.KillIndices(consulManifestName, "consul", instances)
 				Expect(err).NotTo(HaveOccurred())
 
-				err = boshClient.SetVMResurrection(consulManifest.Name, "consul", jobIndexToResurrect, true)
+				err = boshClient.SetVMResurrection(consulManifestName, "consul", jobIndexToResurrect, true)
 				Expect(err).NotTo(HaveOccurred())
 
 				Eventually(func() error {
-					return boshClient.ScanAndFix(consulManifest.Name, "consul", []int{jobIndexToResurrect})
+					return boshClient.ScanAndFix(consulManifestName, "consul", []int{jobIndexToResurrect})
 				}, "10m", "1m").ShouldNot(HaveOccurred())
 
 				Eventually(func() ([]bosh.VM, error) {
-					return helpers.DeploymentVMs(boshClient, consulManifest.Name)
+					return helpers.DeploymentVMs(boshClient, consulManifestName)
 				}, "5m", "1m").Should(ContainElement(bosh.VM{JobName: "consul", Index: jobIndexToResurrect, State: "running"}))
 			})
 
 			By("setting and getting a new value", func() {
 				guid, err := helpers.NewGUID()
 				Expect(err).NotTo(HaveOccurred())
+
 				testKey := "consul-key-" + guid
 				testValue := "consul-value-" + guid
 

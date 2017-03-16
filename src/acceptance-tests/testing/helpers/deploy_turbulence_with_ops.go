@@ -1,11 +1,13 @@
 package helpers
 
 import (
+	"fmt"
+
 	"github.com/pivotal-cf-experimental/bosh-test/bosh"
 	"github.com/pivotal-cf-experimental/destiny/turbulencewithops"
 )
 
-func DeployTurbulenceWithOps(client bosh.Client) (string, error) {
+func DeployTurbulenceWithOps(suffix string, client bosh.Client) (string, error) {
 	info, err := client.Info()
 	if err != nil {
 		return "", err
@@ -15,7 +17,7 @@ func DeployTurbulenceWithOps(client bosh.Client) (string, error) {
 
 	manifest, err := turbulencewithops.NewManifestV2(turbulencewithops.ConfigV2{
 		DirectorUUID:     info.UUID,
-		Name:             "turbulence",
+		Name:             fmt.Sprintf("turbulence-%s", suffix),
 		AZs:              []string{"z1"},
 		DirectorHost:     boshConfig.Host,
 		DirectorUsername: boshConfig.Username,

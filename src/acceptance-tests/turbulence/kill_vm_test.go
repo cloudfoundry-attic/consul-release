@@ -34,7 +34,7 @@ var _ = Describe("KillVm", func() {
 	BeforeEach(func() {
 		By("deploying turbulence", func() {
 			var err error
-			turbulenceManifest, err = helpers.DeployTurbulenceWithOps(boshClient)
+			turbulenceManifest, err = helpers.DeployTurbulenceWithOps("kill-vm", boshClient)
 			Expect(err).NotTo(HaveOccurred())
 
 			turbulenceManifestName, err = ops.ManifestName(turbulenceManifest)
