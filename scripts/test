@@ -3,7 +3,6 @@
 export CONSUL_RELEASE_VERSION="99999+dev.$(date +%s)"
 export LATEST_CONSUL_RELEASE_VERSION="$(curl http://bosh.io/api/v1/releases/github.com/cloudfoundry-incubator/consul-release | jq -r .[0].version)"
 
-warden_cpi_version="29"
 turbulence_version="0.6"
 
 function check_dependencies() {
@@ -66,9 +65,6 @@ function upload_releases() {
   releases_dir="/tmp/consats/releases"
   mkdir -p "${releases_dir}"
 
-  wget -nc -O "${releases_dir}/bosh-warden-cpi-release-${warden_cpi_version}.tgz" "http://bosh.io/d/github.com/cppforlife/bosh-warden-cpi-release?v=${warden_cpi_version}" || echo "File Exists"
-  bosh upload-release "${releases_dir}/bosh-warden-cpi-release-${warden_cpi_version}.tgz"
-
   wget -nc -O "${releases_dir}/turbulence-release-${turbulence_version}.tgz" "http://bosh.io/d/github.com/cppforlife/turbulence-release?v=${turbulence_version}" || echo "File Exists"
   bosh upload-release "${releases_dir}/turbulence-release-${turbulence_version}.tgz"
 
@@ -95,7 +91,6 @@ function force_compilation() {
     bosh -d compilation -n deploy "consul_compilation.yml"
     bosh -d compilation export-release "consul/${CONSUL_RELEASE_VERSION}" "ubuntu-trusty/${stemcell_version}"
     bosh -d compilation export-release "turbulence/${turbulence_version}" "ubuntu-trusty/${stemcell_version}"
-    bosh -d compilation export-release "bosh-warden-cpi/${warden_cpi_version}" "ubuntu-trusty/${stemcell_version}"
     bosh -d compilation -n delete-deployment
   popd > /dev/null
 }
@@ -103,7 +98,6 @@ function force_compilation() {
 function cleanup_releases() {
   set +e
   bosh -n delete-release turbulence/"${turbulence_version}"
-  bosh -n delete-release bosh-warden-cpi/"${warden_cpi_version}"
   bosh -n delete-release consul/"${LATEST_CONSUL_RELEASE_VERSION}"
   bosh -n delete-release consul/"${CONSUL_RELEASE_VERSION}"
   set -e
