@@ -44,7 +44,7 @@ var _ = Describe("KillVm", func() {
 				return helpers.DeploymentVMs(boshClient, turbulenceManifestName)
 			}, "1m", "10s").Should(ConsistOf(helpers.GetVMsFromManifestV2(turbulenceManifest)))
 
-			turbulencePassword, err := ops.FindOp(turbulenceManifest, "/instance_groups/name=api/properties/turbulence_api/password")
+			turbulencePassword, err := ops.FindOp(turbulenceManifest, "/instance_groups/name=api/properties/password")
 			Expect(err).NotTo(HaveOccurred())
 
 			turbulenceIPs, err := helpers.GetVMIPs(boshClient, turbulenceManifestName, "api")
@@ -118,7 +118,10 @@ var _ = Describe("KillVm", func() {
 			By("killing indices", func() {
 				spammer.Spam()
 
-				err := turbulenceClient.KillIndices(consulManifestName, "consul", []int{rand.Intn(3)})
+				vmIDs, err := helpers.GetVMIDByIndices(boshClient, consulManifestName, "consul", []int{rand.Intn(3)})
+				Expect(err).NotTo(HaveOccurred())
+
+				err = turbulenceClient.KillIDs(vmIDs)
 				Expect(err).ToNot(HaveOccurred())
 
 				Eventually(func() error {

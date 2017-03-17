@@ -45,7 +45,7 @@ var _ = Describe("quorum loss", func() {
 				return helpers.DeploymentVMs(boshClient, turbulenceManifestName)
 			}, "1m", "10s").Should(ConsistOf(helpers.GetVMsFromManifestV2(turbulenceManifest)))
 
-			turbulencePassword, err := ops.FindOp(turbulenceManifest, "/instance_groups/name=api/properties/turbulence_api/password")
+			turbulencePassword, err := ops.FindOp(turbulenceManifest, "/instance_groups/name=api/properties/password")
 			Expect(err).NotTo(HaveOccurred())
 
 			turbulenceIPs, err := helpers.GetVMIPs(boshClient, turbulenceManifestName, "api")
@@ -142,7 +142,10 @@ var _ = Describe("quorum loss", func() {
 
 				jobIndexToResurrect := startingIndex + 1
 
-				err = turbulenceClient.KillIndices(consulManifestName, "consul", instances)
+				vmIDs, err := helpers.GetVMIDByIndices(boshClient, consulManifestName, "consul", instances)
+				Expect(err).NotTo(HaveOccurred())
+
+				err = turbulenceClient.KillIDs(vmIDs)
 				Expect(err).NotTo(HaveOccurred())
 
 				err = boshClient.SetVMResurrection(consulManifestName, "consul", jobIndexToResurrect, true)

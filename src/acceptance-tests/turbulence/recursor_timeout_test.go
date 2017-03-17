@@ -7,7 +7,6 @@ import (
 	"github.com/cloudfoundry-incubator/consul-release/src/acceptance-tests/testing/helpers"
 	"github.com/pivotal-cf-experimental/bosh-test/bosh"
 	"github.com/pivotal-cf-experimental/destiny/ops"
-	"github.com/pivotal-cf-experimental/destiny/turbulence"
 
 	testconsumerclient "github.com/cloudfoundry-incubator/consul-release/src/acceptance-tests/testing/testconsumer/client"
 
@@ -52,11 +51,11 @@ type instanceGroupJob struct {
 	Name     string
 	Release  string
 	Provides instanceGroupJobLink `yaml:",omitempty"`
+	Consumes instanceGroupJobLink `yaml:",omitempty"`
 }
 
 type instanceGroupProperties struct {
-	FakeDNSServer   instanceGroupPropertiesFakeDNSServer   `yaml:"fake_dns_server,omitempty"`
-	TurbulenceAgent instanceGroupPropertiesTurbulenceAgent `yaml:"turbulence_agent,omitempty"`
+	FakeDNSServer instanceGroupPropertiesFakeDNSServer `yaml:"fake_dns_server,omitempty"`
 }
 
 type instanceGroupPropertiesFakeDNSServer struct {
@@ -68,18 +67,9 @@ type instanceGroupPropertiesFakeDNSServerHostToAdd struct {
 	Address string `yaml:",omitempty"`
 }
 
-type instanceGroupPropertiesTurbulenceAgent struct {
-	API instanceGroupPropertiesTurbulenceAgentAPI `yaml:"api,omitempty"`
-}
-
-type instanceGroupPropertiesTurbulenceAgentAPI struct {
-	Host     string `yaml:",omitempty"`
-	Password string `yaml:",omitempty"`
-	CACert   string `yaml:"ca_cert,omitempty"`
-}
-
 type instanceGroupJobLink struct {
 	DNS map[string]string `yaml:"dns,omitempty"`
+	API map[string]string `yaml:"api,omitempty"`
 }
 
 var _ = Describe("recursor timeout", func() {
@@ -87,6 +77,7 @@ var _ = Describe("recursor timeout", func() {
 		turbulenceClient       turbulenceclient.Client
 		turbulenceManifest     string
 		turbulenceManifestName string
+		turbulencePassword     interface{}
 		turbulenceIPs          []string
 
 		consulManifest     string
@@ -109,13 +100,13 @@ var _ = Describe("recursor timeout", func() {
 				return helpers.DeploymentVMs(boshClient, turbulenceManifestName)
 			}, "1m", "10s").Should(ConsistOf(helpers.GetVMsFromManifestV2(turbulenceManifest)))
 
-			turbulencePassword, err := ops.FindOp(turbulenceManifest, "/instance_groups/name=api/properties/turbulence_api/password")
+			turbulencePassword, err = ops.FindOp(turbulenceManifest, "/instance_groups/name=api/properties/password")
 			Expect(err).NotTo(HaveOccurred())
 
 			turbulenceIPs, err = helpers.GetVMIPs(boshClient, turbulenceManifestName, "api")
 			Expect(err).NotTo(HaveOccurred())
 
-			turbulenceClient = turbulenceclient.NewClient(fmt.Sprintf("https://turbulence:%s@%s:8080", turbulencePassword, turbulenceIPs[0]), 5*time.Minute, 2*time.Second)
+			turbulenceClient = turbulenceclient.NewClient(fmt.Sprintf("https://turbulence:%s@%s:8080", turbulencePassword.(string), turbulenceIPs[0]), 5*time.Minute, 2*time.Second)
 		})
 
 		By("deploying consul", func() {
@@ -124,9 +115,6 @@ var _ = Describe("recursor timeout", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			consulManifestName, err = ops.ManifestName(consulManifest)
-			Expect(err).NotTo(HaveOccurred())
-
-			turbulencePassword, err := ops.FindOp(turbulenceManifest, "/instance_groups/name=api/properties/turbulence_api/password")
 			Expect(err).NotTo(HaveOccurred())
 
 			consulManifest, err = ops.ApplyOps(consulManifest, []ops.Op{
@@ -166,6 +154,12 @@ var _ = Describe("recursor timeout", func() {
 							{
 								Name:    "turbulence_agent",
 								Release: "turbulence",
+								Consumes: instanceGroupJobLink{
+									API: map[string]string{
+										"from":       "api",
+										"deployment": turbulenceManifestName,
+									},
+								},
 							},
 						},
 						Properties: instanceGroupProperties{
@@ -173,13 +167,6 @@ var _ = Describe("recursor timeout", func() {
 								HostToAdd: instanceGroupPropertiesFakeDNSServerHostToAdd{
 									Name:    "turbulence.local",
 									Address: turbulenceIPs[0],
-								},
-							},
-							TurbulenceAgent: instanceGroupPropertiesTurbulenceAgent{
-								API: instanceGroupPropertiesTurbulenceAgentAPI{
-									Host:     "turbulence.local",
-									Password: turbulencePassword.(string),
-									CACert:   turbulence.APICACert,
 								},
 							},
 						},
@@ -265,7 +252,10 @@ var _ = Describe("recursor timeout", func() {
 		})
 
 		By("delaying DNS queries with a network delay that is greater than the recursor timeout", func() {
-			response, err := turbulenceClient.Delay(consulManifestName, "fake-dns-server", []int{0}, DELAY, TIMEOUT)
+			vmIDs, err := helpers.GetVMIDByIndices(boshClient, consulManifestName, "fake-dns-server", []int{0})
+			Expect(err).NotTo(HaveOccurred())
+
+			response, err := turbulenceClient.Delay(vmIDs, DELAY, TIMEOUT)
 			Expect(err).NotTo(HaveOccurred())
 
 			delayIncidentID = response.ID
@@ -304,7 +294,10 @@ var _ = Describe("recursor timeout", func() {
 		})
 
 		By("delaying DNS queries with a network delay that is less than the recursor timeout", func() {
-			response, err := turbulenceClient.Delay(consulManifestName, "fake-dns-server", []int{0}, DELAY, TIMEOUT)
+			vmIDs, err := helpers.GetVMIDByIndices(boshClient, consulManifestName, "fake-dns-server", []int{0})
+			Expect(err).NotTo(HaveOccurred())
+
+			response, err := turbulenceClient.Delay(vmIDs, DELAY, TIMEOUT)
 			Expect(err).NotTo(HaveOccurred())
 
 			delayIncidentID = response.ID
