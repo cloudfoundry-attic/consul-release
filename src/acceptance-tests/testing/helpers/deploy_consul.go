@@ -5,11 +5,11 @@ import (
 	"fmt"
 
 	"github.com/pivotal-cf-experimental/bosh-test/bosh"
-	"github.com/pivotal-cf-experimental/destiny/consulwithops"
+	"github.com/pivotal-cf-experimental/destiny/consul"
 	"github.com/pivotal-cf-experimental/destiny/ops"
 )
 
-func NewConsulManifestWithOpsWithInstanceCountAndReleaseVersion(deploymentPrefix string, instanceCount int, boshClient bosh.Client, releaseVersion string) (string, error) {
+func NewConsulManifestWithInstanceCountAndReleaseVersion(deploymentPrefix string, instanceCount int, boshClient bosh.Client, releaseVersion string) (string, error) {
 	manifestName := fmt.Sprintf("consul-%s", deploymentPrefix)
 
 	info, err := boshClient.Info()
@@ -18,7 +18,7 @@ func NewConsulManifestWithOpsWithInstanceCountAndReleaseVersion(deploymentPrefix
 	}
 
 	//TODO: AZs should be pulled from integration_config
-	manifest, err := consulwithops.NewManifestV2(consulwithops.ConfigV2{
+	manifest, err := consul.NewManifestV2(consul.ConfigV2{
 		DirectorUUID: info.UUID,
 		Name:         manifestName,
 		AZs:          []string{"z1", "z2"},
@@ -53,12 +53,12 @@ func NewConsulManifestWithOpsWithInstanceCountAndReleaseVersion(deploymentPrefix
 	return string(manifestYAML), nil
 }
 
-func NewConsulManifestWithOpsWithInstanceCount(deploymentPrefix string, instanceCount int, boshClient bosh.Client) (string, error) {
-	return NewConsulManifestWithOpsWithInstanceCountAndReleaseVersion(deploymentPrefix, instanceCount, boshClient, ConsulReleaseVersion())
+func NewConsulManifestWithInstanceCount(deploymentPrefix string, instanceCount int, boshClient bosh.Client) (string, error) {
+	return NewConsulManifestWithInstanceCountAndReleaseVersion(deploymentPrefix, instanceCount, boshClient, ConsulReleaseVersion())
 }
 
-func DeployConsulWithOpsWithInstanceCountAndReleaseVersion(deploymentPrefix string, instanceCount int, boshClient bosh.Client, releaseVersion string) (string, error) {
-	manifest, err := NewConsulManifestWithOpsWithInstanceCountAndReleaseVersion(deploymentPrefix, instanceCount, boshClient, releaseVersion)
+func DeployConsulWithInstanceCountAndReleaseVersion(deploymentPrefix string, instanceCount int, boshClient bosh.Client, releaseVersion string) (string, error) {
+	manifest, err := NewConsulManifestWithInstanceCountAndReleaseVersion(deploymentPrefix, instanceCount, boshClient, releaseVersion)
 	if err != nil {
 		return "", err
 	}
@@ -71,8 +71,8 @@ func DeployConsulWithOpsWithInstanceCountAndReleaseVersion(deploymentPrefix stri
 	return manifest, nil
 }
 
-func DeployConsulWithOpsWithInstanceCount(deploymentPrefix string, instanceCount int, boshClient bosh.Client) (string, error) {
-	return DeployConsulWithOpsWithInstanceCountAndReleaseVersion(deploymentPrefix, instanceCount, boshClient, ConsulReleaseVersion())
+func DeployConsulWithInstanceCount(deploymentPrefix string, instanceCount int, boshClient bosh.Client) (string, error) {
+	return DeployConsulWithInstanceCountAndReleaseVersion(deploymentPrefix, instanceCount, boshClient, ConsulReleaseVersion())
 }
 
 func VerifyDeploymentRelease(client bosh.Client, deploymentName string, releaseVersion string) error {

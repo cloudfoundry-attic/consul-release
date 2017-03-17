@@ -34,7 +34,7 @@ var _ = Describe("KillVm", func() {
 	BeforeEach(func() {
 		By("deploying turbulence", func() {
 			var err error
-			turbulenceManifest, err = helpers.DeployTurbulenceWithOps("kill-vm", boshClient)
+			turbulenceManifest, err = helpers.DeployTurbulence("kill-vm", boshClient)
 			Expect(err).NotTo(HaveOccurred())
 
 			turbulenceManifestName, err = ops.ManifestName(turbulenceManifest)
@@ -42,7 +42,7 @@ var _ = Describe("KillVm", func() {
 
 			Eventually(func() ([]bosh.VM, error) {
 				return helpers.DeploymentVMs(boshClient, turbulenceManifestName)
-			}, "1m", "10s").Should(ConsistOf(helpers.GetVMsFromManifestV2(turbulenceManifest)))
+			}, "1m", "10s").Should(ConsistOf(helpers.GetVMsFromManifest(turbulenceManifest)))
 
 			turbulencePassword, err := ops.FindOp(turbulenceManifest, "/instance_groups/name=api/properties/password")
 			Expect(err).NotTo(HaveOccurred())
@@ -60,7 +60,7 @@ var _ = Describe("KillVm", func() {
 			testKey = "consul-key-" + guid
 			testValue = "consul-value-" + guid
 
-			consulManifest, err = helpers.DeployConsulWithOpsWithInstanceCount("kill-vm", 3, boshClient)
+			consulManifest, err = helpers.DeployConsulWithInstanceCount("kill-vm", 3, boshClient)
 			Expect(err).NotTo(HaveOccurred())
 
 			consulManifestName, err = ops.ManifestName(consulManifest)
@@ -68,7 +68,7 @@ var _ = Describe("KillVm", func() {
 
 			Eventually(func() ([]bosh.VM, error) {
 				return helpers.DeploymentVMs(boshClient, consulManifestName)
-			}, "1m", "10s").Should(ConsistOf(helpers.GetVMsFromManifestV2(consulManifest)))
+			}, "1m", "10s").Should(ConsistOf(helpers.GetVMsFromManifest(consulManifest)))
 
 			testConsumerIPs, err := helpers.GetVMIPs(boshClient, consulManifestName, "testconsumer")
 			Expect(err).NotTo(HaveOccurred())
@@ -90,7 +90,7 @@ var _ = Describe("KillVm", func() {
 
 			Eventually(func() ([]bosh.VM, error) {
 				return helpers.DeploymentVMs(boshClient, consulManifestName)
-			}, "1m", "10s").Should(ConsistOf(helpers.GetVMsFromManifestV2(consulManifest)))
+			}, "1m", "10s").Should(ConsistOf(helpers.GetVMsFromManifest(consulManifest)))
 		})
 
 		By("deleting the deployment", func() {
@@ -130,7 +130,7 @@ var _ = Describe("KillVm", func() {
 
 				Eventually(func() ([]bosh.VM, error) {
 					return helpers.DeploymentVMs(boshClient, consulManifestName)
-				}, "5m", "10s").Should(ConsistOf(helpers.GetVMsFromManifestV2(consulManifest)))
+				}, "5m", "10s").Should(ConsistOf(helpers.GetVMsFromManifest(consulManifest)))
 
 				spammer.Stop()
 			})

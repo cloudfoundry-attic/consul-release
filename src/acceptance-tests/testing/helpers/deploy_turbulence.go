@@ -4,10 +4,10 @@ import (
 	"fmt"
 
 	"github.com/pivotal-cf-experimental/bosh-test/bosh"
-	"github.com/pivotal-cf-experimental/destiny/turbulencewithops"
+	"github.com/pivotal-cf-experimental/destiny/turbulence"
 )
 
-func DeployTurbulenceWithOps(suffix string, client bosh.Client) (string, error) {
+func DeployTurbulence(suffix string, client bosh.Client) (string, error) {
 	info, err := client.Info()
 	if err != nil {
 		return "", err
@@ -15,7 +15,7 @@ func DeployTurbulenceWithOps(suffix string, client bosh.Client) (string, error) 
 
 	boshConfig := client.GetConfig()
 
-	manifest, err := turbulencewithops.NewManifestV2(turbulencewithops.ConfigV2{
+	manifest, err := turbulence.NewManifestV2(turbulence.ConfigV2{
 		DirectorUUID:     info.UUID,
 		Name:             fmt.Sprintf("turbulence-%s", suffix),
 		AZs:              []string{"z1"},

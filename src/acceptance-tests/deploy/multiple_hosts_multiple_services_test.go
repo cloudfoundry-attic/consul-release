@@ -23,7 +23,7 @@ var _ = Describe("Multiple hosts multiple services", func() {
 
 	BeforeEach(func() {
 		var err error
-		manifest, err = helpers.DeployConsulWithOpsWithInstanceCount("multiple-host-multiple-services", 3, boshClient)
+		manifest, err = helpers.DeployConsulWithInstanceCount("multiple-host-multiple-services", 3, boshClient)
 		Expect(err).NotTo(HaveOccurred())
 
 		manifestName, err = ops.ManifestName(manifest)
@@ -31,7 +31,7 @@ var _ = Describe("Multiple hosts multiple services", func() {
 
 		Eventually(func() ([]bosh.VM, error) {
 			return helpers.DeploymentVMs(boshClient, manifestName)
-		}, "1m", "10s").Should(ConsistOf(helpers.GetVMsFromManifestV2(manifest)))
+		}, "1m", "10s").Should(ConsistOf(helpers.GetVMsFromManifest(manifest)))
 
 		testConsumerIPs, err := helpers.GetVMIPs(boshClient, manifestName, "testconsumer")
 		Expect(err).NotTo(HaveOccurred())
@@ -84,7 +84,7 @@ var _ = Describe("Multiple hosts multiple services", func() {
 
 			Eventually(func() ([]bosh.VM, error) {
 				return helpers.DeploymentVMs(boshClient, manifestName)
-			}, "1m", "10s").Should(ConsistOf(helpers.GetVMsFromManifestV2(manifest)))
+			}, "1m", "10s").Should(ConsistOf(helpers.GetVMsFromManifest(manifest)))
 		})
 
 		By("resolving service addresses", func() {

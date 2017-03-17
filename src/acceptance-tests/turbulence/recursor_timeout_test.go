@@ -90,7 +90,7 @@ var _ = Describe("recursor timeout", func() {
 	BeforeEach(func() {
 		By("deploying turbulence", func() {
 			var err error
-			turbulenceManifest, err = helpers.DeployTurbulenceWithOps("recursor-timeout", boshClient)
+			turbulenceManifest, err = helpers.DeployTurbulence("recursor-timeout", boshClient)
 			Expect(err).NotTo(HaveOccurred())
 
 			turbulenceManifestName, err = ops.ManifestName(turbulenceManifest)
@@ -98,7 +98,7 @@ var _ = Describe("recursor timeout", func() {
 
 			Eventually(func() ([]bosh.VM, error) {
 				return helpers.DeploymentVMs(boshClient, turbulenceManifestName)
-			}, "1m", "10s").Should(ConsistOf(helpers.GetVMsFromManifestV2(turbulenceManifest)))
+			}, "1m", "10s").Should(ConsistOf(helpers.GetVMsFromManifest(turbulenceManifest)))
 
 			turbulencePassword, err = ops.FindOp(turbulenceManifest, "/instance_groups/name=api/properties/password")
 			Expect(err).NotTo(HaveOccurred())
@@ -111,7 +111,7 @@ var _ = Describe("recursor timeout", func() {
 
 		By("deploying consul", func() {
 			var err error
-			consulManifest, err = helpers.NewConsulManifestWithOpsWithInstanceCount("recursor-timeout", 1, boshClient)
+			consulManifest, err = helpers.NewConsulManifestWithInstanceCount("recursor-timeout", 1, boshClient)
 			Expect(err).NotTo(HaveOccurred())
 
 			consulManifestName, err = ops.ManifestName(consulManifest)
@@ -189,7 +189,7 @@ var _ = Describe("recursor timeout", func() {
 
 			Eventually(func() ([]bosh.VM, error) {
 				return helpers.DeploymentVMs(boshClient, consulManifestName)
-			}, "1m", "10s").Should(ConsistOf(helpers.GetVMsFromManifestV2(consulManifest)))
+			}, "1m", "10s").Should(ConsistOf(helpers.GetVMsFromManifest(consulManifest)))
 
 			testConsumerIPs, err := helpers.GetVMIPs(boshClient, consulManifestName, "testconsumer")
 			Expect(err).NotTo(HaveOccurred())
@@ -290,7 +290,7 @@ var _ = Describe("recursor timeout", func() {
 
 			Eventually(func() ([]bosh.VM, error) {
 				return helpers.DeploymentVMs(boshClient, consulManifestName)
-			}, "1m", "10s").Should(ConsistOf(helpers.GetVMsFromManifestV2(consulManifest)))
+			}, "1m", "10s").Should(ConsistOf(helpers.GetVMsFromManifest(consulManifest)))
 		})
 
 		By("delaying DNS queries with a network delay that is less than the recursor timeout", func() {

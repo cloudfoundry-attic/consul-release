@@ -35,7 +35,7 @@ var _ = Describe("quorum loss", func() {
 	BeforeEach(func() {
 		By("deploying turbulence", func() {
 			var err error
-			turbulenceManifest, err = helpers.DeployTurbulenceWithOps("quorum-loss", boshClient)
+			turbulenceManifest, err = helpers.DeployTurbulence("quorum-loss", boshClient)
 			Expect(err).NotTo(HaveOccurred())
 
 			turbulenceManifestName, err = ops.ManifestName(turbulenceManifest)
@@ -43,7 +43,7 @@ var _ = Describe("quorum loss", func() {
 
 			Eventually(func() ([]bosh.VM, error) {
 				return helpers.DeploymentVMs(boshClient, turbulenceManifestName)
-			}, "1m", "10s").Should(ConsistOf(helpers.GetVMsFromManifestV2(turbulenceManifest)))
+			}, "1m", "10s").Should(ConsistOf(helpers.GetVMsFromManifest(turbulenceManifest)))
 
 			turbulencePassword, err := ops.FindOp(turbulenceManifest, "/instance_groups/name=api/properties/password")
 			Expect(err).NotTo(HaveOccurred())
@@ -56,7 +56,7 @@ var _ = Describe("quorum loss", func() {
 
 		By("deploying consul", func() {
 			var err error
-			consulManifest, err = helpers.DeployConsulWithOpsWithInstanceCount("quorum-loss", 5, boshClient)
+			consulManifest, err = helpers.DeployConsulWithInstanceCount("quorum-loss", 5, boshClient)
 			Expect(err).NotTo(HaveOccurred())
 
 			consulManifestName, err = ops.ManifestName(consulManifest)
@@ -64,7 +64,7 @@ var _ = Describe("quorum loss", func() {
 
 			Eventually(func() ([]bosh.VM, error) {
 				return helpers.DeploymentVMs(boshClient, consulManifestName)
-			}, "1m", "10s").Should(ConsistOf(helpers.GetVMsFromManifestV2(consulManifest)))
+			}, "1m", "10s").Should(ConsistOf(helpers.GetVMsFromManifest(consulManifest)))
 
 			testConsumerIPs, err := helpers.GetVMIPs(boshClient, consulManifestName, "testconsumer")
 			Expect(err).NotTo(HaveOccurred())
@@ -87,7 +87,7 @@ var _ = Describe("quorum loss", func() {
 
 				Eventually(func() ([]bosh.VM, error) {
 					return helpers.DeploymentVMs(boshClient, consulManifestName)
-				}, "10m", "10s").Should(ConsistOf(helpers.GetVMsFromManifestV2(consulManifest)))
+				}, "10m", "10s").Should(ConsistOf(helpers.GetVMsFromManifest(consulManifest)))
 
 				Eventually(func() ([]string, error) {
 					return lockedDeployments()

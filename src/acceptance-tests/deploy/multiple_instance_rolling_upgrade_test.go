@@ -46,7 +46,7 @@ var _ = Describe("Multiple instance rolling upgrade", func() {
 			releaseNumber := os.Getenv("LATEST_CONSUL_RELEASE_VERSION")
 
 			var err error
-			manifest, err = helpers.DeployConsulWithOpsWithInstanceCountAndReleaseVersion("multiple-instance-rolling-upgrade", 3, boshClient, releaseNumber)
+			manifest, err = helpers.DeployConsulWithInstanceCountAndReleaseVersion("multiple-instance-rolling-upgrade", 3, boshClient, releaseNumber)
 			Expect(err).NotTo(HaveOccurred())
 
 			manifestName, err = ops.ManifestName(manifest)
@@ -54,7 +54,7 @@ var _ = Describe("Multiple instance rolling upgrade", func() {
 
 			Eventually(func() ([]bosh.VM, error) {
 				return helpers.DeploymentVMs(boshClient, manifestName)
-			}, "1m", "10s").Should(ConsistOf(helpers.GetVMsFromManifestV2(manifest)))
+			}, "1m", "10s").Should(ConsistOf(helpers.GetVMsFromManifest(manifest)))
 
 			testConsumerIPs, err := helpers.GetVMIPs(boshClient, manifestName, "testconsumer")
 			Expect(err).NotTo(HaveOccurred())
@@ -85,7 +85,7 @@ var _ = Describe("Multiple instance rolling upgrade", func() {
 
 			Eventually(func() ([]bosh.VM, error) {
 				return helpers.DeploymentVMs(boshClient, manifestName)
-			}, "1m", "10s").Should(ConsistOf(helpers.GetVMsFromManifestV2(manifest)))
+			}, "1m", "10s").Should(ConsistOf(helpers.GetVMsFromManifest(manifest)))
 
 			err = helpers.VerifyDeploymentRelease(boshClient, manifestName, helpers.ConsulReleaseVersion())
 			Expect(err).NotTo(HaveOccurred())

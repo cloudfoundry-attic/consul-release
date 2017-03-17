@@ -34,7 +34,7 @@ var _ = Describe("Scaling down instances", func() {
 			testKey = "consul-key-" + guid
 			testValue = "consul-value-" + guid
 
-			manifest, err = helpers.DeployConsulWithOpsWithInstanceCount("scale-down-3-to-1", 3, boshClient)
+			manifest, err = helpers.DeployConsulWithInstanceCount("scale-down-3-to-1", 3, boshClient)
 			Expect(err).NotTo(HaveOccurred())
 
 			manifestName, err = ops.ManifestName(manifest)
@@ -42,7 +42,7 @@ var _ = Describe("Scaling down instances", func() {
 
 			Eventually(func() ([]bosh.VM, error) {
 				return helpers.DeploymentVMs(boshClient, manifestName)
-			}, "1m", "10s").Should(ConsistOf(helpers.GetVMsFromManifestV2(manifest)))
+			}, "1m", "10s").Should(ConsistOf(helpers.GetVMsFromManifest(manifest)))
 
 			testConsumerIPs, err := helpers.GetVMIPs(boshClient, manifestName, "testconsumer")
 			Expect(err).NotTo(HaveOccurred())
@@ -77,7 +77,7 @@ var _ = Describe("Scaling down instances", func() {
 
 				Eventually(func() ([]bosh.VM, error) {
 					return helpers.DeploymentVMs(boshClient, manifestName)
-				}, "1m", "10s").Should(ConsistOf(helpers.GetVMsFromManifestV2(manifest)))
+				}, "1m", "10s").Should(ConsistOf(helpers.GetVMsFromManifest(manifest)))
 			})
 
 			By("checking if value was persisted", func() {
@@ -102,7 +102,7 @@ var _ = Describe("Scaling down instances", func() {
 			testKey = "consul-key-" + guid
 			testValue = "consul-value-" + guid
 
-			manifest, err = helpers.DeployConsulWithOpsWithInstanceCount("scale-down-5-to-3", 5, boshClient)
+			manifest, err = helpers.DeployConsulWithInstanceCount("scale-down-5-to-3", 5, boshClient)
 			Expect(err).NotTo(HaveOccurred())
 
 			manifestName, err = ops.ManifestName(manifest)
@@ -110,7 +110,7 @@ var _ = Describe("Scaling down instances", func() {
 
 			Eventually(func() ([]bosh.VM, error) {
 				return helpers.DeploymentVMs(boshClient, manifestName)
-			}, "1m", "10s").Should(ConsistOf(helpers.GetVMsFromManifestV2(manifest)))
+			}, "1m", "10s").Should(ConsistOf(helpers.GetVMsFromManifest(manifest)))
 
 			testConsumerIPs, err := helpers.GetVMIPs(boshClient, manifestName, "testconsumer")
 			Expect(err).NotTo(HaveOccurred())
@@ -149,7 +149,7 @@ var _ = Describe("Scaling down instances", func() {
 
 				Eventually(func() ([]bosh.VM, error) {
 					return helpers.DeploymentVMs(boshClient, manifestName)
-				}, "1m", "10s").Should(ConsistOf(helpers.GetVMsFromManifestV2(manifest)))
+				}, "1m", "10s").Should(ConsistOf(helpers.GetVMsFromManifest(manifest)))
 
 				spammer.Stop()
 			})

@@ -36,7 +36,7 @@ var _ = Describe("Health Check", func() {
 
 		BeforeEach(func() {
 			var err error
-			manifest, err = helpers.DeployConsulWithOpsWithInstanceCount("health-check-custom-script", 3, boshClient)
+			manifest, err = helpers.DeployConsulWithInstanceCount("health-check-custom-script", 3, boshClient)
 			Expect(err).NotTo(HaveOccurred())
 
 			manifestName, err = ops.ManifestName(manifest)
@@ -44,7 +44,7 @@ var _ = Describe("Health Check", func() {
 
 			Eventually(func() ([]bosh.VM, error) {
 				return helpers.DeploymentVMs(boshClient, manifestName)
-			}, "1m", "10s").Should(ConsistOf(helpers.GetVMsFromManifestV2(manifest)))
+			}, "1m", "10s").Should(ConsistOf(helpers.GetVMsFromManifest(manifest)))
 
 			testConsumerIPs, err := helpers.GetVMIPs(boshClient, manifestName, "testconsumer")
 			Expect(err).NotTo(HaveOccurred())
@@ -88,7 +88,7 @@ var _ = Describe("Health Check", func() {
 
 				Eventually(func() ([]bosh.VM, error) {
 					return helpers.DeploymentVMs(boshClient, manifestName)
-				}, "1m", "10s").Should(ConsistOf(helpers.GetVMsFromManifestV2(manifest)))
+				}, "1m", "10s").Should(ConsistOf(helpers.GetVMsFromManifest(manifest)))
 			})
 
 			By("resolving the service address", func() {
@@ -139,7 +139,7 @@ var _ = Describe("Health Check", func() {
 
 		BeforeEach(func() {
 			var err error
-			manifest, err = helpers.DeployConsulWithOpsWithInstanceCount("health-check-default-script", 3, boshClient)
+			manifest, err = helpers.DeployConsulWithInstanceCount("health-check-default-script", 3, boshClient)
 			Expect(err).NotTo(HaveOccurred())
 
 			manifestName, err = ops.ManifestName(manifest)
@@ -147,7 +147,7 @@ var _ = Describe("Health Check", func() {
 
 			Eventually(func() ([]bosh.VM, error) {
 				return helpers.DeploymentVMs(boshClient, manifestName)
-			}, "1m", "10s").Should(ConsistOf(helpers.GetVMsFromManifestV2(manifest)))
+			}, "1m", "10s").Should(ConsistOf(helpers.GetVMsFromManifest(manifest)))
 
 			testConsumerIPs, err := helpers.GetVMIPs(boshClient, manifestName, "testconsumer")
 			Expect(err).NotTo(HaveOccurred())
@@ -193,7 +193,7 @@ var _ = Describe("Health Check", func() {
 
 				Eventually(func() ([]bosh.VM, error) {
 					return helpers.DeploymentVMs(boshClient, manifestName)
-				}, "1m", "10s").Should(ConsistOf(helpers.GetVMsFromManifestV2(manifest)))
+				}, "1m", "10s").Should(ConsistOf(helpers.GetVMsFromManifest(manifest)))
 			})
 
 			By("resolving the service address", func() {
