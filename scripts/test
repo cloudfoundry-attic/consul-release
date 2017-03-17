@@ -4,7 +4,7 @@ export CONSUL_RELEASE_VERSION="99999+dev.$(date +%s)"
 export LATEST_CONSUL_RELEASE_VERSION="$(curl http://bosh.io/api/v1/releases/github.com/cloudfoundry-incubator/consul-release | jq -r .[0].version)"
 
 warden_cpi_version="29"
-turbulence_version="0.4"
+turbulence_version="0.6"
 
 function check_dependencies() {
   test -n "${CONSATS_CONFIG?"CONSATS_CONFIG is a required environment variable"}"
