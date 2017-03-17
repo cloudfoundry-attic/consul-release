@@ -39,27 +39,6 @@ var _ = Describe("configuration", func() {
 						"password": "some-bosh-password",
 						"director_ca_cert": "some-ca-cert"
 					},
-					"aws": {
-						"subnets": [
-						{"id":"some-awssubnet-1", "range": "10.0.1.0/24", "az":"some-az-1", "security_group":"some-security-group-1"},
-						{"id":"some-awssubnet-2", "range": "10.0.2.0/24", "az":"some-az-2", "security_group":"some-security-group-2"}
-						],
-						"cloud_config_subnets": [
-						{"id":"some-cloudconfig-awssubnet-1", "range": "10.0.3.0/24", "az":"some-az-1", "security_group":"some-security-group-1"},
-						{"id":"some-cloudconfig-awssubnet-2", "range": "10.0.4.0/24", "az":"some-az-2", "security_group":"some-security-group-2"}
-						],
-						"access_key_id": "some-access-key-id",
-						"secret_access_key": "some-secret-access-key",
-						"default_key_name": "some-default-key-name",
-						"default_security_groups": ["some-default-security-group"],
-						"region": "some-region"
-					},
-					"registry": {
-						"host": "some-registry-host",
-						"port": 12345,
-						"username": "some-registry-username",
-						"password": "some-registry-password"
-					},
 					"parallel_nodes": 4,
 					"windows_clients": true
 				}`)
@@ -81,30 +60,8 @@ var _ = Describe("configuration", func() {
 						Password:       "some-bosh-password",
 						DirectorCACert: "some-ca-cert",
 					},
-					AWS: helpers.ConfigAWS{
-						Subnets: []helpers.ConfigSubnet{
-							{ID: "some-awssubnet-1", Range: "10.0.1.0/24", AZ: "some-az-1", SecurityGroup: "some-security-group-1"},
-							{ID: "some-awssubnet-2", Range: "10.0.2.0/24", AZ: "some-az-2", SecurityGroup: "some-security-group-2"},
-						},
-						CloudConfigSubnets: []helpers.ConfigSubnet{
-							{ID: "some-cloudconfig-awssubnet-1", Range: "10.0.3.0/24", AZ: "some-az-1", SecurityGroup: "some-security-group-1"},
-							{ID: "some-cloudconfig-awssubnet-2", Range: "10.0.4.0/24", AZ: "some-az-2", SecurityGroup: "some-security-group-2"},
-						},
-						AccessKeyID:           "some-access-key-id",
-						SecretAccessKey:       "some-secret-access-key",
-						DefaultKeyName:        "some-default-key-name",
-						DefaultSecurityGroups: []string{"some-default-security-group"},
-						Region:                "some-region",
-					},
-					Registry: helpers.ConfigRegistry{
-						Host:     "some-registry-host",
-						Port:     12345,
-						Username: "some-registry-username",
-						Password: "some-registry-password",
-					},
-					TurbulenceReleaseName: "turbulence",
-					ParallelNodes:         4,
-					WindowsClients:        true,
+					ParallelNodes:  4,
+					WindowsClients: true,
 				}))
 			})
 		})
@@ -205,123 +162,6 @@ var _ = Describe("configuration", func() {
 			})
 		})
 
-		Context("when turbulence config is not provided", func() {
-			var configFilePath string
-
-			BeforeEach(func() {
-				var err error
-				configFilePath, err = writeConfigJSON(`{
-					"bosh": {
-						"target": "some-bosh-target",
-						"username": "some-bosh-username",
-						"password": "some-bosh-password"
-					}
-				}`)
-				Expect(err).NotTo(HaveOccurred())
-			})
-
-			AfterEach(func() {
-				err := os.Remove(configFilePath)
-				Expect(err).NotTo(HaveOccurred())
-			})
-
-			It("returns a valid config", func() {
-				config, err := helpers.LoadConfig(configFilePath)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(config).To(Equal(helpers.Config{
-					BOSH: helpers.ConfigBOSH{
-						Target:   "some-bosh-target",
-						Username: "some-bosh-username",
-						Password: "some-bosh-password",
-					},
-					AWS: helpers.ConfigAWS{
-						DefaultKeyName: "bosh",
-						Region:         "us-west-2",
-					},
-					TurbulenceReleaseName: "turbulence",
-					ParallelNodes:         1,
-				}))
-			})
-		})
-
-		Context("when aws.default_key_name is missing", func() {
-			var configFilePath string
-
-			BeforeEach(func() {
-				var err error
-				configFilePath, err = writeConfigJSON(`{
-					"bosh": {
-						"target": "some-bosh-target",
-						"username": "some-bosh-username",
-						"password": "some-bosh-password"
-					}
-				}`)
-				Expect(err).NotTo(HaveOccurred())
-			})
-
-			AfterEach(func() {
-				err := os.Remove(configFilePath)
-				Expect(err).NotTo(HaveOccurred())
-			})
-
-			It("uses the name 'bosh'", func() {
-				config, err := helpers.LoadConfig(configFilePath)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(config).To(Equal(helpers.Config{
-					BOSH: helpers.ConfigBOSH{
-						Target:   "some-bosh-target",
-						Username: "some-bosh-username",
-						Password: "some-bosh-password",
-					},
-					AWS: helpers.ConfigAWS{
-						DefaultKeyName: "bosh",
-						Region:         "us-west-2",
-					},
-					TurbulenceReleaseName: "turbulence",
-					ParallelNodes:         1,
-				}))
-			})
-		})
-
-		Context("when aws.region is missing", func() {
-			var configFilePath string
-
-			BeforeEach(func() {
-				var err error
-				configFilePath, err = writeConfigJSON(`{
-					"bosh": {
-						"target": "some-bosh-target",
-						"username": "some-bosh-username",
-						"password": "some-bosh-password"
-					}
-				}`)
-				Expect(err).NotTo(HaveOccurred())
-			})
-
-			AfterEach(func() {
-				err := os.Remove(configFilePath)
-				Expect(err).NotTo(HaveOccurred())
-			})
-
-			It("uses the region 'us-west-2'", func() {
-				config, err := helpers.LoadConfig(configFilePath)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(config).To(Equal(helpers.Config{
-					BOSH: helpers.ConfigBOSH{
-						Target:   "some-bosh-target",
-						Username: "some-bosh-username",
-						Password: "some-bosh-password",
-					},
-					AWS: helpers.ConfigAWS{
-						DefaultKeyName: "bosh",
-						Region:         "us-west-2",
-					},
-					TurbulenceReleaseName: "turbulence",
-					ParallelNodes:         1,
-				}))
-			})
-		})
-
 		Context("when parallel_nodes is missing", func() {
 			var configFilePath string
 
@@ -351,12 +191,7 @@ var _ = Describe("configuration", func() {
 						Username: "some-bosh-username",
 						Password: "some-bosh-password",
 					},
-					AWS: helpers.ConfigAWS{
-						DefaultKeyName: "bosh",
-						Region:         "us-west-2",
-					},
-					TurbulenceReleaseName: "turbulence",
-					ParallelNodes:         1,
+					ParallelNodes: 1,
 				}))
 			})
 		})
