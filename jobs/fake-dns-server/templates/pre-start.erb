@@ -37,7 +37,9 @@ function add_entry_to_hosts() {
   local address_to_add
   address_to_add="<%= p("fake_dns_server.host_to_add.address") %>"
 
-  echo "${address_to_add} ${host_to_add}" >> "${hosts_file}"
+  if [[ -n "${host_to_add}" && -n "${address_to_add}" ]]; then
+    echo "${address_to_add} ${host_to_add}" >> "${hosts_file}"
+  fi
 }
 
 function main() {
