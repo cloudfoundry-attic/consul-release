@@ -190,7 +190,7 @@ var _ = Describe("Controller", func() {
 			It("returns an error after timeout", func() {
 				agentClient.SelfCall.Returns.Error = errors.New("some error occurred")
 
-				timeout := utils.NewTimeout(time.After(0))
+				timeout := utils.NewTimeout(time.After(10 * time.Millisecond))
 
 				err := controller.BootAgent(timeout)
 				Expect(err).To(MatchError(`timeout exceeded: "some error occurred"`))
@@ -554,7 +554,7 @@ var _ = Describe("Controller", func() {
 				It("immediately returns an error", func() {
 					agentClient.VerifySyncedCalls.Returns.Error = errors.New("some error")
 
-					timeout = utils.NewTimeout(time.After(0))
+					timeout = utils.NewTimeout(time.After(10 * time.Millisecond))
 
 					err := controller.ConfigureServer(timeout, rpcClient)
 					Expect(err).To(MatchError(`timeout exceeded: "some error"`))
