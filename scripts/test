@@ -37,7 +37,11 @@ function main() {
 
   upload_releases "${scripts_dir}"
   force_compilation "${scripts_dir}"
-  bash -c "${scripts_dir}/../src/acceptance-tests/scripts/test -nodes ${PARALLEL_NODES} $@"
+  if [[ "${1}" = "turbulence" ]]; then
+    bash -c "${scripts_dir}/../src/acceptance-tests/scripts/test-turbulence -nodes ${PARALLEL_NODES} $@"
+  else
+    bash -c "${scripts_dir}/../src/acceptance-tests/scripts/test -nodes ${PARALLEL_NODES} $@"
+  fi
 }
 
 function parse_config() {

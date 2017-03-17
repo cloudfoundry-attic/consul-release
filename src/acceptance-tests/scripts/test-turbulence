@@ -28,7 +28,6 @@ function main() {
       -randomizeSuites \
       -skipPackage precheck \
       -slowSpecThreshold 300 \
-      turbulence \
       "$@"
   popd > /dev/null
 }
