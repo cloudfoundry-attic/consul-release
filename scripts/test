@@ -82,6 +82,8 @@ function force_compilation() {
   set -x
 
   pushd /tmp > /dev/null
+    cp "${scripts_dir}/fixtures/consul_compilation.yml" "consul_compilation.yml"
+
     if [[ -n $(bosh cloud-config) ]]; then
       echo "cloud config exists...skipping update cloud-config"
     else
