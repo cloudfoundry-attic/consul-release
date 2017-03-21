@@ -12,16 +12,10 @@ import (
 func NewConsulManifestWithInstanceCountAndReleaseVersion(deploymentPrefix string, instanceCount int, boshClient bosh.Client, releaseVersion string) (string, error) {
 	manifestName := fmt.Sprintf("consul-%s", deploymentPrefix)
 
-	info, err := boshClient.Info()
-	if err != nil {
-		return "", err
-	}
-
 	//TODO: AZs should be pulled from integration_config
 	manifest, err := consul.NewManifestV2(consul.ConfigV2{
-		DirectorUUID: info.UUID,
-		Name:         manifestName,
-		AZs:          []string{"z1", "z2"},
+		Name: manifestName,
+		AZs:  []string{"z1", "z2"},
 	})
 	if err != nil {
 		return "", err

@@ -8,15 +8,9 @@ import (
 )
 
 func DeployTurbulence(suffix string, client bosh.Client) (string, error) {
-	info, err := client.Info()
-	if err != nil {
-		return "", err
-	}
-
 	boshConfig := client.GetConfig()
 
 	manifest, err := turbulence.NewManifestV2(turbulence.ConfigV2{
-		DirectorUUID:     info.UUID,
 		Name:             fmt.Sprintf("turbulence-%s", suffix),
 		AZs:              []string{"z1"},
 		DirectorHost:     boshConfig.Host,
