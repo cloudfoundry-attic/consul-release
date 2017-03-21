@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/url"
 	"os"
 	"strings"
 )
@@ -16,6 +17,7 @@ type Config struct {
 
 type ConfigBOSH struct {
 	Target         string `json:"target"`
+	Host           string
 	Username       string `json:"username"`
 	Password       string `json:"password"`
 	DirectorCACert string `json:"director_ca_cert"`
@@ -35,7 +37,12 @@ func LoadConfig(configFilePath string) (Config, error) {
 	}
 
 	if config.BOSH.Target == "" {
-		return Config{}, errors.New("missing `bosh.target` - e.g. 'lite' or '192.168.50.4'")
+		return Config{}, errors.New("missing `bosh.target` - e.g. 'https://192.168.50.4:25555'")
+	}
+
+	config.BOSH.Host, err = addBOSHHost(config.BOSH.Target)
+	if err != nil {
+		return Config{}, err
 	}
 
 	if config.BOSH.Username == "" {
@@ -51,6 +58,15 @@ func LoadConfig(configFilePath string) (Config, error) {
 	}
 
 	return config, nil
+}
+
+func addBOSHHost(target string) (string, error) {
+	u, err := url.Parse(target)
+	if err != nil {
+		return "", err
+	}
+
+	return u.Hostname(), nil
 }
 
 func loadConfigJsonFromPath(configFilePath string) (Config, error) {

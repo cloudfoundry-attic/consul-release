@@ -1,7 +1,6 @@
 package turbulence_test
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/cloudfoundry-incubator/consul-release/src/acceptance-tests/testing/helpers"
@@ -31,8 +30,8 @@ var _ = BeforeSuite(func() {
 
 	consulReleaseVersion = helpers.ConsulReleaseVersion()
 	boshClient = bosh.NewClient(bosh.Config{
-		URL:              fmt.Sprintf("https://%s:25555", config.BOSH.Target),
-		Host:             config.BOSH.Target,
+		URL:              config.BOSH.Target,
+		Host:             config.BOSH.Host,
 		Username:         config.BOSH.Username,
 		Password:         config.BOSH.Password,
 		AllowInsecureSSL: true,

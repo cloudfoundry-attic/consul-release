@@ -27,14 +27,14 @@ func writeConfigJSON(json string) (string, error) {
 
 var _ = Describe("configuration", func() {
 	Describe("LoadConfig", func() {
-		Context("with a valid config options", func() {
+		Context("with a valid config JSON", func() {
 			var configFilePath string
 
 			BeforeEach(func() {
 				var err error
 				configFilePath, err = writeConfigJSON(`{
 					"bosh": {
-						"target": "some-bosh-target",
+						"target": "https://some-bosh-target:25555",
 						"username": "some-bosh-username",
 						"password": "some-bosh-password",
 						"director_ca_cert": "some-ca-cert"
@@ -55,7 +55,8 @@ var _ = Describe("configuration", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(config).To(Equal(helpers.Config{
 					BOSH: helpers.ConfigBOSH{
-						Target:         "some-bosh-target",
+						Target:         "https://some-bosh-target:25555",
+						Host:           "some-bosh-target",
 						Username:       "some-bosh-username",
 						Password:       "some-bosh-password",
 						DirectorCACert: "some-ca-cert",
@@ -66,102 +67,6 @@ var _ = Describe("configuration", func() {
 			})
 		})
 
-		Context("with an invalid config json file location", func() {
-			It("should return an error if the file does not exist", func() {
-				_, err := helpers.LoadConfig("someblahblahfile")
-				Expect(err).To(MatchError(ContainSubstring("no such file or directory")))
-			})
-		})
-
-		Context("when config file contains invalid JSON", func() {
-			var configFilePath string
-
-			BeforeEach(func() {
-				var err error
-				configFilePath, err = writeConfigJSON("%%%")
-				Expect(err).NotTo(HaveOccurred())
-			})
-
-			AfterEach(func() {
-				err := os.Remove(configFilePath)
-				Expect(err).NotTo(HaveOccurred())
-			})
-
-			It("should return an error", func() {
-				_, err := helpers.LoadConfig(configFilePath)
-				Expect(err).To(MatchError(ContainSubstring("invalid character '%'")))
-			})
-		})
-
-		Context("when the bosh.target is missing", func() {
-			var configFilePath string
-
-			BeforeEach(func() {
-				var err error
-				configFilePath, err = writeConfigJSON(`{}`)
-				Expect(err).NotTo(HaveOccurred())
-			})
-
-			AfterEach(func() {
-				err := os.Remove(configFilePath)
-				Expect(err).NotTo(HaveOccurred())
-			})
-
-			It("should return an error", func() {
-				_, err := helpers.LoadConfig(configFilePath)
-				Expect(err).To(MatchError(errors.New("missing `bosh.target` - e.g. 'lite' or '192.168.50.4'")))
-			})
-		})
-
-		Context("when the bosh.username is missing", func() {
-			var configFilePath string
-
-			BeforeEach(func() {
-				var err error
-				configFilePath, err = writeConfigJSON(`{
-					"bosh": {
-						"target": "some-bosh-target"
-					}
-				}`)
-				Expect(err).NotTo(HaveOccurred())
-			})
-
-			AfterEach(func() {
-				err := os.Remove(configFilePath)
-				Expect(err).NotTo(HaveOccurred())
-			})
-
-			It("should return an error", func() {
-				_, err := helpers.LoadConfig(configFilePath)
-				Expect(err).To(MatchError(errors.New("missing `bosh.username` - specify username for authenticating with BOSH")))
-			})
-		})
-
-		Context("when the bosh_password is missing", func() {
-			var configFilePath string
-
-			BeforeEach(func() {
-				var err error
-				configFilePath, err = writeConfigJSON(`{
-					"bosh": {
-						"target": "some-bosh-target",
-						"username": "some-bosh-username"
-					}
-				}`)
-				Expect(err).NotTo(HaveOccurred())
-			})
-
-			AfterEach(func() {
-				err := os.Remove(configFilePath)
-				Expect(err).NotTo(HaveOccurred())
-			})
-
-			It("should return an error", func() {
-				_, err := helpers.LoadConfig(configFilePath)
-				Expect(err).To(MatchError(errors.New("missing `bosh.password` - specify password for authenticating with BOSH")))
-			})
-		})
-
 		Context("when parallel_nodes is missing", func() {
 			var configFilePath string
 
@@ -169,7 +74,7 @@ var _ = Describe("configuration", func() {
 				var err error
 				configFilePath, err = writeConfigJSON(`{
 					"bosh": {
-						"target": "some-bosh-target",
+						"target": "https://some-bosh-target:25555",
 						"username": "some-bosh-username",
 						"password": "some-bosh-password"
 					}
@@ -187,12 +92,135 @@ var _ = Describe("configuration", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(config).To(Equal(helpers.Config{
 					BOSH: helpers.ConfigBOSH{
-						Target:   "some-bosh-target",
+						Target:   "https://some-bosh-target:25555",
+						Host:     "some-bosh-target",
 						Username: "some-bosh-username",
 						Password: "some-bosh-password",
 					},
 					ParallelNodes: 1,
 				}))
+			})
+		})
+
+		Context("failure cases", func() {
+			Context("with an missing config json file location", func() {
+				It("should return an error", func() {
+					_, err := helpers.LoadConfig("someblahblahfile")
+					Expect(err).To(MatchError(ContainSubstring("no such file or directory")))
+				})
+			})
+
+			Context("when config file contains invalid JSON", func() {
+				var configFilePath string
+
+				BeforeEach(func() {
+					var err error
+					configFilePath, err = writeConfigJSON("%%%")
+					Expect(err).NotTo(HaveOccurred())
+				})
+
+				AfterEach(func() {
+					err := os.Remove(configFilePath)
+					Expect(err).NotTo(HaveOccurred())
+				})
+
+				It("should return an error", func() {
+					_, err := helpers.LoadConfig(configFilePath)
+					Expect(err).To(MatchError(ContainSubstring("invalid character '%'")))
+				})
+			})
+
+			Context("when the bosh.target is missing", func() {
+				var configFilePath string
+
+				BeforeEach(func() {
+					var err error
+					configFilePath, err = writeConfigJSON(`{}`)
+					Expect(err).NotTo(HaveOccurred())
+				})
+
+				AfterEach(func() {
+					err := os.Remove(configFilePath)
+					Expect(err).NotTo(HaveOccurred())
+				})
+
+				It("should return an error", func() {
+					_, err := helpers.LoadConfig(configFilePath)
+					Expect(err).To(MatchError(errors.New("missing `bosh.target` - e.g. 'https://192.168.50.4:25555'")))
+				})
+			})
+
+			Context("when the bosh.target is invalid", func() {
+				var configFilePath string
+
+				BeforeEach(func() {
+					var err error
+					configFilePath, err = writeConfigJSON(`{
+						"bosh": {
+							"target": "%%%"
+						}
+					}`)
+					Expect(err).NotTo(HaveOccurred())
+				})
+
+				AfterEach(func() {
+					err := os.Remove(configFilePath)
+					Expect(err).NotTo(HaveOccurred())
+				})
+
+				It("should return an error", func() {
+					_, err := helpers.LoadConfig(configFilePath)
+					Expect(err).To(MatchError(`parse %%%: invalid URL escape "%%%"`))
+				})
+			})
+
+			Context("when the bosh.username is missing", func() {
+				var configFilePath string
+
+				BeforeEach(func() {
+					var err error
+					configFilePath, err = writeConfigJSON(`{
+						"bosh": {
+							"target": "some-bosh-target"
+						}
+					}`)
+					Expect(err).NotTo(HaveOccurred())
+				})
+
+				AfterEach(func() {
+					err := os.Remove(configFilePath)
+					Expect(err).NotTo(HaveOccurred())
+				})
+
+				It("should return an error", func() {
+					_, err := helpers.LoadConfig(configFilePath)
+					Expect(err).To(MatchError(errors.New("missing `bosh.username` - specify username for authenticating with BOSH")))
+				})
+			})
+
+			Context("when the bosh.password is missing", func() {
+				var configFilePath string
+
+				BeforeEach(func() {
+					var err error
+					configFilePath, err = writeConfigJSON(`{
+						"bosh": {
+							"target": "https://some-bosh-target:25555",
+							"username": "some-bosh-username"
+						}
+					}`)
+					Expect(err).NotTo(HaveOccurred())
+				})
+
+				AfterEach(func() {
+					err := os.Remove(configFilePath)
+					Expect(err).NotTo(HaveOccurred())
+				})
+
+				It("should return an error", func() {
+					_, err := helpers.LoadConfig(configFilePath)
+					Expect(err).To(MatchError(errors.New("missing `bosh.password` - specify password for authenticating with BOSH")))
+				})
 			})
 		})
 	})
