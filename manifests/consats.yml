@@ -1,8 +1,6 @@
 ---
 name: consats
 
-director_uuid: BOSH_DIRECTOR_UUID # REPLACE ME
-
 releases:
 - name: consul
   version: CONSUL_RELEASE_VERSION # REPLACE ME
@@ -16,9 +14,12 @@ instance_groups:
 - name: acceptance-tests
   instances: 1
   lifecycle: errand
+  azs: [z1]
   vm_type: m3.medium
   vm_extensions: [10GB_ephemeral_disk]
   stemcell: default
+  networks:
+  - name: private
   jobs:
   - name: acceptance-tests
     release: consul
