@@ -46,7 +46,7 @@ var _ = Describe("Multiple instance rolling upgrade", func() {
 			releaseNumber := os.Getenv("LATEST_CONSUL_RELEASE_VERSION")
 
 			var err error
-			manifest, err = helpers.DeployConsulWithInstanceCountAndReleaseVersion("multiple-instance-rolling-upgrade", 3, boshClient, releaseNumber)
+			manifest, err = helpers.DeployConsulWithInstanceCountAndReleaseVersion("multiple-instance-rolling-upgrade", 3, config.WindowsClients, boshClient, releaseNumber)
 			Expect(err).NotTo(HaveOccurred())
 
 			manifestName, err = ops.ManifestName(manifest)

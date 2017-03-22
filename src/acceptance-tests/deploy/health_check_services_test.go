@@ -36,7 +36,7 @@ var _ = Describe("Health Check", func() {
 
 		BeforeEach(func() {
 			var err error
-			manifest, err = helpers.DeployConsulWithInstanceCount("health-check-custom-script", 3, boshClient)
+			manifest, err = helpers.DeployConsulWithInstanceCount("health-check-custom-script", 3, config.WindowsClients, boshClient)
 			Expect(err).NotTo(HaveOccurred())
 
 			manifestName, err = ops.ManifestName(manifest)
@@ -139,7 +139,7 @@ var _ = Describe("Health Check", func() {
 
 		BeforeEach(func() {
 			var err error
-			manifest, err = helpers.DeployConsulWithInstanceCount("health-check-default-script", 3, boshClient)
+			manifest, err = helpers.DeployConsulWithInstanceCount("health-check-default-script", 3, config.WindowsClients, boshClient)
 			Expect(err).NotTo(HaveOccurred())
 
 			manifestName, err = ops.ManifestName(manifest)

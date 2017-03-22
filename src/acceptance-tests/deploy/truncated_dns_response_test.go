@@ -48,7 +48,7 @@ var _ = Describe("given large DNS response", func() {
 
 	BeforeEach(func() {
 		var err error
-		manifest, err = helpers.NewConsulManifestWithInstanceCount("large-dns-response", 1, boshClient)
+		manifest, err = helpers.NewConsulManifestWithInstanceCount("large-dns-response", 1, config.WindowsClients, boshClient)
 		Expect(err).NotTo(HaveOccurred())
 
 		manifestName, err = ops.ManifestName(manifest)

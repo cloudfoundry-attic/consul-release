@@ -60,7 +60,7 @@ var _ = Describe("KillVm", func() {
 			testKey = "consul-key-" + guid
 			testValue = "consul-value-" + guid
 
-			consulManifest, err = helpers.DeployConsulWithInstanceCount("kill-vm", 3, boshClient)
+			consulManifest, err = helpers.DeployConsulWithInstanceCount("kill-vm", 3, config.WindowsClients, boshClient)
 			Expect(err).NotTo(HaveOccurred())
 
 			consulManifestName, err = ops.ManifestName(consulManifest)

@@ -32,7 +32,7 @@ var _ = Describe("Encryption key rotation", func() {
 		testKey = "consul-key-" + guid
 		testValue = "consul-value-" + guid
 
-		manifest, err = helpers.DeployConsulWithInstanceCount("encryption-key-rotation", 3, boshClient)
+		manifest, err = helpers.DeployConsulWithInstanceCount("encryption-key-rotation", 3, config.WindowsClients, boshClient)
 		Expect(err).NotTo(HaveOccurred())
 
 		manifestName, err = ops.ManifestName(manifest)

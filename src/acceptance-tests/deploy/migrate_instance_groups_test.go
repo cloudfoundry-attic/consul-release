@@ -42,7 +42,7 @@ var _ = Describe("Migrate instance groups", func() {
 		It("deploys successfully with minimal interruption", func() {
 			By("deploying 3 node cluster across two AZs with name consul", func() {
 				var err error
-				manifest, err = helpers.DeployConsulWithInstanceCount("migrate-instance-group", 3, boshClient)
+				manifest, err = helpers.DeployConsulWithInstanceCount("migrate-instance-group", 3, config.WindowsClients, boshClient)
 				Expect(err).NotTo(HaveOccurred())
 
 				manifestName, err = ops.ManifestName(manifest)

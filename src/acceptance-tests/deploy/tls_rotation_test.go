@@ -160,7 +160,7 @@ var _ = Describe("TLS key rotation", func() {
 
 	BeforeEach(func() {
 		var err error
-		manifest, err = helpers.DeployConsulWithInstanceCount("tls-key-rotation", 3, boshClient)
+		manifest, err = helpers.DeployConsulWithInstanceCount("tls-key-rotation", 3, config.WindowsClients, boshClient)
 		Expect(err).NotTo(HaveOccurred())
 
 		manifestName, err = ops.ManifestName(manifest)

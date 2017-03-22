@@ -33,7 +33,7 @@ var _ = Describe("Scaling up Instances", func() {
 			testKey = "consul-key-" + guid
 			testValue = "consul-value-" + guid
 
-			manifest, err = helpers.DeployConsulWithInstanceCount("scale-up-1-to-3", 1, boshClient)
+			manifest, err = helpers.DeployConsulWithInstanceCount("scale-up-1-to-3", 1, config.WindowsClients, boshClient)
 			Expect(err).NotTo(HaveOccurred())
 
 			manifestName, err = ops.ManifestName(manifest)
@@ -101,7 +101,7 @@ var _ = Describe("Scaling up Instances", func() {
 			testKey = "consul-key-" + guid
 			testValue = "consul-value-" + guid
 
-			manifest, err = helpers.DeployConsulWithInstanceCount("scale-up-3-to-5", 3, boshClient)
+			manifest, err = helpers.DeployConsulWithInstanceCount("scale-up-3-to-5", 3, config.WindowsClients, boshClient)
 			Expect(err).NotTo(HaveOccurred())
 
 			manifestName, err = ops.ManifestName(manifest)

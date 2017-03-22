@@ -111,7 +111,7 @@ var _ = Describe("recursor timeout", func() {
 
 		By("deploying consul", func() {
 			var err error
-			consulManifest, err = helpers.NewConsulManifestWithInstanceCount("recursor-timeout", 1, boshClient)
+			consulManifest, err = helpers.NewConsulManifestWithInstanceCount("recursor-timeout", 1, config.WindowsClients, boshClient)
 			Expect(err).NotTo(HaveOccurred())
 
 			consulManifestName, err = ops.ManifestName(consulManifest)

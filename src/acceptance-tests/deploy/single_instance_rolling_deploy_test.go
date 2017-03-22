@@ -30,7 +30,7 @@ var _ = Describe("Single instance rolling deploys", func() {
 		testKey = "consul-key-" + guid
 		testValue = "consul-value-" + guid
 
-		manifest, err = helpers.DeployConsulWithInstanceCount("single-instance-rolling-deploy", 1, boshClient)
+		manifest, err = helpers.DeployConsulWithInstanceCount("single-instance-rolling-deploy", 1, config.WindowsClients, boshClient)
 		Expect(err).NotTo(HaveOccurred())
 
 		manifestName, err = ops.ManifestName(manifest)

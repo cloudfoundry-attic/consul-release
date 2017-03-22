@@ -32,7 +32,7 @@ var _ = Describe("Multiple instance rolling deploys", func() {
 		testKey = "consul-key-" + guid
 		testValue = "consul-value-" + guid
 
-		manifest, err = helpers.DeployConsulWithInstanceCount("multiple-instance-rolling-deploy", 3, boshClient)
+		manifest, err = helpers.DeployConsulWithInstanceCount("multiple-instance-rolling-deploy", 3, config.WindowsClients, boshClient)
 		Expect(err).NotTo(HaveOccurred())
 
 		manifestName, err = ops.ManifestName(manifest)

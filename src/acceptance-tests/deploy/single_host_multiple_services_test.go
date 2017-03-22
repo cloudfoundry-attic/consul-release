@@ -23,7 +23,7 @@ var _ = Describe("Single host multiple services", func() {
 
 	BeforeEach(func() {
 		var err error
-		manifest, err = helpers.DeployConsulWithInstanceCount("single-host-multiple-services", 1, boshClient)
+		manifest, err = helpers.DeployConsulWithInstanceCount("single-host-multiple-services", 1, config.WindowsClients, boshClient)
 		Expect(err).NotTo(HaveOccurred())
 
 		manifestName, err = ops.ManifestName(manifest)

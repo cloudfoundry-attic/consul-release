@@ -56,7 +56,7 @@ var _ = Describe("quorum loss", func() {
 
 		By("deploying consul", func() {
 			var err error
-			consulManifest, err = helpers.DeployConsulWithInstanceCount("quorum-loss", 5, boshClient)
+			consulManifest, err = helpers.DeployConsulWithInstanceCount("quorum-loss", 5, config.WindowsClients, boshClient)
 			Expect(err).NotTo(HaveOccurred())
 
 			consulManifestName, err = ops.ManifestName(consulManifest)
