@@ -16,6 +16,7 @@ func DeployTurbulence(suffix string, client bosh.Client) (string, error) {
 		DirectorHost:     boshConfig.Host,
 		DirectorUsername: boshConfig.Username,
 		DirectorPassword: boshConfig.Password,
+		DirectorCACert:   boshConfig.DirectorCACert,
 	})
 	if err != nil {
 		return "", err

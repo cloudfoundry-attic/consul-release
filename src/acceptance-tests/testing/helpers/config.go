@@ -45,6 +45,10 @@ func LoadConfig(configFilePath string) (Config, error) {
 		return Config{}, err
 	}
 
+	if config.BOSH.DirectorCACert == "" {
+		return Config{}, errors.New("missing `bosh.director_ca_cert` - specify CA cert for BOSH director validation")
+	}
+
 	if config.BOSH.Username == "" {
 		return Config{}, errors.New("missing `bosh.username` - specify username for authenticating with BOSH")
 	}

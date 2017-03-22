@@ -32,6 +32,7 @@ var _ = BeforeSuite(func() {
 	boshClient = bosh.NewClient(bosh.Config{
 		URL:              config.BOSH.Target,
 		Host:             config.BOSH.Host,
+		DirectorCACert:   config.BOSH.DirectorCACert,
 		Username:         config.BOSH.Username,
 		Password:         config.BOSH.Password,
 		AllowInsecureSSL: true,

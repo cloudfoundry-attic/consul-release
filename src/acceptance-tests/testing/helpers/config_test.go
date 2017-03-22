@@ -76,7 +76,8 @@ var _ = Describe("configuration", func() {
 					"bosh": {
 						"target": "https://some-bosh-target:25555",
 						"username": "some-bosh-username",
-						"password": "some-bosh-password"
+						"password": "some-bosh-password",
+						"director_ca_cert": "some-ca-cert"
 					}
 				}`)
 				Expect(err).NotTo(HaveOccurred())
@@ -92,10 +93,11 @@ var _ = Describe("configuration", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(config).To(Equal(helpers.Config{
 					BOSH: helpers.ConfigBOSH{
-						Target:   "https://some-bosh-target:25555",
-						Host:     "some-bosh-target",
-						Username: "some-bosh-username",
-						Password: "some-bosh-password",
+						Target:         "https://some-bosh-target:25555",
+						Host:           "some-bosh-target",
+						Username:       "some-bosh-username",
+						Password:       "some-bosh-password",
+						DirectorCACert: "some-ca-cert",
 					},
 					ParallelNodes: 1,
 				}))
@@ -174,7 +176,7 @@ var _ = Describe("configuration", func() {
 				})
 			})
 
-			Context("when the bosh.username is missing", func() {
+			Context("when the bosh.director_ca_cert is missing", func() {
 				var configFilePath string
 
 				BeforeEach(func() {
@@ -182,6 +184,31 @@ var _ = Describe("configuration", func() {
 					configFilePath, err = writeConfigJSON(`{
 						"bosh": {
 							"target": "some-bosh-target"
+						}
+					}`)
+					Expect(err).NotTo(HaveOccurred())
+				})
+
+				AfterEach(func() {
+					err := os.Remove(configFilePath)
+					Expect(err).NotTo(HaveOccurred())
+				})
+
+				It("should return an error", func() {
+					_, err := helpers.LoadConfig(configFilePath)
+					Expect(err).To(MatchError(errors.New("missing `bosh.director_ca_cert` - specify CA cert for BOSH director validation")))
+				})
+			})
+
+			Context("when the bosh.username is missing", func() {
+				var configFilePath string
+
+				BeforeEach(func() {
+					var err error
+					configFilePath, err = writeConfigJSON(`{
+						"bosh": {
+							"target": "some-bosh-target",
+							"director_ca_cert": "some-ca-cert"
 						}
 					}`)
 					Expect(err).NotTo(HaveOccurred())
@@ -206,6 +233,7 @@ var _ = Describe("configuration", func() {
 					configFilePath, err = writeConfigJSON(`{
 						"bosh": {
 							"target": "https://some-bosh-target:25555",
+							"director_ca_cert": "some-ca-cert",
 							"username": "some-bosh-username"
 						}
 					}`)
