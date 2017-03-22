@@ -54,6 +54,12 @@ var _ = Describe("given large DNS response", func() {
 		manifestName, err = ops.ManifestName(manifest)
 		Expect(err).NotTo(HaveOccurred())
 
+		testConsumerJobName := "consul-test-consumer"
+
+		if config.WindowsClients {
+			testConsumerJobName = "consul-test-consumer-windows"
+		}
+
 		manifest, err = ops.ApplyOps(manifest, []ops.Op{
 			{
 				Type: "replace",
@@ -85,7 +91,7 @@ var _ = Describe("given large DNS response", func() {
 			},
 			{
 				Type: "replace",
-				Path: "/instance_groups/name=testconsumer/jobs/name=consul-test-consumer/consumes?",
+				Path: fmt.Sprintf("/instance_groups/name=testconsumer/jobs/name=%s/consumes?", testConsumerJobName),
 				Value: instanceGroupJobLink{
 					DNS: map[string]string{
 						"from": "fake-dns-server",
