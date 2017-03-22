@@ -37,9 +37,9 @@ function main() {
   upload_releases "${scripts_dir}"
   force_compilation "${scripts_dir}"
   if [[ "${1}" = "turbulence" ]]; then
-    bash -c "${scripts_dir}/../src/acceptance-tests/scripts/test-turbulence -nodes ${PARALLEL_NODES} $@"
-  else
     bash -c "${scripts_dir}/../src/acceptance-tests/scripts/test -nodes ${PARALLEL_NODES} $@"
+  else
+    bash -c "${scripts_dir}/../src/acceptance-tests/scripts/test -skipPackage turbulence -nodes ${PARALLEL_NODES} $@"
   fi
 }
 
@@ -78,7 +78,7 @@ function force_compilation() {
 
   set +x
   local stemcell_version
-  stemcell_version=$(curl -k https://${BOSH_CLIENT}:${BOSH_CLIENT_SECRET}@${BOSH_DIRECTOR}:25555/stemcells | jq -r .[0].version)
+  stemcell_version=$(bosh stemcells | awk '$3 == "ubuntu-trusty" { print $2 }')
   set -x
 
   pushd /tmp > /dev/null
