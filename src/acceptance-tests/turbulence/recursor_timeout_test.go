@@ -117,6 +117,12 @@ var _ = Describe("recursor timeout", func() {
 			consulManifestName, err = ops.ManifestName(consulManifest)
 			Expect(err).NotTo(HaveOccurred())
 
+			testConsumerJobName := "consul-test-consumer"
+
+			if config.WindowsClients {
+				testConsumerJobName = "consul-test-consumer-windows"
+			}
+
 			consulManifest, err = ops.ApplyOps(consulManifest, []ops.Op{
 				{
 					Type: "replace",
@@ -174,7 +180,7 @@ var _ = Describe("recursor timeout", func() {
 				},
 				{
 					Type: "replace",
-					Path: "/instance_groups/name=testconsumer/jobs/name=consul-test-consumer/consumes?",
+					Path: fmt.Sprintf("/instance_groups/name=testconsumer/jobs/name=%s/consumes?", testConsumerJobName),
 					Value: instanceGroupJobLink{
 						DNS: map[string]string{
 							"from": "fake-dns-server",
