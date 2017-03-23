@@ -10,7 +10,18 @@ New-Item -ItemType Directory -Force -Path "${LOG_DIR}"
 New-Item -ItemType Directory -Force -Path "${PKG_DIR}"
 New-Item -ItemType Directory -Force -Path "${RUN_DIR}"
 
-<% if !p("consul-test-consumer.nameserver").empty? %>
+<%
+$nameserver = ""
+if_link("dns") do |dns_link|
+  $nameserver = dns_link.instances[0].address
+end
+
+if $nameserver == ""
+  $nameserver = p("consul-test-consumer.nameserver")
+end
+%>
+
+<% if $nameserver != "" %>
     # Not Implemented:
     #  - echo "options timeout:30" >> "${resolvconf_file}"
     function DnsServers($interface) {
@@ -33,7 +44,7 @@ New-Item -ItemType Directory -Force -Path "${RUN_DIR}"
       Remove-Item C:\var\vcap\sys\run\consul-dns.lock
     }
 
-    $nameserver='<%= p("consul-test-consumer.nameserver") %>'
+    $nameserver='<%= $nameserver %>'
     WaitForDNSLock
     [array]$routeable_interfaces = Get-WmiObject Win32_NetworkAdapterConfiguration | Where { $_.IpAddress -AND ($_.IpAddress | Where { $addr = [Net.IPAddress] $_; $addr.AddressFamily -eq "InterNetwork" -AND ($addr.address -BAND ([Net.IPAddress] "255.255.0.0").address) -ne ([Net.IPAddress] "169.254.0.0").address }) }
     $ifindex = $routeable_interfaces[0].Index
