@@ -448,5 +448,11 @@ var _ = Describe("ConsulConfigDefiner", func() {
 				Expect(consulConfig.Performance.RaftMultiplier).To(Equal(1))
 			})
 		})
+
+		Describe("tls_min_version", func() {
+			It("defaults to tls12", func() {
+				Expect(consulConfig.TLSMinVersion).To(Equal("tls12"))
+			})
+		})
 	})
 })

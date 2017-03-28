@@ -122,6 +122,7 @@ var _ = Describe("confab", func() {
 					"performance": map[string]int{
 						"raft_multiplier": 1,
 					},
+					"tls_min_version": "tls12",
 				},
 			})
 		})
@@ -222,6 +223,7 @@ var _ = Describe("confab", func() {
 				"performance": map[string]int{
 					"raft_multiplier": 1,
 				},
+				"tls_min_version": "tls12",
 			}
 			body, err := json.Marshal(conf)
 			Expect(err).To(BeNil())

@@ -32,6 +32,7 @@ type ConsulConfig struct {
 	Bootstrap            *bool                   `json:"bootstrap,omitempty"`
 	Performance          ConsulConfigPerformance `json:"performance"`
 	Telemetry            *ConsulConfigTelemetry  `json:"telemetry,omitempty"`
+	TLSMinVersion        string                  `json:"tls_min_version"`
 }
 
 type ConsulConfigPorts struct {
@@ -95,6 +96,7 @@ func GenerateConfiguration(config Config, configDir, nodeName string) ConsulConf
 		Performance: ConsulConfigPerformance{
 			RaftMultiplier: 1,
 		},
+		TLSMinVersion: "tls12",
 	}
 
 	if config.Consul.Agent.Telemetry.StatsdAddress != "" {
