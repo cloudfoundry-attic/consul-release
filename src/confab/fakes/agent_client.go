@@ -1,9 +1,6 @@
 package fakes
 
-import (
-	"github.com/cloudfoundry-incubator/consul-release/src/confab/agent"
-	"github.com/hashicorp/consul/api"
-)
+import "github.com/hashicorp/consul/api"
 
 type AgentClient struct {
 	VerifyJoinedCalls struct {
@@ -33,13 +30,6 @@ type AgentClient struct {
 		CallCount int
 		Returns   struct {
 			Error error
-		}
-	}
-
-	SetConsulRPCClientCall struct {
-		CallCount int
-		Receives  struct {
-			ConsulRPCClient agent.ConsulRPCClient
 		}
 	}
 
@@ -138,11 +128,6 @@ func (c *AgentClient) SetKeys(keys []string) error {
 func (c *AgentClient) Leave() error {
 	c.LeaveCall.CallCount++
 	return c.LeaveCall.Returns.Error
-}
-
-func (c *AgentClient) SetConsulRPCClient(rpcClient agent.ConsulRPCClient) {
-	c.SetConsulRPCClientCall.CallCount++
-	c.SetConsulRPCClientCall.Receives.ConsulRPCClient = rpcClient
 }
 
 func (c *AgentClient) Members(wan bool) ([]*api.AgentMember, error) {

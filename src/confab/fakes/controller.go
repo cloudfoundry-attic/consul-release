@@ -1,9 +1,6 @@
 package fakes
 
-import (
-	"github.com/cloudfoundry-incubator/consul-release/src/confab/utils"
-	"github.com/hashicorp/consul/command/agent"
-)
+import "github.com/cloudfoundry-incubator/consul-release/src/confab/utils"
 
 type Controller struct {
 	WriteServiceDefinitionsCall struct {
@@ -27,8 +24,7 @@ type Controller struct {
 	ConfigureServerCall struct {
 		CallCount int
 		Receives  struct {
-			Timeout   utils.Timeout
-			RPCClient *agent.RPCClient
+			Timeout utils.Timeout
 		}
 		Returns struct {
 			Error error
@@ -64,10 +60,9 @@ func (c *Controller) BootAgent(timeout utils.Timeout) error {
 	return c.BootAgentCall.Returns.Error
 }
 
-func (c *Controller) ConfigureServer(timeout utils.Timeout, rpcClient *agent.RPCClient) error {
+func (c *Controller) ConfigureServer(timeout utils.Timeout) error {
 	c.ConfigureServerCall.CallCount++
 	c.ConfigureServerCall.Receives.Timeout = timeout
-	c.ConfigureServerCall.Receives.RPCClient = rpcClient
 
 	return c.ConfigureServerCall.Returns.Error
 }

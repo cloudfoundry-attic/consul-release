@@ -153,6 +153,7 @@ var _ = Describe("confab", func() {
 					"-recursor=10.0.2.3",
 				},
 				LeaveCallCount: 1,
+				SelfCallCount:  1,
 			}))
 
 			serviceConfig, err := ioutil.ReadFile(filepath.Join(consulConfigDir, "service-cloud_controller.json"))
@@ -365,6 +366,7 @@ var _ = Describe("confab", func() {
 						"agent",
 						fmt.Sprintf("-config-dir=%s", consulConfigDir),
 					},
+					SelfCallCount: 1,
 				}))
 			})
 		})
@@ -432,7 +434,7 @@ var _ = Describe("confab", func() {
 					PID:                 pid,
 					UseKeyCallCount:     1,
 					InstallKeyCallCount: 2,
-					StatsCallCount:      1,
+					SelfCallCount:       2,
 					ConsulConfig: ConsulConfig{
 						Server:    true,
 						Bootstrap: true,
@@ -483,8 +485,8 @@ var _ = Describe("confab", func() {
 
 				output, err := fakeAgentOutputFromFile(consulConfigDir, "fake-output-2.json")
 				Expect(err).NotTo(HaveOccurred())
-				Expect(output.StatsCallCount).To(BeNumerically(">", 0))
-				Expect(output.StatsCallCount).To(BeNumerically("<", 4))
+				Expect(output.SelfCallCount).To(BeNumerically(">", 0))
+				Expect(output.SelfCallCount).To(BeNumerically("<", 4))
 			})
 		})
 	})
@@ -522,7 +524,7 @@ var _ = Describe("confab", func() {
 			Eventually(cmd.Run, COMMAND_TIMEOUT, COMMAND_TIMEOUT).Should(Succeed())
 
 			Eventually(func() error {
-				conn, err := net.Dial("tcp", "localhost:8400")
+				conn, err := net.Dial("tcp", "localhost:8500")
 				if err == nil {
 					conn.Close()
 				}
@@ -558,7 +560,7 @@ var _ = Describe("confab", func() {
 				LeaveCallCount:      1,
 				InstallKeyCallCount: 2,
 				UseKeyCallCount:     1,
-				StatsCallCount:      1,
+				SelfCallCount:       2,
 			}))
 		})
 	})
@@ -773,51 +775,6 @@ var _ = Describe("confab", func() {
 				pid, err := getPID(pidFile.Name())
 				Expect(err).NotTo(HaveOccurred())
 				Expect(utils.IsPIDRunning(pid)).To(BeTrue())
-			})
-		})
-
-		Context("when the rpc connection cannot be created", func() {
-			BeforeEach(func() {
-				writeConfigurationFile(configFile.Name(), map[string]interface{}{
-					"path": map[string]interface{}{
-						"agent_path":        pathToFakeAgent,
-						"consul_config_dir": consulConfigDir,
-						"pid_file":          pidFile.Name(),
-						"data_dir":          dataDir,
-					},
-					"consul": map[string]interface{}{
-						"agent": map[string]interface{}{
-							"mode": "server",
-							"servers": map[string]interface{}{
-								"lan": []string{"member-1", "member-2", "member-3"},
-							},
-						},
-					},
-				})
-			})
-
-			AfterEach(func() {
-				err := os.Remove(configFile.Name())
-				Expect(err).NotTo(HaveOccurred())
-			})
-
-			It("returns an error and exits with status 1", func() {
-				options := []byte(`{ "Members": ["member-1", "member-2", "member-3"], "FailRPCServer": true }`)
-				Expect(ioutil.WriteFile(filepath.Join(consulConfigDir, "options.json"), options, 0600)).To(Succeed())
-
-				cmd := exec.Command(pathToConfab,
-					"start",
-					"--config-file", configFile.Name(),
-					"--config-consul-link-file", configConsulLinkFile.Name(),
-				)
-				buffer := bytes.NewBuffer([]byte{})
-				cmd.Stderr = buffer
-				Eventually(cmd.Run, COMMAND_TIMEOUT, COMMAND_TIMEOUT).ShouldNot(Succeed())
-				Expect(buffer).To(ContainSubstring("error during start"))
-				Expect(buffer).To(Or(
-					ContainSubstring("connection refused"),
-					ContainSubstring("No connection could be made"), // Windows
-				))
 			})
 		})
 

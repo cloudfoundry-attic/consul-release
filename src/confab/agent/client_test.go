@@ -18,7 +18,6 @@ var _ = Describe("Client", func() {
 	var (
 		consulAPIAgent    *fakes.FakeconsulAPIAgent
 		consulAPIOperator *fakes.FakeconsulAPIOperator
-		consulRPCClient   *fakes.FakeconsulRPCClient
 		logger            *fakes.Logger
 		client            agent.Client
 	)
@@ -26,12 +25,10 @@ var _ = Describe("Client", func() {
 	BeforeEach(func() {
 		consulAPIAgent = &fakes.FakeconsulAPIAgent{}
 		consulAPIOperator = &fakes.FakeconsulAPIOperator{}
-		consulRPCClient = &fakes.FakeconsulRPCClient{}
 		logger = &fakes.Logger{}
 		client = agent.Client{
 			ConsulAPIAgent:    consulAPIAgent,
 			ConsulAPIOperator: consulAPIOperator,
-			ConsulRPCClient:   consulRPCClient,
 			Logger:            logger,
 		}
 	})
@@ -151,17 +148,19 @@ var _ = Describe("Client", func() {
 
 	Describe("VerifySynced", func() {
 		BeforeEach(func() {
-			consulRPCClient.StatsReturns(map[string]map[string]string{
-				"raft": map[string]string{
-					"commit_index":   "2",
-					"last_log_index": "2",
+			consulAPIAgent.SelfCall.Returns.SelfInfo = map[string]map[string]interface{}{
+				"Stats": map[string]interface{}{
+					"raft": map[string]interface{}{
+						"commit_index":   "2",
+						"last_log_index": "2",
+					},
 				},
-			}, nil)
+			}
 		})
 
 		It("verifies the sync state of the raft log", func() {
 			Expect(client.VerifySynced()).To(Succeed())
-			Expect(consulRPCClient.StatsCallCount()).To(Equal(1))
+			Expect(consulAPIAgent.SelfCall.CallCount).To(Equal(1))
 			Expect(logger.Messages()).To(ContainSequence([]fakes.LoggerMessage{
 				{
 					Action: "agent-client.verify-synced.stats.request",
@@ -181,17 +180,19 @@ var _ = Describe("Client", func() {
 
 		Context("when the last_log_index never catches up", func() {
 			BeforeEach(func() {
-				consulRPCClient.StatsReturns(map[string]map[string]string{
-					"raft": map[string]string{
-						"commit_index":   "2",
-						"last_log_index": "1",
+				consulAPIAgent.SelfCall.Returns.SelfInfo = map[string]map[string]interface{}{
+					"Stats": map[string]interface{}{
+						"raft": map[string]interface{}{
+							"commit_index":   "2",
+							"last_log_index": "1",
+						},
 					},
-				}, nil)
+				}
 			})
 
 			It("returns an error", func() {
 				Expect(client.VerifySynced()).To(MatchError("log not in sync"))
-				Expect(consulRPCClient.StatsCallCount()).To(Equal(1))
+				Expect(consulAPIAgent.SelfCall.CallCount).To(Equal(1))
 				Expect(logger.Messages()).To(ContainSequence([]fakes.LoggerMessage{
 					{
 						Action: "agent-client.verify-synced.stats.request",
@@ -211,21 +212,21 @@ var _ = Describe("Client", func() {
 			})
 		})
 
-		Context("when the RPCClient returns an error", func() {
+		Context("when the ConsulAPIAgent returns an error", func() {
 			BeforeEach(func() {
-				consulRPCClient.StatsReturns(nil, errors.New("RPC error"))
+				consulAPIAgent.SelfCall.Returns.Error = errors.New("failed to query self")
 			})
 
 			It("immediately returns an error", func() {
-				Expect(client.VerifySynced()).To(MatchError("RPC error"))
-				Expect(consulRPCClient.StatsCallCount()).To(Equal(1))
+				Expect(client.VerifySynced()).To(MatchError("failed to query self"))
+				Expect(consulAPIAgent.SelfCall.CallCount).To(Equal(1))
 				Expect(logger.Messages()).To(ContainSequence([]fakes.LoggerMessage{
 					{
 						Action: "agent-client.verify-synced.stats.request",
 					},
 					{
 						Action: "agent-client.verify-synced.stats.request.failed",
-						Error:  errors.New("RPC error"),
+						Error:  errors.New("failed to query self"),
 					},
 				}))
 			})
@@ -233,17 +234,19 @@ var _ = Describe("Client", func() {
 
 		Context("when the commit index is 0", func() {
 			BeforeEach(func() {
-				consulRPCClient.StatsReturns(map[string]map[string]string{
-					"raft": map[string]string{
-						"commit_index":   "0",
-						"last_log_index": "0",
+				consulAPIAgent.SelfCall.Returns.SelfInfo = map[string]map[string]interface{}{
+					"Stats": map[string]interface{}{
+						"raft": map[string]interface{}{
+							"commit_index":   "0",
+							"last_log_index": "0",
+						},
 					},
-				}, nil)
+				}
 			})
 
 			It("immediately returns an error", func() {
 				Expect(client.VerifySynced()).To(MatchError("commit index must not be zero"))
-				Expect(consulRPCClient.StatsCallCount()).To(Equal(1))
+				Expect(consulAPIAgent.SelfCall.CallCount).To(Equal(1))
 				Expect(logger.Messages()).To(ContainSequence([]fakes.LoggerMessage{
 					{
 						Action: "agent-client.verify-synced.stats.request",
@@ -890,14 +893,36 @@ var _ = Describe("Client", func() {
 		})
 	})
 
-	Describe("SetConsulRPCClient", func() {
-		It("assigns the ConsulRPCClient field", func() {
-			client.ConsulRPCClient = nil
-			Expect(client.ConsulRPCClient).To(BeNil())
+	Describe("RaftStats", func() {
+		BeforeEach(func() {
+			consulAPIAgent.SelfCall.Returns.SelfInfo = map[string]map[string]interface{}{
+				"Stats": map[string]interface{}{
+					"raft": map[string]interface{}{
+						"commit_index":   "2",
+						"last_log_index": "2",
+					},
+				},
+			}
+		})
 
-			rpcClient := &fakes.FakeconsulRPCClient{}
-			client.SetConsulRPCClient(rpcClient)
-			Expect(client.ConsulRPCClient).To(Equal(rpcClient))
+		It("returns the stats.raft from /v1/agent/self", func() {
+			raftStats, err := client.RaftStats()
+			Expect(err).NotTo(HaveOccurred())
+			Expect(raftStats).To(Equal(map[string]interface{}{
+				"commit_index":   "2",
+				"last_log_index": "2",
+			}))
+		})
+
+		Context("when it fails to query self", func() {
+			BeforeEach(func() {
+				consulAPIAgent.SelfCall.Returns.Error = errors.New("failed to query self")
+			})
+
+			It("returns an error", func() {
+				_, err := client.RaftStats()
+				Expect(err).To(MatchError("failed to query self"))
+			})
 		})
 	})
 })

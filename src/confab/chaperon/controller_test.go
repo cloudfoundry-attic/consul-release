@@ -11,7 +11,6 @@ import (
 	"github.com/cloudfoundry-incubator/consul-release/src/confab/config"
 	"github.com/cloudfoundry-incubator/consul-release/src/confab/fakes"
 	"github.com/cloudfoundry-incubator/consul-release/src/confab/utils"
-	consulagent "github.com/hashicorp/consul/command/agent"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -418,18 +417,16 @@ var _ = Describe("Controller", func() {
 
 	Describe("ConfigureServer", func() {
 		var (
-			timeout   utils.Timeout
-			rpcClient *consulagent.RPCClient
+			timeout utils.Timeout
 		)
 
 		BeforeEach(func() {
 			timeout = utils.NewTimeout(make(chan time.Time))
-			rpcClient = &consulagent.RPCClient{}
 		})
 
 		Context("setting keys", func() {
 			It("sets the encryption keys used by the agent", func() {
-				Expect(controller.ConfigureServer(timeout, rpcClient)).To(Succeed())
+				Expect(controller.ConfigureServer(timeout)).To(Succeed())
 				Expect(agentClient.SetKeysCall.Receives.Keys).To(Equal([]string{
 					"key 1",
 					"key 2",
@@ -453,7 +450,7 @@ var _ = Describe("Controller", func() {
 					timeout = utils.NewTimeout(time.After(10 * time.Millisecond))
 					agentClient.SetKeysCall.Returns.Error = errors.New("oh noes")
 
-					Expect(controller.ConfigureServer(timeout, rpcClient)).To(MatchError(`timeout exceeded: "oh noes"`))
+					Expect(controller.ConfigureServer(timeout)).To(MatchError(`timeout exceeded: "oh noes"`))
 					Expect(agentClient.SetKeysCall.Receives.Keys).To(Equal([]string{
 						"key 1",
 						"key 2",
@@ -484,7 +481,7 @@ var _ = Describe("Controller", func() {
 				})
 
 				It("returns an error", func() {
-					Expect(controller.ConfigureServer(timeout, rpcClient)).To(MatchError("encrypt keys cannot be empty if ssl is enabled"))
+					Expect(controller.ConfigureServer(timeout)).To(MatchError("encrypt keys cannot be empty if ssl is enabled"))
 					Expect(agentClient.SetKeysCall.Receives.Keys).To(BeNil())
 					Expect(agentRunner.WritePIDCall.CallCount).To(Equal(0))
 
@@ -500,7 +497,7 @@ var _ = Describe("Controller", func() {
 
 		Context("when starting the server", func() {
 			It("checks that it is synced", func() {
-				Expect(controller.ConfigureServer(timeout, rpcClient)).To(Succeed())
+				Expect(controller.ConfigureServer(timeout)).To(Succeed())
 				Expect(agentClient.VerifySyncedCalls.CallCount).To(Equal(1))
 				Expect(agentRunner.WritePIDCall.CallCount).To(Equal(1))
 
@@ -527,7 +524,7 @@ var _ = Describe("Controller", func() {
 						agentClient.VerifySyncedCalls.Returns.Errors[i] = errors.New("some error")
 					}
 
-					Expect(controller.ConfigureServer(timeout, rpcClient)).To(Succeed())
+					Expect(controller.ConfigureServer(timeout)).To(Succeed())
 					Expect(agentClient.VerifySyncedCalls.CallCount).To(Equal(10))
 					Expect(clock.SleepCall.CallCount).To(Equal(9))
 					Expect(clock.SleepCall.Receives.Duration).To(Equal(10 * time.Millisecond))
@@ -556,7 +553,7 @@ var _ = Describe("Controller", func() {
 
 					timeout = utils.NewTimeout(time.After(10 * time.Millisecond))
 
-					err := controller.ConfigureServer(timeout, rpcClient)
+					err := controller.ConfigureServer(timeout)
 					Expect(err).To(MatchError(`timeout exceeded: "some error"`))
 					Expect(agentClient.VerifySyncedCalls.CallCount).NotTo(Equal(0))
 					Expect(agentClient.SetKeysCall.Receives.Keys).To(BeNil())
@@ -579,7 +576,7 @@ var _ = Describe("Controller", func() {
 			It("returns the error", func() {
 				agentRunner.WritePIDCall.Returns.Error = errors.New("failed to write PIDFILE")
 
-				err := controller.ConfigureServer(timeout, rpcClient)
+				err := controller.ConfigureServer(timeout)
 				Expect(err).To(MatchError("failed to write PIDFILE"))
 
 				Expect(agentRunner.WritePIDCall.CallCount).To(Equal(1))

@@ -11,7 +11,6 @@ import (
 	"golang.org/x/crypto/pbkdf2"
 
 	"github.com/hashicorp/consul/api"
-	"github.com/hashicorp/consul/command/agent"
 )
 
 var NoMembersToJoinError = errors.New("no members to join")
@@ -35,20 +34,11 @@ type consulAPIOperator interface {
 	KeyringRemove(string, *api.WriteOptions) error
 }
 
-type ConsulRPCClient interface {
-	Stats() (map[string]map[string]string, error)
-}
-
 type Client struct {
 	ExpectedMembers   []string
 	ConsulAPIAgent    consulAPIAgent
-	ConsulRPCClient   ConsulRPCClient
 	ConsulAPIOperator consulAPIOperator
 	Logger            logger
-}
-
-type RPCClient struct {
-	agent.RPCClient
 }
 
 func (c Client) VerifyJoined() error {
@@ -93,14 +83,14 @@ func (c Client) VerifyJoined() error {
 func (c Client) VerifySynced() error {
 	c.Logger.Info("agent-client.verify-synced.stats.request")
 
-	stats, err := c.ConsulRPCClient.Stats()
+	raftStats, err := c.RaftStats()
 	if err != nil {
 		c.Logger.Error("agent-client.verify-synced.stats.request.failed", err)
 		return err
 	}
 
-	commitIndex := stats["raft"]["commit_index"]
-	lastLogIndex := stats["raft"]["last_log_index"]
+	commitIndex := raftStats["commit_index"].(string)
+	lastLogIndex := raftStats["last_log_index"].(string)
 
 	c.Logger.Info("agent-client.verify-synced.stats.response", lager.Data{
 		"commit_index":   commitIndex,
@@ -306,16 +296,21 @@ func (c Client) Leave() error {
 	return nil
 }
 
-func (c *Client) SetConsulRPCClient(rpcClient ConsulRPCClient) {
-	c.ConsulRPCClient = rpcClient
-}
-
 func (c Client) Self() error {
 	_, err := c.ConsulAPIAgent.Self()
 	if err != nil {
 		return err
 	}
 	return nil
+}
+
+func (c Client) RaftStats() (map[string]interface{}, error) {
+	data, err := c.ConsulAPIAgent.Self()
+	if err != nil {
+		return nil, err
+	}
+
+	return data["Stats"]["raft"].(map[string]interface{}), nil
 }
 
 func containsString(elems []string, elem string) bool {

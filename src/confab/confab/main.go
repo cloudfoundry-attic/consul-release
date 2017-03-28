@@ -20,8 +20,6 @@ import (
 	"github.com/cloudfoundry-incubator/consul-release/src/confab/status"
 	"github.com/cloudfoundry-incubator/consul-release/src/confab/utils"
 	"github.com/hashicorp/consul/api"
-
-	consulagent "github.com/hashicorp/consul/command/agent"
 )
 
 type runner interface {
@@ -135,7 +133,6 @@ func main() {
 		ExpectedMembers:   cfg.Consul.Agent.Servers.LAN,
 		ConsulAPIAgent:    consulAPIClient.Agent(),
 		ConsulAPIOperator: consulAPIClient.Operator(),
-		ConsulRPCClient:   nil,
 		Logger:            logger,
 	}
 
@@ -158,7 +155,7 @@ func main() {
 	var r runner = chaperon.NewClient(controller, keyringRemover, configWriter)
 	if controller.Config.Consul.Agent.Mode == "server" {
 		bootstrapChecker := chaperon.NewBootstrapChecker(logger, agentClient, status.Client{ConsulAPIStatus: consulAPIClient.Status()}, time.Sleep)
-		r = chaperon.NewServer(controller, configWriter, consulagent.NewRPCClient, bootstrapChecker)
+		r = chaperon.NewServer(controller, configWriter, bootstrapChecker)
 	}
 
 	switch os.Args[1] {

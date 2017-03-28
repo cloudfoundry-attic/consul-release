@@ -4,20 +4,13 @@ import (
 	"encoding/json"
 	"net"
 	"net/http"
-	"os"
-	"time"
 
 	"github.com/hashicorp/consul/api"
-	"github.com/hashicorp/consul/command/agent"
-	"github.com/hashicorp/consul/logger"
 )
 
 type Server struct {
 	HTTPAddr     string
 	HTTPListener net.Listener
-
-	TCPAddr     string
-	TCPListener *net.TCPListener
 
 	OutputWriter *OutputWriter
 
@@ -33,17 +26,6 @@ func (s *Server) Serve() error {
 		return err
 	}
 
-	tcpAddr, err := net.ResolveTCPAddr("tcp", s.TCPAddr)
-	if err != nil {
-		return err
-	}
-
-	s.TCPListener, err = net.ListenTCP("tcp", tcpAddr)
-	if err != nil {
-		return err
-	}
-
-	go s.ServeTCP()
 	go s.ServeHTTP()
 
 	return nil
@@ -54,6 +36,7 @@ func (s *Server) ServeHTTP() {
 		useKeyCallCount     int
 		installKeyCallCount int
 		leaveCallCount      int
+		selfCallCount       int
 	)
 
 	mux := http.NewServeMux()
@@ -71,7 +54,27 @@ func (s *Server) ServeHTTP() {
 	})
 	mux.HandleFunc("/v1/agent/self", func(w http.ResponseWriter, req *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{}`))
+		if s.FailStatsEndpoint {
+			w.Write([]byte(`{
+				"Stats": {
+					"raft": {
+						"commit_index":   "5",
+						"last_log_index": "2"
+					}
+				}
+			}`))
+		} else {
+			w.Write([]byte(`{
+				"Stats": {
+					"raft": {
+						"commit_index":   "2",
+						"last_log_index": "2"
+					}
+				}
+			}`))
+		}
+		selfCallCount++
+		s.OutputWriter.SelfCalled()
 	})
 	mux.HandleFunc("/v1/agent/join/", func(w http.ResponseWriter, req *http.Request) {
 		w.WriteHeader(http.StatusOK)
@@ -114,43 +117,8 @@ func (s *Server) ServeHTTP() {
 	server.Serve(s.HTTPListener)
 }
 
-func (s *Server) ServeTCP() {
-	mockAgent := new(FakeAgentBackend)
-	if s.FailStatsEndpoint {
-		mockAgent.StatsReturns(map[string]map[string]string{
-			"raft": {
-				"commit_index":   "5",
-				"last_log_index": "2",
-			},
-		})
-	}
-
-	agentRPCServer := agent.NewAgentRPC(mockAgent, s.TCPListener, os.Stderr, logger.NewLogWriter(42))
-
-	var (
-		statsCallCount int
-	)
-
-	for {
-		switch {
-		case mockAgent.LeaveCallCount() > 0:
-			agentRPCServer.Shutdown()
-		case mockAgent.StatsCallCount() > statsCallCount:
-			statsCallCount++
-			s.OutputWriter.StatsCalled()
-		}
-
-		time.Sleep(10 * time.Millisecond)
-	}
-}
-
 func (s Server) Exit() error {
 	err := s.HTTPListener.Close()
-	if err != nil {
-		return err
-	}
-
-	err = s.TCPListener.Close()
 	if err != nil {
 		return err
 	}
