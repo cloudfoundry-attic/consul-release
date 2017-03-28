@@ -94,6 +94,10 @@ properties:
   consul.agent.domain:
     description: "Domain suffix for DNS"
 
+  consul.agent.rewrite_resolv:
+    description: "When set to true this property will rewrite the resolv.conf file and add 127.0.0.1 as the first entry"
+    default: true
+
   consul.ca_cert:
     description: "PEM-encoded CA certificate"
 

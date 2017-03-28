@@ -73,7 +73,7 @@ properties:
     description: "Require SSL to talk with the local agent"
     default: false
 
-  consul.rewrite_resolv:
+  consul.agent.rewrite_resolv:
     description: "When set to true this property will rewrite the resolv.conf file and add 127.0.0.1 as the first entry"
     default: true
 

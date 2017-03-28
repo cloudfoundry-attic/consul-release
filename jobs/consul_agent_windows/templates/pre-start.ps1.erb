@@ -37,6 +37,9 @@ $ifindex = $routeable_interfaces[0].Index
 $interface = (Get-WmiObject Win32_NetworkAdapter | Where { $_.DeviceID -eq $ifindex }).netconnectionid
 $servers = DnsServers($interface)
 
+<% rewrite_resolv = p("consul.agent.rewrite_resolv") %>
+
+<% if rewrite_resolv == true %>
 if($servers[0] -eq "127.0.0.1")
 {
     Write-Host "DNS Servers are set correctly."
@@ -53,6 +56,10 @@ else
     }
     ReleaseDNSLock
 }
+<% elsif rewrite_resolv != false %>
+Write-Error "Error: rewrite_resolv property must be a boolean"
+Exit 1
+<% end %>
 
 if (@(Get-DnsClientCache).Count -ne 0) {
     Clear-DnsClientCache
