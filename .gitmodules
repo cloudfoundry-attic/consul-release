@@ -6,7 +6,7 @@
 	url = https://github.com/onsi/gomega
 [submodule "src/confab/vendor/github.com/hashicorp/consul"]
 	path = src/confab/vendor/github.com/hashicorp/consul
-	url = https://github.com/cloudfoundry-incubator/consul
+	url = https://github.com/hashicorp/consul
 [submodule "src/confab/vendor/github.com/armon/go-metrics"]
 	path = src/confab/vendor/github.com/armon/go-metrics
 	url = https://github.com/armon/go-metrics
@@ -18,7 +18,7 @@
 	url = https://github.com/hashicorp/memberlist
 [submodule "src/confab/vendor/github.com/hashicorp/serf"]
 	path = src/confab/vendor/github.com/hashicorp/serf
-	url = https://github.com/cloudfoundry-incubator/serf
+	url = https://github.com/hashicorp/serf
 [submodule "src/confab/vendor/golang.org/x/crypto"]
 	path = src/confab/vendor/golang.org/x/crypto
 	url = https://go.googlesource.com/crypto
