@@ -115,3 +115,7 @@ properties:
 
   consul.encrypt_keys:
     description: "A list of passphrases that will be converted into encryption keys, the first key in the list is the active one"
+
+  consul.client.enabled:
+    description: "Set to false to disable the consul_agent on a VM."
+    default: true
