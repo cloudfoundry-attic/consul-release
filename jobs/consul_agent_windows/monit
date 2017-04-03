@@ -1,5 +1,5 @@
-<% if p("consul.client.enabled") == true %>
 {
+<% if p("consul.client.enabled") == true %>
   "processes": [
     {
       "name": "consul",
@@ -20,5 +20,5 @@
       }
     }
   ]
-}
 <% end %>
+}
