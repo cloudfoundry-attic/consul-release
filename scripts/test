@@ -87,7 +87,7 @@ function force_compilation() {
     if [[ -n $(bosh cloud-config) ]]; then
       echo "cloud config exists...skipping update cloud-config"
     else
-      bosh update-cloud-config "${scripts_dir}/fixtures/cloud_config.yml"
+      bosh update-cloud-config "${scripts_dir}/../manifests/cloud_config.yml"
     fi
 
     bosh -d compilation -n deploy "consul_compilation.yml"
