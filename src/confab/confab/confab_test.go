@@ -83,7 +83,24 @@ var _ = Describe("confab", func() {
 	})
 
 	Context("when managing the entire process lifecycle", func() {
+		var (
+			expectedCloudControllerServiceConfig []byte
+			expectedRouterServiceConfig          []byte
+		)
+
 		BeforeEach(func() {
+			os := "linux"
+			if Windows {
+				os = "windows"
+			}
+
+			var err error
+			expectedCloudControllerServiceConfig, err = ioutil.ReadFile(filepath.Join("fixtures", fmt.Sprintf("service-cloud-controller-%s.json", os)))
+			Expect(err).NotTo(HaveOccurred())
+
+			expectedRouterServiceConfig, err = ioutil.ReadFile(filepath.Join("fixtures", fmt.Sprintf("service-router-%s.json", os)))
+			Expect(err).NotTo(HaveOccurred())
+
 			writeConfigurationFile(configFile.Name(), map[string]interface{}{
 				"node": map[string]interface{}{
 					"name":        "my-node",
@@ -132,7 +149,6 @@ var _ = Describe("confab", func() {
 		})
 
 		testStoppingConsulProcess := func(pid int) {
-
 			stop := exec.Command(pathToConfab,
 				"stop",
 				"--config-file", configFile.Name(),
@@ -158,38 +174,11 @@ var _ = Describe("confab", func() {
 
 			serviceConfig, err := ioutil.ReadFile(filepath.Join(consulConfigDir, "service-cloud_controller.json"))
 			Expect(err).NotTo(HaveOccurred())
-			Expect(string(serviceConfig)).To(MatchJSON(`{
-				"service": {
-					"name": "cloud-controller",
-					"check": {
-						"name": "dns_health_check",
-						"script": "/var/vcap/jobs/cloud_controller/bin/dns_health_check",
-						"interval": "3s"
-					},
-					"checks": [
-						{
-							"name": "do_something",
-							"script": "/var/vcap/jobs/cloudcontroller/bin/do_something",
-							"interval": "5m"
-						}
-					],
-					"tags": ["my-node-3"]
-				}
-			}`))
+			Expect(string(serviceConfig)).To(MatchJSON(string(expectedCloudControllerServiceConfig)))
 
 			serviceConfig, err = ioutil.ReadFile(filepath.Join(consulConfigDir, "service-router.json"))
 			Expect(err).NotTo(HaveOccurred())
-			Expect(string(serviceConfig)).To(MatchJSON(`{
-				"service": {
-					"name": "gorouter",
-					"check": {
-						"name": "dns_health_check",
-						"script": "/var/vcap/jobs/router/bin/dns_health_check",
-						"interval": "3s"
-					},
-					"tags": ["my-node-3"]
-				}
-			}`))
+			Expect(string(serviceConfig)).To(MatchJSON(string(expectedRouterServiceConfig)))
 
 			consulConfig, err := ioutil.ReadFile(filepath.Join(consulConfigDir, "config.json"))
 			Expect(err).NotTo(HaveOccurred())
@@ -318,7 +307,6 @@ var _ = Describe("confab", func() {
 
 			Eventually(func() error { wg.Wait(); return nil }).Should(Succeed())
 		})
-
 	})
 
 	Context("when starting", func() {
