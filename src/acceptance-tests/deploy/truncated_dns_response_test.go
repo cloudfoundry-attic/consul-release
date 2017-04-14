@@ -106,7 +106,7 @@ var _ = Describe("given large DNS response", func() {
 
 		Eventually(func() ([]bosh.VM, error) {
 			return helpers.DeploymentVMs(boshClient, manifestName)
-		}, "1m", "10s").Should(ConsistOf(helpers.GetVMsFromManifest(manifest)))
+		}, "5m", "10s").Should(ConsistOf(helpers.GetVMsFromManifest(manifest)))
 
 		testConsumerIPs, err := helpers.GetVMIPs(boshClient, manifestName, "testconsumer")
 		Expect(err).NotTo(HaveOccurred())

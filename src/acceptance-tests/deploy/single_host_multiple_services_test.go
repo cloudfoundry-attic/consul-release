@@ -31,7 +31,7 @@ var _ = Describe("Single host multiple services", func() {
 
 		Eventually(func() ([]bosh.VM, error) {
 			return helpers.DeploymentVMs(boshClient, manifestName)
-		}, "1m", "10s").Should(ConsistOf(helpers.GetVMsFromManifest(manifest)))
+		}, "5m", "10s").Should(ConsistOf(helpers.GetVMsFromManifest(manifest)))
 
 		testConsumerIPs, err := helpers.GetVMIPs(boshClient, manifestName, "testconsumer")
 		Expect(err).NotTo(HaveOccurred())
@@ -77,17 +77,17 @@ var _ = Describe("Single host multiple services", func() {
 
 			Eventually(func() ([]bosh.VM, error) {
 				return helpers.DeploymentVMs(boshClient, manifestName)
-			}, "1m", "10s").Should(ConsistOf(helpers.GetVMsFromManifest(manifest)))
+			}, "5m", "10s").Should(ConsistOf(helpers.GetVMsFromManifest(manifest)))
 		})
 
 		By("resolving service addresses", func() {
 			Eventually(func() ([]string, error) {
 				return tcClient.DNS("consul-test-consumer.service.cf.internal")
-			}, "1m", "10s").Should(ConsistOf(testConsumerIP))
+			}, "5m", "10s").Should(ConsistOf(testConsumerIP))
 
 			Eventually(func() ([]string, error) {
 				return tcClient.DNS("some-service-name.service.cf.internal")
-			}, "1m", "10s").Should(ConsistOf(testConsumerIP))
+			}, "5m", "10s").Should(ConsistOf(testConsumerIP))
 		})
 	})
 })

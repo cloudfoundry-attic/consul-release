@@ -31,7 +31,7 @@ var _ = Describe("Multiple hosts multiple services", func() {
 
 		Eventually(func() ([]bosh.VM, error) {
 			return helpers.DeploymentVMs(boshClient, manifestName)
-		}, "1m", "10s").Should(ConsistOf(helpers.GetVMsFromManifest(manifest)))
+		}, "5m", "10s").Should(ConsistOf(helpers.GetVMsFromManifest(manifest)))
 
 		testConsumerIPs, err := helpers.GetVMIPs(boshClient, manifestName, "testconsumer")
 		Expect(err).NotTo(HaveOccurred())
@@ -84,7 +84,7 @@ var _ = Describe("Multiple hosts multiple services", func() {
 
 			Eventually(func() ([]bosh.VM, error) {
 				return helpers.DeploymentVMs(boshClient, manifestName)
-			}, "1m", "10s").Should(ConsistOf(helpers.GetVMsFromManifest(manifest)))
+			}, "5m", "10s").Should(ConsistOf(helpers.GetVMsFromManifest(manifest)))
 		})
 
 		By("resolving service addresses", func() {
@@ -113,35 +113,35 @@ var _ = Describe("Multiple hosts multiple services", func() {
 
 			Eventually(func() ([]string, error) {
 				return tcClient.DNS("some-service-name.service.cf.internal")
-			}, "2m", "10s").Should(ConsistOf(consulIPs))
+			}, "5m", "10s").Should(ConsistOf(consulIPs))
 
 			Eventually(func() ([]string, error) {
 				return tcClient.DNS("consul-0.some-service-name.service.cf.internal")
-			}, "2m", "10s").Should(ConsistOf(consulVM0.IPs))
+			}, "5m", "10s").Should(ConsistOf(consulVM0.IPs))
 
 			Eventually(func() ([]string, error) {
 				return tcClient.DNS("consul-1.some-service-name.service.cf.internal")
-			}, "2m", "10s").Should(ConsistOf(consulVM1.IPs))
+			}, "5m", "10s").Should(ConsistOf(consulVM1.IPs))
 
 			Eventually(func() ([]string, error) {
 				return tcClient.DNS("consul-2.some-service-name.service.cf.internal")
-			}, "2m", "10s").Should(ConsistOf(consulVM2.IPs))
+			}, "5m", "10s").Should(ConsistOf(consulVM2.IPs))
 
 			Eventually(func() ([]string, error) {
 				return tcClient.DNS("some-other-service-name.service.cf.internal")
-			}, "2m", "10s").Should(ConsistOf(consulIPs))
+			}, "5m", "10s").Should(ConsistOf(consulIPs))
 
 			Eventually(func() ([]string, error) {
 				return tcClient.DNS("consul-0.some-other-service-name.service.cf.internal")
-			}, "2m", "10s").Should(ConsistOf(consulVM0.IPs))
+			}, "5m", "10s").Should(ConsistOf(consulVM0.IPs))
 
 			Eventually(func() ([]string, error) {
 				return tcClient.DNS("consul-1.some-other-service-name.service.cf.internal")
-			}, "2m", "10s").Should(ConsistOf(consulVM1.IPs))
+			}, "5m", "10s").Should(ConsistOf(consulVM1.IPs))
 
 			Eventually(func() ([]string, error) {
 				return tcClient.DNS("consul-2.some-other-service-name.service.cf.internal")
-			}, "2m", "10s").Should(ConsistOf(consulVM2.IPs))
+			}, "5m", "10s").Should(ConsistOf(consulVM2.IPs))
 		})
 	})
 })

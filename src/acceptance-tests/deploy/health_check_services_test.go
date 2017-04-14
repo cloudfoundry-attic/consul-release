@@ -44,7 +44,7 @@ var _ = Describe("Health Check", func() {
 
 			Eventually(func() ([]bosh.VM, error) {
 				return helpers.DeploymentVMs(boshClient, manifestName)
-			}, "1m", "10s").Should(ConsistOf(helpers.GetVMsFromManifest(manifest)))
+			}, "5m", "10s").Should(ConsistOf(helpers.GetVMsFromManifest(manifest)))
 
 			testConsumerIPs, err := helpers.GetVMIPs(boshClient, manifestName, "testconsumer")
 			Expect(err).NotTo(HaveOccurred())
@@ -88,7 +88,7 @@ var _ = Describe("Health Check", func() {
 
 				Eventually(func() ([]bosh.VM, error) {
 					return helpers.DeploymentVMs(boshClient, manifestName)
-				}, "1m", "10s").Should(ConsistOf(helpers.GetVMsFromManifest(manifest)))
+				}, "5m", "10s").Should(ConsistOf(helpers.GetVMsFromManifest(manifest)))
 			})
 
 			By("resolving the service address", func() {
@@ -97,7 +97,7 @@ var _ = Describe("Health Check", func() {
 
 				Eventually(func() ([]string, error) {
 					return tcClient.DNS("some-service-name.service.cf.internal")
-				}, "1m", "10s").Should(ConsistOf(consulIPs))
+				}, "5m", "10s").Should(ConsistOf(consulIPs))
 			})
 
 			By("causing the health check to fail", func() {
@@ -108,7 +108,7 @@ var _ = Describe("Health Check", func() {
 			By("the service should be deregistered", func() {
 				Eventually(func() ([]string, error) {
 					return tcClient.DNS("some-service-name.service.cf.internal")
-				}, "1m", "10s").Should(BeEmpty())
+				}, "5m", "10s").Should(BeEmpty())
 			})
 
 			By("causing the health check to succeed", func() {
@@ -122,7 +122,7 @@ var _ = Describe("Health Check", func() {
 
 				Eventually(func() ([]string, error) {
 					return tcClient.DNS("some-service-name.service.cf.internal")
-				}, "1m", "10s").Should(ConsistOf(consulIPs))
+				}, "5m", "10s").Should(ConsistOf(consulIPs))
 			})
 		})
 	})
@@ -147,7 +147,7 @@ var _ = Describe("Health Check", func() {
 
 			Eventually(func() ([]bosh.VM, error) {
 				return helpers.DeploymentVMs(boshClient, manifestName)
-			}, "1m", "10s").Should(ConsistOf(helpers.GetVMsFromManifest(manifest)))
+			}, "5m", "10s").Should(ConsistOf(helpers.GetVMsFromManifest(manifest)))
 
 			testConsumerIPs, err := helpers.GetVMIPs(boshClient, manifestName, "testconsumer")
 			Expect(err).NotTo(HaveOccurred())
@@ -193,7 +193,7 @@ var _ = Describe("Health Check", func() {
 
 				Eventually(func() ([]bosh.VM, error) {
 					return helpers.DeploymentVMs(boshClient, manifestName)
-				}, "1m", "10s").Should(ConsistOf(helpers.GetVMsFromManifest(manifest)))
+				}, "5m", "10s").Should(ConsistOf(helpers.GetVMsFromManifest(manifest)))
 			})
 
 			By("resolving the service address", func() {
@@ -202,7 +202,7 @@ var _ = Describe("Health Check", func() {
 
 				Eventually(func() ([]string, error) {
 					return tcClient.DNS(fmt.Sprintf("%s.service.cf.internal", serviceName))
-				}, "1m", "10s").Should(ConsistOf(testConsumerIPs))
+				}, "5m", "10s").Should(ConsistOf(testConsumerIPs))
 			})
 
 			By("causing the health check to fail", func() {
@@ -213,7 +213,7 @@ var _ = Describe("Health Check", func() {
 			By("the service should be deregistered", func() {
 				Eventually(func() ([]string, error) {
 					return tcClient.DNS(fmt.Sprintf("%s.service.cf.internal", serviceName))
-				}, "1m", "10s").Should(HaveLen(2))
+				}, "5m", "10s").Should(HaveLen(2))
 			})
 
 			By("causing the health check to succeed", func() {
@@ -227,7 +227,7 @@ var _ = Describe("Health Check", func() {
 
 				Eventually(func() ([]string, error) {
 					return tcClient.DNS(fmt.Sprintf("%s.service.cf.internal", serviceName))
-				}, "1m", "10s").Should(ConsistOf(testConsumerIPs))
+				}, "5m", "10s").Should(ConsistOf(testConsumerIPs))
 			})
 		})
 	})

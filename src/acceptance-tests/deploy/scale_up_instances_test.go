@@ -41,7 +41,7 @@ var _ = Describe("Scaling up Instances", func() {
 
 			Eventually(func() ([]bosh.VM, error) {
 				return helpers.DeploymentVMs(boshClient, manifestName)
-			}, "1m", "10s").Should(ConsistOf(helpers.GetVMsFromManifest(manifest)))
+			}, "5m", "10s").Should(ConsistOf(helpers.GetVMsFromManifest(manifest)))
 
 			testConsumerIPs, err := helpers.GetVMIPs(boshClient, manifestName, "testconsumer")
 			Expect(err).NotTo(HaveOccurred())
@@ -76,7 +76,7 @@ var _ = Describe("Scaling up Instances", func() {
 
 				Eventually(func() ([]bosh.VM, error) {
 					return helpers.DeploymentVMs(boshClient, manifestName)
-				}, "1m", "10s").Should(ConsistOf(helpers.GetVMsFromManifest(manifest)))
+				}, "5m", "10s").Should(ConsistOf(helpers.GetVMsFromManifest(manifest)))
 			})
 
 			By("checking if value was persisted", func() {
@@ -109,7 +109,7 @@ var _ = Describe("Scaling up Instances", func() {
 
 			Eventually(func() ([]bosh.VM, error) {
 				return helpers.DeploymentVMs(boshClient, manifestName)
-			}, "1m", "10s").Should(ConsistOf(helpers.GetVMsFromManifest(manifest)))
+			}, "5m", "10s").Should(ConsistOf(helpers.GetVMsFromManifest(manifest)))
 
 			testConsumerIPs, err := helpers.GetVMIPs(boshClient, manifestName, "testconsumer")
 			Expect(err).NotTo(HaveOccurred())
@@ -148,7 +148,7 @@ var _ = Describe("Scaling up Instances", func() {
 
 				Eventually(func() ([]bosh.VM, error) {
 					return helpers.DeploymentVMs(boshClient, manifestName)
-				}, "1m", "10s").Should(ConsistOf(helpers.GetVMsFromManifest(manifest)))
+				}, "5m", "10s").Should(ConsistOf(helpers.GetVMsFromManifest(manifest)))
 
 				spammer.Stop()
 			})

@@ -31,7 +31,7 @@ var _ = Describe("Disabling consul_agent", func() {
 
 			Eventually(func() ([]bosh.VM, error) {
 				return helpers.DeploymentVMs(boshClient, manifestName)
-			}, "1m", "10s").Should(ConsistOf(helpers.GetVMsFromManifest(manifest)))
+			}, "5m", "10s").Should(ConsistOf(helpers.GetVMsFromManifest(manifest)))
 
 			testConsumerIPs, err := helpers.GetVMIPs(boshClient, manifestName, "testconsumer")
 			Expect(err).NotTo(HaveOccurred())
@@ -53,7 +53,7 @@ var _ = Describe("Disabling consul_agent", func() {
 
 				Eventually(func() ([]string, error) {
 					return tcClient.DNS("consul.service.cf.internal")
-				}, "1m", "10s").Should(ConsistOf(consulIPs))
+				}, "5m", "10s").Should(ConsistOf(consulIPs))
 			})
 
 			By("setting the enabled property to false", func() {
@@ -70,13 +70,13 @@ var _ = Describe("Disabling consul_agent", func() {
 
 				Eventually(func() ([]bosh.VM, error) {
 					return helpers.DeploymentVMs(boshClient, manifestName)
-				}, "1m", "10s").Should(ConsistOf(helpers.GetVMsFromManifest(manifest)))
+				}, "5m", "10s").Should(ConsistOf(helpers.GetVMsFromManifest(manifest)))
 			})
 
 			By("verifying that the consul_agent is no longer running on the testconsumer", func() {
 				Eventually(func() ([]string, error) {
 					return tcClient.DNS("consul.service.cf.internal")
-				}, "1m", "10s").Should(BeEmpty())
+				}, "5m", "10s").Should(BeEmpty())
 			})
 		})
 	})

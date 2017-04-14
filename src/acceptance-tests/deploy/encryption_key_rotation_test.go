@@ -40,7 +40,7 @@ var _ = Describe("Encryption key rotation", func() {
 
 		Eventually(func() ([]bosh.VM, error) {
 			return helpers.DeploymentVMs(boshClient, manifestName)
-		}, "1m", "10s").Should(ConsistOf(helpers.GetVMsFromManifest(manifest)))
+		}, "5m", "10s").Should(ConsistOf(helpers.GetVMsFromManifest(manifest)))
 
 		testConsumerIPs, err := helpers.GetVMIPs(boshClient, manifestName, "testconsumer")
 		Expect(err).NotTo(HaveOccurred())
@@ -90,7 +90,7 @@ var _ = Describe("Encryption key rotation", func() {
 
 			Eventually(func() ([]bosh.VM, error) {
 				return helpers.DeploymentVMs(boshClient, manifestName)
-			}, "1m", "10s").Should(ConsistOf(helpers.GetVMsFromManifest(manifest)))
+			}, "5m", "10s").Should(ConsistOf(helpers.GetVMsFromManifest(manifest)))
 		})
 
 		By("reading the value from consul", func() {
@@ -114,7 +114,7 @@ var _ = Describe("Encryption key rotation", func() {
 
 			Eventually(func() ([]bosh.VM, error) {
 				return helpers.DeploymentVMs(boshClient, manifestName)
-			}, "1m", "10s").Should(ConsistOf(helpers.GetVMsFromManifest(manifest)))
+			}, "5m", "10s").Should(ConsistOf(helpers.GetVMsFromManifest(manifest)))
 
 			spammer.Stop()
 		})
