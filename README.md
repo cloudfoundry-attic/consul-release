@@ -5,7 +5,7 @@ This is a [BOSH](http://bosh.io) release for [consul](https://github.com/hashico
 * [CI](https://p-concourse.wings.cf-app.com/teams/system-team-infra-infra1-08f1/pipelines/consul)
 * [Roadmap](https://www.pivotaltracker.com/n/projects/1488988)
 
-###Contents
+### Contents
 
 * [Using Consul](#using-consul)
 * [Deploying](#deploying)
