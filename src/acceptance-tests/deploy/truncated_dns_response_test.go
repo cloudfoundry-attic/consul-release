@@ -132,14 +132,14 @@ var _ = Describe("given large DNS response", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		if config.WindowsClients {
-			Expect(addresses).To(Equal([]string{
+			Expect(addresses).To(ConsistOf([]string{
 				"1.2.3.0", "1.2.3.0",
 				"1.2.3.1", "1.2.3.1",
 				"1.2.3.2", "1.2.3.2",
 				"1.2.3.3", "1.2.3.3",
 			}))
 		} else {
-			Expect(addresses).To(Equal([]string{
+			Expect(addresses).To(ConsistOf([]string{
 				"1.2.3.0", "1.2.3.0",
 				"1.2.3.1", "1.2.3.1",
 				"1.2.3.2", "1.2.3.2",
