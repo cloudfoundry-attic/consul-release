@@ -217,6 +217,11 @@ defined in JSON, but translated into YAML to fit into a manifest. More
 information about service registration can be found
 [here](https://www.consul.io/docs/agent/services.html).
 
+Note: When running on Windows VMs, we use powershell. To honor the exit code of the
+health check script, we wrap the script as follows:
+`powershell -Command some_script.ps1; Exit $LASTEXITCODE`.
+Any user provided script should do the same.
+
 ### Health Checks
 
 Health checks provide another level of functionality to the service discovery
