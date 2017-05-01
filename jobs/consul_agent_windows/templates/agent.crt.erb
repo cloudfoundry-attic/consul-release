@@ -1,9 +1,9 @@
 <%=
   agent_cert = nil
-  if_p("consul.agent_cert") do
-    agent_cert = p("consul.agent_cert")
+  respond_to?(:if_link) && if_link("consul") do |link|
+    agent_cert = link.p("consul.agent_cert")
   end.else do
-    agent_cert = link("consul").p("consul.agent_cert")
+    agent_cert = p("consul.agent_cert")
   end
   agent_cert
 %>
