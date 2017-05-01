@@ -20,6 +20,32 @@ packages:
   - confab
 
 provides:
+- name: consul_common
+  type: consul_common
+  properties:
+  - consul.agent.servers.lan
+  - consul.agent.log_level
+  - consul.agent.datacenter
+  - consul.agent.protocol_version
+  - consul.agent.dns_config.allow_stale
+  - consul.agent.dns_config.max_stale
+  - consul.agent.dns_config.recursor_timeout
+  - consul.agent.domain
+  - consul.ca_cert
+  - consul.encrypt_keys
+
+- name: consul_server
+  type: consul_server
+  properties:
+  - consul.server_cert
+  - consul.server_key
+
+- name: consul_client
+  type: consul_client
+  properties:
+  - consul.agent_cert
+  - consul.agent_key
+
 - name: consul
   type: consul
   properties:
@@ -39,8 +65,16 @@ provides:
   - consul.encrypt_keys
 
 consumes:
-- name: consul
-  type: consul
+- name: consul_common
+  type: consul_common
+  optional: true
+
+- name: consul_server
+  type: consul_server
+  optional: true
+
+- name: consul_client
+  type: consul_client
   optional: true
 
 properties:
