@@ -84,7 +84,7 @@ properties:
     description: "PEM-encoded agent certificate"
 
   consul.agent_key:
-    description: "PEM-encoded client key. When running in client mode, this property will override the value provided by the link from the server"
+    description: "PEM-encoded client key"
 
   consul.encrypt_keys:
     description: "A list of passphrases that will be converted into encryption keys, the first key in the list is the active one"
