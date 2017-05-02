@@ -52,7 +52,7 @@ var _ = Describe("Multiple instance rolling upgrade", func() {
 			manifestName, err = ops.ManifestName(manifest)
 			Expect(err).NotTo(HaveOccurred())
 
-			testconsumerConsulAgentJobName = "consul_agent"
+			testconsumerConsulAgentJobName := "consul_agent"
 			if config.WindowsClients {
 				testconsumerConsulAgentJobName = "consul_agent_windows"
 			}
