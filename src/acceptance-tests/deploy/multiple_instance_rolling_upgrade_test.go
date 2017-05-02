@@ -46,10 +46,38 @@ var _ = Describe("Multiple instance rolling upgrade", func() {
 			releaseNumber := os.Getenv("LATEST_CONSUL_RELEASE_VERSION")
 
 			var err error
-			manifest, err = helpers.DeployConsulWithInstanceCountAndReleaseVersion("multiple-instance-rolling-upgrade", 3, config.WindowsClients, boshClient, releaseNumber)
+			manifest, err = helpers.NewConsulManifestWithInstanceCountAndReleaseVersion("multiple-instance-rolling-upgrade", 3, config.WindowsClients, boshClient, releaseNumber)
 			Expect(err).NotTo(HaveOccurred())
 
 			manifestName, err = ops.ManifestName(manifest)
+			Expect(err).NotTo(HaveOccurred())
+
+			manifest, err = ops.ApplyOps(manifest, []ops.Op{
+				{
+					Type: "replace",
+					Path: "/instance_groups/name=consul/jobs/name=consul_agent/provides",
+					Value: map[string]interface{}{
+						"consul": map[string]string{"as": "consul_server"},
+					},
+				},
+				{
+					Type: "replace",
+					Path: "/instance_groups/name=consul/jobs/name=consul_agent/consumes",
+					Value: map[string]interface{}{
+						"consul": map[string]string{"from": "consul_server"},
+					},
+				},
+				{
+					Type: "replace",
+					Path: "/instance_groups/name=testconsumer/jobs/name=consul_agent/consumes",
+					Value: map[string]interface{}{
+						"consul": map[string]string{"from": "consul_server"},
+					},
+				},
+			})
+			Expect(err).NotTo(HaveOccurred())
+
+			_, err = boshClient.Deploy([]byte(manifest))
 			Expect(err).NotTo(HaveOccurred())
 
 			Eventually(func() ([]bosh.VM, error) {
@@ -70,17 +98,10 @@ var _ = Describe("Multiple instance rolling upgrade", func() {
 		})
 
 		By("deploying with the new consul-release", func() {
-			var err error
-			manifest, err = ops.ApplyOp(manifest, ops.Op{
-				Type:  "replace",
-				Path:  "/releases/name=consul/version",
-				Value: helpers.ConsulReleaseVersion(),
-			})
-			Expect(err).NotTo(HaveOccurred())
-
 			spammer.Spam()
 
-			_, err = boshClient.Deploy([]byte(manifest))
+			var err error
+			manifest, err = helpers.DeployConsulWithInstanceCount("multiple-instance-rolling-upgrade", 3, config.WindowsClients, boshClient)
 			Expect(err).NotTo(HaveOccurred())
 
 			Eventually(func() ([]bosh.VM, error) {
