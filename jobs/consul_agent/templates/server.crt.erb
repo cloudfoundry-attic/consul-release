@@ -3,7 +3,7 @@
     server_cert = nil
 
     respond_to?(:if_link) && if_link("consul_server") do |link|
-      server_cert = link.p("consul_server.server_cert")
+      server_cert = link.p("consul.server_cert")
     end.else do
       respond_to?(:if_link) && if_link("consul") do |link|
         server_cert = link.p("consul.server_cert")
