@@ -52,6 +52,11 @@ var _ = Describe("Multiple instance rolling upgrade", func() {
 			manifestName, err = ops.ManifestName(manifest)
 			Expect(err).NotTo(HaveOccurred())
 
+			testconsumerConsulAgentJobName = "consul_agent"
+			if config.WindowsClients {
+				testconsumerConsulAgentJobName = "consul_agent_windows"
+			}
+
 			manifest, err = ops.ApplyOps(manifest, []ops.Op{
 				{
 					Type: "replace",
@@ -69,7 +74,7 @@ var _ = Describe("Multiple instance rolling upgrade", func() {
 				},
 				{
 					Type: "replace",
-					Path: "/instance_groups/name=testconsumer/jobs/name=consul_agent/consumes",
+					Path: fmt.Sprintf("/instance_groups/name=testconsumer/jobs/name=%s/consumes", testconsumerConsulAgentJobName),
 					Value: map[string]interface{}{
 						"consul": map[string]string{"from": "consul_server"},
 					},
