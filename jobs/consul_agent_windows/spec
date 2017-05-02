@@ -29,8 +29,16 @@ provides:
   - consul.encrypt_keys
 
 consumes:
-- name: consul
-  type: consul
+- name: consul_common
+  type: consul_common
+  optional: true
+
+- name: consul_server
+  type: consul_server
+  optional: true
+
+- name: consul_client
+  type: consul_client
   optional: true
 
 properties:
