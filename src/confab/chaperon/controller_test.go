@@ -189,7 +189,7 @@ var _ = Describe("Controller", func() {
 			It("returns an error after timeout", func() {
 				agentClient.SelfCall.Returns.Error = errors.New("some error occurred")
 
-				timeout := utils.NewTimeout(time.After(10 * time.Millisecond))
+				timeout := utils.NewTimeout(time.After(20 * time.Millisecond))
 
 				err := controller.BootAgent(timeout)
 				Expect(err).To(MatchError(`timeout exceeded: "some error occurred"`))
