@@ -77,6 +77,10 @@ consumes:
   type: consul_client
   optional: true
 
+- name: consul
+  type: consul
+  optional: true
+
 properties:
   consul.agent.mode:
     description: "Mode to run the agent in. (client or server)"
