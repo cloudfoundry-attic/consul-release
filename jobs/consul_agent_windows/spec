@@ -12,22 +12,6 @@ packages:
 - consul-windows
 - confab-windows
 
-provides:
-- name: consul
-  type: consul
-  properties:
-  - consul.agent.servers.lan
-  - consul.agent.log_level
-  - consul.agent.datacenter
-  - consul.agent.protocol_version
-  - consul.agent.dns_config.allow_stale
-  - consul.agent.dns_config.max_stale
-  - consul.agent.domain
-  - consul.ca_cert
-  - consul.agent_cert
-  - consul.agent_key
-  - consul.encrypt_keys
-
 consumes:
 - name: consul_common
   type: consul_common
@@ -39,6 +23,10 @@ consumes:
 
 - name: consul_client
   type: consul_client
+  optional: true
+
+- name: consul
+  type: consul
   optional: true
 
 properties:
