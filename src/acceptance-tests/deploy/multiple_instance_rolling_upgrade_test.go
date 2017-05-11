@@ -14,7 +14,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("Multiple instance rolling upgrade", func() {
+var _ = FDescribe("Multiple instance rolling upgrade", func() {
 	var (
 		manifest     string
 		manifestName string
@@ -56,31 +56,6 @@ var _ = Describe("Multiple instance rolling upgrade", func() {
 			if config.WindowsClients {
 				testconsumerConsulAgentJobName = "consul_agent_windows"
 			}
-
-			manifest, err = ops.ApplyOps(manifest, []ops.Op{
-				{
-					Type: "replace",
-					Path: "/instance_groups/name=consul/jobs/name=consul_agent/provides",
-					Value: map[string]interface{}{
-						"consul": map[string]string{"as": "consul_server"},
-					},
-				},
-				{
-					Type: "replace",
-					Path: "/instance_groups/name=consul/jobs/name=consul_agent/consumes",
-					Value: map[string]interface{}{
-						"consul": map[string]string{"from": "consul_server"},
-					},
-				},
-				{
-					Type: "replace",
-					Path: fmt.Sprintf("/instance_groups/name=testconsumer/jobs/name=%s/consumes", testconsumerConsulAgentJobName),
-					Value: map[string]interface{}{
-						"consul": map[string]string{"from": "consul_server"},
-					},
-				},
-			})
-			Expect(err).NotTo(HaveOccurred())
 
 			_, err = boshClient.Deploy([]byte(manifest))
 			Expect(err).NotTo(HaveOccurred())
