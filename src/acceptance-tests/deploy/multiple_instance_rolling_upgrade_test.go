@@ -14,7 +14,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = FDescribe("Multiple instance rolling upgrade", func() {
+var _ = Describe("Multiple instance rolling upgrade", func() {
 	var (
 		manifest     string
 		manifestName string
