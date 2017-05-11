@@ -52,11 +52,6 @@ var _ = FDescribe("Multiple instance rolling upgrade", func() {
 			manifestName, err = ops.ManifestName(manifest)
 			Expect(err).NotTo(HaveOccurred())
 
-			testconsumerConsulAgentJobName := "consul_agent"
-			if config.WindowsClients {
-				testconsumerConsulAgentJobName = "consul_agent_windows"
-			}
-
 			_, err = boshClient.Deploy([]byte(manifest))
 			Expect(err).NotTo(HaveOccurred())
 
