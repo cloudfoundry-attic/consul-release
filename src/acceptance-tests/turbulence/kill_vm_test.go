@@ -90,7 +90,7 @@ var _ = Describe("KillVm", func() {
 
 			Eventually(func() ([]bosh.VM, error) {
 				return helpers.DeploymentVMs(boshClient, consulManifestName)
-			}, "1m", "10s").Should(ConsistOf(helpers.GetVMsFromManifest(consulManifest)))
+			}, "10m", "10s").Should(ConsistOf(helpers.GetVMsFromManifest(consulManifest)))
 		})
 
 		By("deleting the deployment", func() {
