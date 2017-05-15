@@ -34,6 +34,12 @@ function ReleaseDNSLock() {
   Remove-Item C:\var\vcap\sys\run\consul-dns.lock -ErrorAction Ignore
 }
 
+function ClearConsulAgentPidfile() {
+  Remove-Item C:\var\vcap\sys\log\consul_agent_windows\consul_agent.pid -ErrorAction Ignore
+}
+
+ClearConsulAgentPidfile
+
 WaitForDNSLock
 
 [array]$routeable_interfaces = Get-WmiObject Win32_NetworkAdapterConfiguration | Where { $_.IpAddress -AND ($_.IpAddress | Where { $addr = [Net.IPAddress] $_; $addr.AddressFamily -eq "InterNetwork" -AND ($addr.address -BAND ([Net.IPAddress] "255.255.0.0").address) -ne ([Net.IPAddress] "169.254.0.0").address }) }
