@@ -4,11 +4,7 @@
   respond_to?(:if_link) && if_link("consul_client") do |link|
     agent_cert = link.p("consul.agent_cert")
   end.else do
-    respond_to?(:if_link) && if_link("consul") do |link|
-      agent_cert = link.p("consul.agent_cert")
-    end.else do
-      agent_cert = p("consul.agent_cert")
-    end
+    agent_cert = p("consul.agent_cert")
   end
 
   agent_cert

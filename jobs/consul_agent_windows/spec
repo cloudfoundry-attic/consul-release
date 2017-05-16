@@ -25,10 +25,6 @@ consumes:
   type: consul_client
   optional: true
 
-- name: consul
-  type: consul
-  optional: true
-
 properties:
   consul.agent.servers.lan:
     description: "LAN server addresses to join on start."
