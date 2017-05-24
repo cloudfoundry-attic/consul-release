@@ -333,6 +333,33 @@ indeed safe to follow the above steps.
 Additional information about outage recovery can be found on the consul
 [documentation page](https://www.consul.io/docs/guides/outage.html).
 
+NOTE: The above will not work if a consul server is failing because of an issue
+with a client node. In fact if you were to perform the recovery steps outlined
+above you may fall below quorum and take down the consul servers. To know if you
+are in this situation check the `/var/vcap/sys/log/consul_agent/consul.stdout.log`.
+If you see an error similar to the below message then you do not want to follow
+the above steps:
+
+```
+2017/05/04 12:31:39 [INFO] serf: EventMemberFailed: some-node-0 10.0.0.100 {"timestamp":"1493901099.471777678","source":"confab","message":"confab.agent-client.set-keys.list-keys.request.failed","log_level":2,"data":{"error":"7/8 nodes reported success"}}
+```
+
+The important part is:
+
+```
+{"error":"7/8 nodes reported success"}
+```
+
+This indicates that the consul server attempted to set keys on a client node
+and the client node failed to set the key. In this instance the consul server
+will not continue starting to prevent partitioning a client node from the
+cluster.
+
+The resolution in this case is to find the client node that is failing to set
+keys and resolve whatever issue is occuring on that node. The most common issue
+is either the disk is full/not writeable and consul cannot write to its
+datastore or consul cannot communicate with a node on port 8301.
+
 ### Frequent Disappearance of Registered Services
 
 Many BOSH jobs that colocate the `consul_agent` process do so in order to
