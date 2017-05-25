@@ -2,7 +2,7 @@
 
 This is a [BOSH](http://bosh.io) release for [consul](https://github.com/hashicorp/consul).
 
-* [CI](https://p-concourse.wings.cf-app.com/teams/system-team-infra-infra1-08f1/pipelines/consul)
+* [CI](https://wings.concourse.ci/teams/cf-infrastructure/pipelines/consul)
 * [Roadmap](https://www.pivotaltracker.com/n/projects/1488988)
 
 ### Contents
