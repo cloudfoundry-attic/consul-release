@@ -87,4 +87,18 @@ if ($Value.MaxNegativeCacheTtl -ne $ExpectedValue) {
     }
 }
 
+if (-Not (Get-NetFirewallRule | Where-Object { $_.DisplayName -eq "ConsulAgentTCPPort" })) {
+  New-NetFirewallRule -DisplayName "ConsulAgentTCPPort" -Action Allow -Direction Inbound -Enabled True -LocalPort 8301 -Protocol TCP
+  if (-Not (Get-NetFirewallRule | Where-Object { $_.DisplayName -eq "ConsulAgentTCPPort" })) {
+    Write-Error "Unable to add ConsulAgentTCPPort firewall rule"
+  }
+}
+
+if (-Not (Get-NetFirewallRule | Where-Object { $_.DisplayName -eq "ConsulAgentUDPPort" })) {
+  New-NetFirewallRule -DisplayName "ConsulAgentUDPPort" -Action Allow -Direction Inbound -Enabled True -LocalPort 8301 -Protocol UDP
+  if (-Not (Get-NetFirewallRule | Where-Object { $_.DisplayName -eq "ConsulAgentUDPPort" })) {
+    Write-Error "Unable to add ConsulAgentUDPPort firewall rule"
+  }
+}
+
 Exit 0
