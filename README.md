@@ -32,7 +32,7 @@ using DNS names. Consul transparently updates the DNS records across the cluster
 as services start and stop, or pass/fail their health checks.
 
 Additionally, Consul is able to store key-value data across its distributed
-cluster. CloudFoundry makes use of this feature by storing some simple
+cluster. Cloud Foundry makes use of this feature by storing some simple
 configuration data, making it reachable across all nodes in the cluster.
 
 CloudFoundry also makes some use of Consul's distributed locks.
