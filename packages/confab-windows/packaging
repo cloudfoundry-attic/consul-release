@@ -8,7 +8,6 @@ $BOSH_INSTALL_TARGET = Resolve-Path "${env:BOSH_INSTALL_TARGET}"
 $env:GOROOT="C:\var\vcap\packages\golang1.8-windows\go"
 $env:GOPATH="${BOSH_INSTALL_TARGET}"
 $env:PATH="${env:GOROOT}\bin;${env:PATH}"
-$env:GO15VENDOREXPERIMENT=1
 $pkg_path="github.com\cloudfoundry-incubator\consul-release\src\confab\confab"
 
 New-Item -ItemType "directory" -Force "${BOSH_INSTALL_TARGET}\src\github.com\cloudfoundry-incubator\consul-release\src"
