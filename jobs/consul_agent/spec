@@ -60,6 +60,9 @@ consumes:
   optional: true
 
 properties:
+  consul.agent.node_name:
+    description: "Node name for the agent. (Defaults to the BOSH instance group name)"
+
   consul.agent.mode:
     description: "Mode to run the agent in. (client or server)"
     default: client
