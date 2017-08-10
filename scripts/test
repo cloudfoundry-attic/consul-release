@@ -3,7 +3,7 @@
 export CONSUL_RELEASE_VERSION="99999+dev.$(date +%s)"
 export LATEST_CONSUL_RELEASE_VERSION="$(curl http://bosh.io/api/v1/releases/github.com/cloudfoundry-incubator/consul-release | jq -r .[0].version)"
 
-turbulence_version="0.6.1"
+turbulence_version="0.8"
 
 function check_dependencies() {
   test -n "${CONSATS_CONFIG?"CONSATS_CONFIG is a required environment variable"}"
@@ -65,7 +65,7 @@ function upload_releases() {
   releases_dir="/tmp/consats/releases"
   mkdir -p "${releases_dir}"
 
-  wget -nc -O "${releases_dir}/turbulence-release-${turbulence_version}.tgz" "https://github.com/christianang/turbulence-release/releases/download/v${turbulence_version}/release.tgz" || echo "File Exists"
+  wget -nc -O "${releases_dir}/turbulence-release-${turbulence_version}.tgz" "http://bosh.io/d/github.com/cppforlife/turbulence-release?v=${turbulence_version}" || echo "File Exists"
   bosh upload-release "${releases_dir}/turbulence-release-${turbulence_version}.tgz"
 
   wget -nc -O "${releases_dir}/consul-release-${LATEST_CONSUL_RELEASE_VERSION}.tgz" "http://bosh.io/d/github.com/cloudfoundry-incubator/consul-release?v=${LATEST_CONSUL_RELEASE_VERSION}" || echo "File Exists"
