@@ -17,17 +17,9 @@
   network.ip
   end
 
-  node_name = nil
-
-  if_p("consul.agent.node_name") do |prop|
-    node_name = prop
-  end.else do
-    node_name = name
-  end
-
   {
     node: {
-      name: node_name,
+      name: name,
       index: spec.index,
       external_ip: discover_external_ip,
       zone: spec.az,

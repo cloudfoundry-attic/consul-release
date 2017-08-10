@@ -164,8 +164,9 @@ var _ = Describe("ConfigWriter", func() {
 			})
 
 			Context("when config has a node name specified", func() {
-				It("honors the node name specified in the config", func() {
-					cfg.Consul.Agent.NodeName = "some-random-node-name"
+				It("combines the node name specified in the config and the index", func() {
+					cfg.Node.Index = 2
+					cfg.Consul.Agent.NodeName = "consul_agent_node_name"
 					err := writer.Write(cfg)
 					Expect(err).NotTo(HaveOccurred())
 
@@ -176,7 +177,7 @@ var _ = Describe("ConfigWriter", func() {
 
 					err = json.Unmarshal(buf, &config)
 					Expect(err).NotTo(HaveOccurred())
-					Expect(config["node_name"]).To(Equal("some-random-node-name"))
+					Expect(config["node_name"]).To(Equal("consul-agent-node-name-2"))
 				})
 			})
 
