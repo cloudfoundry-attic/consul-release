@@ -75,7 +75,7 @@ type node struct {
 }
 
 func getNodeName(dataDir string, nodeName string, nodeIndex int) (string, error) {
-	var oldNodeName node
+	var oldNode node
 	var name string
 
 	_, err := os.Stat(dataDir)
@@ -86,11 +86,11 @@ func getNodeName(dataDir string, nodeName string, nodeIndex int) (string, error)
 	buf, err := ioutil.ReadFile(filepath.Join(dataDir, "node-name.json"))
 	switch {
 	case err == nil:
-		err = json.Unmarshal(buf, &oldNodeName)
+		err = json.Unmarshal(buf, &oldNode)
 		if err != nil {
 			return "", err
 		}
-		name = oldNodeName.NodeName
+		name = oldNode.NodeName
 	case os.IsNotExist(err):
 		name = strings.Replace(nodeName, "_", "-", -1)
 		name = fmt.Sprintf("%s-%d", name, nodeIndex)
