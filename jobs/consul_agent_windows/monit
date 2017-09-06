@@ -1,3 +1,4 @@
+{
 <%
   server_count = p('consul.agent.servers.lan').size
   respond_to?(:if_link) && if_link('consul_common') do |consul_link|
