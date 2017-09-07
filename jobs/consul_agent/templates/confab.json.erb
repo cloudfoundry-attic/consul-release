@@ -17,6 +17,14 @@
   network.ip
   end
 
+  def consul
+    config = p('consul')
+    if config['agent']['node_name_includes_id']
+      config['agent']['node_name'] = "#{spec.name}-#{spec.id}"
+    end
+    config
+  end
+
   {
     node: {
       name: name,
@@ -24,6 +32,6 @@
       external_ip: discover_external_ip,
       zone: spec.az,
     },
-    consul: p('consul'),
+    consul: consul,
   }.to_json
 %>
