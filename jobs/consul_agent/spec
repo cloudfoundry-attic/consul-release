@@ -63,6 +63,10 @@ properties:
   consul.agent.node_name:
     description: "Node name for the agent. (Defaults to the BOSH instance group name)"
 
+  consul.agent.node_name_includes_id:
+    description: "whether to include the unique spec.id in the node name"
+    default: false
+
   consul.agent.mode:
     description: "Mode to run the agent in. (client or server)"
     default: client

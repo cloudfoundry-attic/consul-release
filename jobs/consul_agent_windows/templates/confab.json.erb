@@ -20,6 +20,9 @@
   def consul
     config = p('consul')
     config["agent"]["mode"] = 'client'
+    if config['agent']['node_name_includes_id']
+      config['agent']['node_name'] = "#{spec.name}-#{spec.id}"
+    end
     config
   end
 
