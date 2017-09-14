@@ -26,6 +26,10 @@ consumes:
   optional: true
 
 properties:
+  consul.agent.node_name_includes_id:
+    description: "whether to include the unique spec.id in the node name"
+    default: false
+
   consul.agent.servers.lan:
     description: "LAN server addresses to join on start."
     default: []
