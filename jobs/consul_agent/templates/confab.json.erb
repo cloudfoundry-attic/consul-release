@@ -6,15 +6,15 @@
       network_spec.default
     end
 
-  if !network
-    _, network = networks.first
-  end
+    if !network
+      _, network = networks.first
+    end
 
-  if !network
-    raise "Could not determine IP via network spec: #{networks}"
-  end
+    if !network
+      raise "Could not determine IP via network spec: #{networks}"
+    end
 
-  network.ip
+    network.ip
   end
 
   def consul
