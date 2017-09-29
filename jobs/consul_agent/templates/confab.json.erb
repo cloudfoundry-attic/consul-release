@@ -17,6 +17,39 @@
     network.ip
   end
 
+  def mapping
+    {
+      's' => 'seconds',
+      'm' => 'minutes',
+    }
+  end
+
+  def multiplier(unit)
+    case unit
+    when 'minutes' ; 60
+    when 'seconds' ; 1
+    else           ; 1
+    end
+  end
+
+  def parse(duration)
+    # Fixnum is deprecated in Ruby 2.4, so...
+    return duration if duration.is_a?(1.class)
+
+    clean  = duration.gsub(/\s/, '')
+    digits = clean.to_i
+    unit   = mapping[clean.sub("#{digits}", '')]
+    digits * multiplier(unit)
+  end
+
+  def confab
+    {}.tap do |config|
+      input = p('confab', {})
+      timeout = input['timeout']
+      config['timeout_in_seconds'] = parse(timeout) if timeout
+    end
+  end
+
   def consul
     config = p('consul')
     if config['agent']['node_name_includes_id']
@@ -25,7 +58,7 @@
     config
   end
 
-  {
+  confab.merge({
     node: {
       name: name,
       index: spec.index,
@@ -33,5 +66,5 @@
       zone: spec.az,
     },
     consul: consul,
-  }.to_json
+  }).to_json
 %>
