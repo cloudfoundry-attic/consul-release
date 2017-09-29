@@ -43,10 +43,11 @@
   end
 
   def confab
-    {}.tap do |config|
-      input = p('confab', {})
-      timeout = input['timeout']
-      config['timeout_in_seconds'] = parse_time(timeout) if timeout
+    input = p('confab')
+    if input && input['timeout']
+      { 'confab': { 'timeout_in_seconds': parse_time(input['timeout']) } }
+    else
+      {}
     end
   end
 
