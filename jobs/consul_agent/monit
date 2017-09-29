@@ -1,27 +1,27 @@
 <%
-   def mapping
-     {
-       's' => 'seconds',
-       'm' => 'minutes',
-     }
-   end
+  def mapping
+    {
+      's' => 'seconds',
+      'm' => 'minutes',
+    }
+  end
 
-   def multiplier(unit)
-     case unit
-     when 'minutes' ; 60
-     when 'seconds' ; 1
-     else           ; 1
-     end
+  def multiplier(unit)
+    case unit
+    when 'minutes' ; 60
+    when 'seconds' ; 1
+    else           ; 1
+    end
   end
 
   def parse_time(duration)
-     # Fixnum is deprecated in Ruby 2.4, so...
-     return duration if duration.is_a?(1.class)
+    # Fixnum is deprecated in Ruby 2.4, so...
+    return duration if duration.is_a?(1.class)
 
-     clean  = duration.gsub(/\s/, '')
-     digits = clean.to_i
-     unit   = mapping[clean.sub("#{digits}", '')]
-     digits * multiplier(unit)
+    clean  = duration.gsub(/\s/, '')
+    digits = clean.to_i
+    unit   = mapping[clean.sub("#{digits}", '')]
+    digits * multiplier(unit)
   end
 
   server_count = p('consul.agent.servers.lan').size
