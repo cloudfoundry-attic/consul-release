@@ -32,7 +32,7 @@
     end
   end
 
-  def parse(duration)
+  def parse_time(duration)
     # Fixnum is deprecated in Ruby 2.4, so...
     return duration if duration.is_a?(1.class)
 
@@ -46,7 +46,7 @@
     {}.tap do |config|
       input = p('confab', {})
       timeout = input['timeout']
-      config['timeout_in_seconds'] = parse(timeout) if timeout
+      config['timeout_in_seconds'] = parse_time(timeout) if timeout
     end
   end
 

@@ -100,8 +100,3 @@ properties:
   syslog_daemon_config.transport:
     description: "Syslog transport protocol (tcp or udp)"
     default: "udp"
-
-  confab.timeout:
-    description: "Timeout used by Confab when starting up."
-    example: "For one minute, use one of: 60, '60s', or '1m'"
-    default: 55
