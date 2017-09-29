@@ -29,9 +29,9 @@
     server_count = consul_link.instances.size
   end
 
-  timeout = "60"
-  if p("confab.timeout") != nil && !p("confab.timeout").blank?
-    timeout = parse_time(p("confab.timeout"))
+  timeout = 65
+  if p("confab.timeout")
+    timeout = 10 + parse_time(p("confab.timeout"))
   end
 
   if p("consul.client.enabled") == true && server_count > 0
@@ -39,7 +39,7 @@
 check process consul_agent
   with pidfile /var/vcap/sys/run/consul_agent/consul_agent.pid
   start program "/var/vcap/jobs/consul_agent/bin/agent_ctl_wrapper start"
-    with timeout <%= timeout + 10 %> seconds
+    with timeout <%= timeout %> seconds
   stop program "/var/vcap/jobs/consul_agent/bin/agent_ctl stop"
   group vcap
 <% end %>
