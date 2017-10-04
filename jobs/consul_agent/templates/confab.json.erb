@@ -6,15 +6,49 @@
       network_spec.default
     end
 
-  if !network
-    _, network = networks.first
+    if !network
+      _, network = networks.first
+    end
+
+    if !network
+      raise "Could not determine IP via network spec: #{networks}"
+    end
+
+    network.ip
   end
 
-  if !network
-    raise "Could not determine IP via network spec: #{networks}"
+  def mapping
+    {
+      's' => 'seconds',
+      'm' => 'minutes',
+    }
   end
 
-  network.ip
+  def multiplier(unit)
+    case unit
+    when 'minutes' ; 60
+    when 'seconds' ; 1
+    else           ; 1
+    end
+  end
+
+  def parse_time(duration)
+    # Fixnum is deprecated in Ruby 2.4, so...
+    return duration if duration.is_a?(1.class)
+
+    clean  = duration.gsub(/\s/, '')
+    digits = clean.to_i
+    unit   = mapping[clean.sub("#{digits}", '')]
+    digits * multiplier(unit)
+  end
+
+  def confab
+    input = p('confab')
+    if input && input['timeout']
+      { 'confab': { 'timeout_in_seconds': parse_time(input['timeout']) } }
+    else
+      {}
+    end
   end
 
   def consul
@@ -25,7 +59,7 @@
     config
   end
 
-  {
+  confab.merge({
     node: {
       name: name,
       index: spec.index,
@@ -33,5 +67,5 @@
       zone: spec.az,
     },
     consul: consul,
-  }.to_json
+  }).to_json
 %>
