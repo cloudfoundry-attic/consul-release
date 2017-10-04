@@ -142,7 +142,3 @@ properties:
   consul.client.enabled:
     description: "Set to false to disable the consul_agent on a VM."
     default: true
-
-  confab.timeout:
-    description: "Timeout (in seconds) used by Confab when starting up."
-    default: 55

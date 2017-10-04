@@ -3,17 +3,12 @@
   respond_to?(:if_link) && if_link('consul_common') do |consul_link|
     server_count = consul_link.instances.size
   end
-
   if p("consul.client.enabled") == true && server_count > 0
-
-  if p("confab.timeout") < 55
-    raise "Timeout for Confab must be at least 55 seconds."
-  end
 %>
 check process consul_agent
   with pidfile /var/vcap/sys/run/consul_agent/consul_agent.pid
   start program "/var/vcap/jobs/consul_agent/bin/agent_ctl_wrapper start"
-    with timeout <%= p("confab.timeout") %> seconds
+    with timeout 60 seconds
   stop program "/var/vcap/jobs/consul_agent/bin/agent_ctl stop"
   group vcap
 <% end %>
