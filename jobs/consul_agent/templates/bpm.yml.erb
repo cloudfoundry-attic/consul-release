@@ -1,0 +1,16 @@
+---
+processes:
+- name: consul_agent
+  executable: /var/vcap/jobs/consul_agent/bin/consul_agent
+  env:
+    CONFAB_PACKAGE: /var/vcap/packages/confab
+  limits:
+    open_files: 4096
+  <% if p("consul.agent.mode") == "server" %>
+  persistent_disk: true
+  <% end %>
+  ephemeral_disk: true
+  capabilities:
+  - NET_BIND_SERVICE
+- name: consul_join
+  executable: /var/vcap/jobs/consul_agent/bin/join

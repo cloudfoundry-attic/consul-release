@@ -1,0 +1,8 @@
+#!/bin/bash -e
+
+until /var/vcap/packages/consul/bin/consul join -wan <%= p("consul.agent.servers.wan").join(" ") %>; do
+  sleep 10
+done
+
+# wait forever
+kill -STOP $$

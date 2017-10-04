@@ -41,6 +41,10 @@ function create_directories_and_chown_to_vcap() {
   mkdir -p "${DATA_DIR}"
   chown -R vcap:vcap "${DATA_DIR}"
 
+  mkdir -p "/var/vcap/data/consul_agent/configuration"
+  cp -r /var/vcap/jobs/consul_agent/config/* /var/vcap/data/consul_agent/configuration
+  chown -R vcap:vcap "/var/vcap/data/consul_agent/configuration"
+
   mkdir -p "${CONF_DIR}"
   chown -R vcap:vcap "${CONF_DIR}"
 

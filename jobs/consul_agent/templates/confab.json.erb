@@ -37,6 +37,9 @@
       zone: spec.az,
     },
     consul: consul,
-    confab: confab,
+    path: {
+      consul_config_dir: "/var/vcap/data/consul_agent/configuration",
+      pid_file: "/var/vcap/data/consul_agent/tmp/consul_agent.pid",
+    },
   }.to_json
 %>

@@ -11,7 +11,7 @@ exec 1>> ${LOG_DIR}/drain.log
 exec 2>> ${LOG_DIR}/drain.log
 
 <% if p("consul.agent.mode") == "server" %>
-${JOB_DIR}/bin/agent_ctl stop
+  /var/vcap/jobs/bpm/bin/bpm stop consul_agent
 <% end %>
 
 echo 0 >&3

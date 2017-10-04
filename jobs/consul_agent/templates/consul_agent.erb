@@ -1,0 +1,42 @@
+#!/bin/bash -exu
+
+
+
+function start_confab() {
+  local nameservers
+  nameservers=("$(cat /etc/resolv.conf | grep nameserver | awk '{print $2}' | grep -Ev '127.0.0.1\b')")
+
+  local recursors
+  recursors=""
+
+  for nameserver in ${nameservers[@]}; do
+    recursors="${recursors} -recursor=${nameserver}"
+  done
+
+  "/var/vcap/packages/confab/bin/confab" \
+    start \
+    ${recursors} \
+    --config-file "/var/vcap/jobs/consul_agent/confab.json" \
+    --config-consul-link-file "/var/vcap/jobs/consul_agent/consul_link.json"
+}
+
+function stop_confab() {
+  "/var/vcap/packages/confab/bin/confab" \
+    stop \
+    --config-file "/var/vcap/jobs/consul_agent/confab.json" \
+    --config-consul-link-file "${JOB_DIR}/consul_link.json"
+}
+
+trap stop_confab SIGTERM
+
+function main() {
+  start_confab
+}
+
+main
+
+echo "Waiting on consul agent"
+while kill -0 $(cat /var/vcap/data/consul_agent/tmp/consul_agent.pid); do
+  sleep 5
+done
+echo "Consul agent exited"
