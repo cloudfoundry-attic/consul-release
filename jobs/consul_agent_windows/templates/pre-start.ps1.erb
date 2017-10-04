@@ -57,7 +57,7 @@ if($servers[0] -eq "127.0.0.1")
 else
 {
     Write-Host "Setting DNS Servers"
-    $newDNS = "127.0.0.1", $servers
+    $newDNS = ,"127.0.0.1" + $servers
     Write-Host $newDNS
     Set-DnsClientServerAddress -InterfaceAlias $interface -ServerAddresses $newDNS
     $servers = DnsServers($interface)
