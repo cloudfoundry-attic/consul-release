@@ -42,6 +42,7 @@ instance_groups:
           domain: cf.internal
         encrypt_keys:
         - ((consul_encrypt_key))
+        - some-other-key
         agent_cert: ((consul_agent.certificate))
         agent_key: ((consul_agent.private_key))
         ca_cert: ((consul_agent.ca))
@@ -52,6 +53,32 @@ instance_groups:
   persistent_disk_type: 1GB
   networks:
   - name: private
+- name: diego-cell
+  azs:
+  - z1
+  - z2
+  instances: 1
+  jobs:
+  - consumes:
+      consul_client:
+        from: client_link
+      consul_common:
+        from: common_link
+      consul_server: nil
+    name: consul_agent
+    properties:
+      consul:
+        agent:
+          node_name_includes_id: true
+      syslog_daemon_config:
+        enable: false
+    release: consul
+  networks:
+  - name: default
+  stemcell: linux
+  vm_extensions:
+  - 100GB_ephemeral_disk
+  vm_type: small-highmem
 
 variables:
 - name: consul_encrypt_key

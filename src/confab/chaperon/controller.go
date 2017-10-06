@@ -1,7 +1,12 @@
 package chaperon
 
 import (
+	"encoding/base64"
+	"encoding/json"
 	"errors"
+	"io/ioutil"
+	"os"
+	"strings"
 	"time"
 
 	"code.cloudfoundry.org/lager"
@@ -112,19 +117,9 @@ func (c Controller) ConfigureServer(timeout utils.Timeout) error {
 		return err
 	}
 
-	c.Logger.Info("controller.configure-server.set-keys", lager.Data{
-		"keys": c.EncryptKeys,
-	})
+	//TODO: If the local.keyring or remote.keyring match the encrypt keys for this deployment, skip this step
 
-	err := c.Retrier.TryUntil(timeout, func() error {
-		return c.AgentClient.SetKeys(c.EncryptKeys)
-	})
-	if err != nil {
-		c.Logger.Error("controller.configure-server.set-keys.failed", err, lager.Data{
-			"keys": c.EncryptKeys,
-		})
-		return err
-	}
+	c.SetKeys(timeout)
 
 	if err := c.AgentRunner.WritePID(); err != nil {
 		c.Logger.Error("controller.configure-server.write-pid.failed", err)
@@ -132,6 +127,60 @@ func (c Controller) ConfigureServer(timeout utils.Timeout) error {
 	}
 
 	c.Logger.Info("controller.configure-server.success")
+	return nil
+}
+
+func (c Controller) SetKeys(timeout utils.Timeout) error {
+	if c.Config.Path.KeyringFile == "" {
+		return nil
+	}
+
+	if _, err := os.Stat(c.Config.Path.KeyringFile); err != nil {
+		return err
+	}
+
+	// Read in the keyring file data
+	keyringData, err := ioutil.ReadFile(c.Config.Path.KeyringFile)
+	if err != nil {
+		return err
+	}
+
+	// Decode keyring JSON
+	keys := make([]string, 0)
+	if err := json.Unmarshal(keyringData, &keys); err != nil {
+		return err
+	}
+
+	// Decode base64 values
+	keysDecoded := make([][]byte, len(keys))
+	for i, key := range keys {
+		keyBytes, err := base64.StdEncoding.DecodeString(key)
+		if err != nil {
+			return err
+		}
+		keysDecoded[i] = keyBytes
+	}
+
+	// Guard against empty keyring
+	// if len(keysDecoded) == 0 {
+	// 	return fmt.Errorf("no keys present in keyring file: %s", c.KeyringFile)
+	// }
+
+	if strings.Join(keys, "") != strings.Join(c.EncryptKeys, "") {
+		c.Logger.Info("controller.configure-server.set-keys", lager.Data{
+			"keys": c.EncryptKeys,
+		})
+		err := c.Retrier.TryUntil(timeout, func() error {
+			return c.AgentClient.SetKeys(c.EncryptKeys)
+		})
+		if err != nil {
+			c.Logger.Error("controller.configure-server.set-keys.failed", err, lager.Data{
+				"keys": c.EncryptKeys,
+			})
+			return err
+		}
+	}
+
 	return nil
 }
 
