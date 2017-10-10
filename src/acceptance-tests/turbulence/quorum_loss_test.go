@@ -51,7 +51,7 @@ var _ = Describe("quorum loss", func() {
 			turbulenceIPs, err := helpers.GetVMIPs(boshClient, turbulenceManifestName, "api")
 			Expect(err).NotTo(HaveOccurred())
 
-			turbulenceClient = turbulenceclient.NewClient(fmt.Sprintf("https://turbulence:%s@%s:8080", turbulencePassword, turbulenceIPs[0]), 5*time.Minute, 2*time.Second)
+			turbulenceClient = turbulenceclient.NewClient(fmt.Sprintf("https://turbulence:%s@%s:8080", turbulencePassword, turbulenceIPs[0]), 10*time.Minute, 2*time.Second)
 		})
 
 		By("deploying consul", func() {
