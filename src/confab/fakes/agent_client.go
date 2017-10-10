@@ -19,7 +19,8 @@ type AgentClient struct {
 
 	SetKeysCall struct {
 		Receives struct {
-			Keys []string
+			Keys        []string
+			KeyringFile string
 		}
 		Returns struct {
 			Error error
@@ -120,8 +121,9 @@ func (c *AgentClient) VerifySynced() error {
 	return err
 }
 
-func (c *AgentClient) SetKeys(keys []string) error {
+func (c *AgentClient) SetKeys(keys []string, keyringFile string) error {
 	c.SetKeysCall.Receives.Keys = keys
+	c.SetKeysCall.Receives.KeyringFile = keyringFile
 	return c.SetKeysCall.Returns.Error
 }
 

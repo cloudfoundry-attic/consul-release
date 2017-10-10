@@ -3,7 +3,9 @@ package agent
 import (
 	"crypto/sha1"
 	"encoding/base64"
+	"encoding/json"
 	"errors"
+	"io/ioutil"
 	"strings"
 
 	"code.cloudfoundry.org/lager"
@@ -146,7 +148,30 @@ func (c Client) Members(wan bool) ([]*api.AgentMember, error) {
 	return c.ConsulAPIAgent.Members(wan)
 }
 
-func (c Client) SetKeys(keys []string) error {
+func (c Client) localKeyringMatchesEncryptKeys(keyringFile string, encryptedKeys []string) bool {
+	keyringData, err := ioutil.ReadFile(keyringFile)
+	if err != nil {
+		return false
+	}
+
+	keyring := make([]string, 0)
+	if err := json.Unmarshal(keyringData, &keyring); err != nil {
+		return false
+	}
+
+	if strings.Join(keyring, "") == strings.Join(encryptedKeys, "") {
+		c.Logger.Info("agent-client.set-keys.existing-keys-match", lager.Data{
+			"keyringFile":  keyringFile,
+			"keys":         encryptedKeys,
+			"existingKeys": keyring,
+		})
+		return true
+	}
+
+	return false
+}
+
+func (c Client) SetKeys(keys []string, keyringFile string) error {
 	if keys == nil {
 		err := errors.New("must provide a non-nil slice of keys")
 		c.Logger.Error("agent-client.set-keys.nil-slice", err)
@@ -158,8 +183,6 @@ func (c Client) SetKeys(keys []string) error {
 		c.Logger.Error("agent-client.set-keys.empty-slice", err)
 		return err
 	}
-
-	c.Logger.Info("agent-client.set-keys.list-keys.request")
 
 	var encryptedKeys []string
 	for _, key := range keys {
@@ -173,6 +196,11 @@ func (c Client) SetKeys(keys []string) error {
 		encryptedKeys = append(encryptedKeys, encryptedKey)
 	}
 
+	if c.localKeyringMatchesEncryptKeys(keyringFile, encryptedKeys) {
+		return nil
+	}
+
+	c.Logger.Info("agent-client.set-keys.list-keys.request")
 	existingKeys, err := c.ListKeys()
 	if err != nil {
 		c.Logger.Error("agent-client.set-keys.list-keys.request.failed", err)

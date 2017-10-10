@@ -28,7 +28,7 @@ type agentClient interface {
 	Members(wan bool) ([]*api.AgentMember, error)
 	VerifyJoined() error
 	VerifySynced() error
-	SetKeys([]string) error
+	SetKeys(encryptKeys []string, keyringFile string) error
 	Leave() error
 	JoinMembers() error
 	Self() error
@@ -117,7 +117,7 @@ func (c Controller) ConfigureServer(timeout utils.Timeout) error {
 	})
 
 	err := c.Retrier.TryUntil(timeout, func() error {
-		return c.AgentClient.SetKeys(c.EncryptKeys)
+		return c.AgentClient.SetKeys(c.EncryptKeys, c.Config.Path.KeyringFile)
 	})
 	if err != nil {
 		c.Logger.Error("controller.configure-server.set-keys.failed", err, lager.Data{

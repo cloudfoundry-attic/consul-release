@@ -41,6 +41,7 @@ var _ = Describe("Controller", func() {
 
 		confabConfig := config.Config{}
 		confabConfig.Node = config.ConfigNode{Name: "node", Index: 0}
+		confabConfig.Path = config.ConfigPath{KeyringFile: "some-keyring-file-path"}
 
 		controller = chaperon.Controller{
 			AgentClient:    agentClient,
@@ -432,6 +433,7 @@ var _ = Describe("Controller", func() {
 					"key 2",
 					"key 3",
 				}))
+				Expect(agentClient.SetKeysCall.Receives.KeyringFile).To(Equal("some-keyring-file-path"))
 				Expect(logger.Messages()).To(ContainSequence([]fakes.LoggerMessage{
 					{
 						Action: "controller.configure-server.set-keys",
@@ -456,6 +458,7 @@ var _ = Describe("Controller", func() {
 						"key 2",
 						"key 3",
 					}))
+					Expect(agentClient.SetKeysCall.Receives.KeyringFile).To(Equal("some-keyring-file-path"))
 					Expect(agentRunner.WritePIDCall.CallCount).To(Equal(0))
 					Expect(logger.Messages()).To(ContainSequence([]fakes.LoggerMessage{
 						{

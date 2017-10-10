@@ -2,6 +2,9 @@ package agent_test
 
 import (
 	"errors"
+	"fmt"
+	"io/ioutil"
+	"os"
 
 	"code.cloudfoundry.org/lager"
 
@@ -20,6 +23,7 @@ var _ = Describe("Client", func() {
 		consulAPIOperator *fakes.FakeconsulAPIOperator
 		logger            *fakes.Logger
 		client            agent.Client
+		keyringFile       string
 	)
 
 	BeforeEach(func() {
@@ -31,6 +35,8 @@ var _ = Describe("Client", func() {
 			ConsulAPIOperator: consulAPIOperator,
 			Logger:            logger,
 		}
+		f, _ := ioutil.TempFile("", "")
+		keyringFile = f.Name()
 	})
 
 	Describe("VerifyJoined", func() {
@@ -464,7 +470,7 @@ var _ = Describe("Client", func() {
 		encryptedKeyPercent := "OLJdB+hlOnGSUEIR7S6ekA=="
 
 		It("installs the given keys", func() {
-			Expect(client.SetKeys([]string{encryptedKey1, "key2", "key%%"})).To(Succeed())
+			Expect(client.SetKeys([]string{encryptedKey1, "key2", "key%%"}, "invalid-kerying-file")).To(Succeed())
 
 			Expect(logger.Messages()).To(ContainSequence([]fakes.LoggerMessage{
 				{
@@ -530,6 +536,26 @@ var _ = Describe("Client", func() {
 			}))
 		})
 
+		Context("when the keys match the existing keys in the keyringfile", func() {
+			BeforeEach(func() {
+				ioutil.WriteFile(keyringFile, []byte(fmt.Sprintf(`["%s","%s"]`, encryptedKey1, encryptedKey2)), os.ModePerm)
+			})
+			It("does not use the API to list or set keys", func() {
+				Expect(client.SetKeys([]string{encryptedKey1, encryptedKey2}, keyringFile)).To(Succeed())
+
+				Expect(logger.Messages()).To(ContainSequence([]fakes.LoggerMessage{
+					{
+						Action: "agent-client.set-keys.existing-keys-match",
+						Data: []lager.Data{{
+							"keyringFile":  keyringFile,
+							"keys":         []string{encryptedKey1, encryptedKey2},
+							"existingKeys": []string{encryptedKey1, encryptedKey2},
+						}},
+					},
+				}))
+			})
+		})
+
 		Context("when there are extra keys", func() {
 			It("removes extra keys", func() {
 				consulAPIOperator.KeyringListCall.Returns.KeyringResponse = []*api.KeyringResponse{
@@ -542,7 +568,7 @@ var _ = Describe("Client", func() {
 					},
 				}
 
-				Expect(client.SetKeys([]string{"key1", "key2"})).To(Succeed())
+				Expect(client.SetKeys([]string{"key1", "key2"}, keyringFile)).To(Succeed())
 
 				msgs := logger.Messages()
 				Expect(len(msgs)).Should(BeNumerically(">=", 2))
@@ -629,7 +655,7 @@ var _ = Describe("Client", func() {
 		Context("failure cases", func() {
 			Context("when provided with a nil slice", func() {
 				It("returns a reasonably named error", func() {
-					Expect(client.SetKeys(nil)).To(MatchError("must provide a non-nil slice of keys"))
+					Expect(client.SetKeys(nil, keyringFile)).To(MatchError("must provide a non-nil slice of keys"))
 					Expect(logger.Messages()).To(ContainSequence([]fakes.LoggerMessage{
 						{
 							Action: "agent-client.set-keys.nil-slice",
@@ -641,7 +667,7 @@ var _ = Describe("Client", func() {
 
 			Context("when provided with an empty slice", func() {
 				It("returns a reasonably named error", func() {
-					Expect(client.SetKeys([]string{})).To(MatchError("must provide a non-empty slice of keys"))
+					Expect(client.SetKeys([]string{}, keyringFile)).To(MatchError("must provide a non-empty slice of keys"))
 					Expect(logger.Messages()).To(ContainSequence([]fakes.LoggerMessage{
 						{
 							Action: "agent-client.set-keys.empty-slice",
@@ -655,7 +681,7 @@ var _ = Describe("Client", func() {
 				It("returns the error", func() {
 					consulAPIOperator.KeyringListCall.Returns.Error = errors.New("list keys error")
 
-					Expect(client.SetKeys([]string{"key1"})).To(MatchError("list keys error"))
+					Expect(client.SetKeys([]string{"key1"}, keyringFile)).To(MatchError("list keys error"))
 					Expect(logger.Messages()).To(ContainSequence([]fakes.LoggerMessage{
 						{
 							Action: "agent-client.set-keys.list-keys.request",
@@ -680,7 +706,7 @@ var _ = Describe("Client", func() {
 						},
 					}
 
-					Expect(client.SetKeys([]string{"key1"})).To(MatchError("remove key error"))
+					Expect(client.SetKeys([]string{"key1"}, keyringFile)).To(MatchError("remove key error"))
 					Expect(logger.Messages()).To(ContainSequence([]fakes.LoggerMessage{
 						{
 							Action: "agent-client.set-keys.list-keys.request",
@@ -712,7 +738,7 @@ var _ = Describe("Client", func() {
 				It("returns the error", func() {
 					consulAPIOperator.KeyringInstallCall.Returns.Error = errors.New("install key error")
 
-					Expect(client.SetKeys([]string{"key1"})).To(MatchError("install key error"))
+					Expect(client.SetKeys([]string{"key1"}, keyringFile)).To(MatchError("install key error"))
 					Expect(logger.Messages()).To(ContainSequence([]fakes.LoggerMessage{
 						{
 							Action: "agent-client.set-keys.list-keys.request",
@@ -744,7 +770,7 @@ var _ = Describe("Client", func() {
 				It("returns the error", func() {
 					consulAPIOperator.KeyringUseCall.Returns.Error = errors.New("use key error")
 
-					Expect(client.SetKeys([]string{"key1"})).To(MatchError("use key error"))
+					Expect(client.SetKeys([]string{"key1"}, keyringFile)).To(MatchError("use key error"))
 					Expect(logger.Messages()).To(ContainSequence([]fakes.LoggerMessage{
 						{
 							Action: "agent-client.set-keys.list-keys.request",
