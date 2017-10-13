@@ -9,6 +9,7 @@ type ServiceDefiner struct {
 		}
 		Returns struct {
 			Definitions []config.ServiceDefinition
+			Error       error
 		}
 	}
 
@@ -29,7 +30,7 @@ func (d *ServiceDefiner) WriteDefinitions(configDir string, definitions []config
 	return d.WriteDefinitionsCall.Returns.Error
 }
 
-func (d *ServiceDefiner) GenerateDefinitions(config config.Config) []config.ServiceDefinition {
+func (d *ServiceDefiner) GenerateDefinitions(config config.Config) ([]config.ServiceDefinition, error) {
 	d.GenerateDefinitionsCall.Receives.Config = config
-	return d.GenerateDefinitionsCall.Returns.Definitions
+	return d.GenerateDefinitionsCall.Returns.Definitions, d.GenerateDefinitionsCall.Returns.Error
 }

@@ -37,7 +37,7 @@ var _ = Describe("ServiceDefiner", func() {
 
 	Describe("GenerateDefinitions", func() {
 		It("logs the definitions that it generates", func() {
-			definer.GenerateDefinitions(config.Config{
+			_, err := definer.GenerateDefinitions(config.Config{
 				Node: config.ConfigNode{
 					Name:  "some_node",
 					Index: 0,
@@ -52,6 +52,7 @@ var _ = Describe("ServiceDefiner", func() {
 					},
 				},
 			})
+			Expect(err).ToNot(HaveOccurred())
 			Expect(logger.Messages()).To(ContainElement(fakes.LoggerMessage{
 				Action: "service-definer.generate-definitions.define",
 				Data: []lager.Data{{
@@ -82,7 +83,7 @@ var _ = Describe("ServiceDefiner", func() {
 			})
 
 			It("generates a definition with the default values", func() {
-				definitions := definer.GenerateDefinitions(config.Config{
+				definitions, err := definer.GenerateDefinitions(config.Config{
 					Node: config.ConfigNode{
 						Name:  "some_node",
 						Index: 0,
@@ -96,6 +97,7 @@ var _ = Describe("ServiceDefiner", func() {
 						},
 					},
 				})
+				Expect(err).ToNot(HaveOccurred())
 				Expect(definitions).To(ConsistOf([]config.ServiceDefinition{
 					{
 						ServiceName: "router",
@@ -109,6 +111,38 @@ var _ = Describe("ServiceDefiner", func() {
 					},
 				}))
 			})
+
+			Context("with a zone containing unicode characters", func() {
+				It("IDN encodes the zone and replaces @ signs", func() {
+					definitions, err := definer.GenerateDefinitions(config.Config{
+						Node: config.ConfigNode{
+							Name:  "some_node",
+							Index: 0,
+							Zone:  "jedi@nečné",
+						},
+						Consul: config.ConfigConsul{
+							Agent: config.ConfigConsulAgent{
+								Services: map[string]config.ServiceDefinition{
+									"router": {},
+								},
+							},
+						},
+					})
+					Expect(err).ToNot(HaveOccurred())
+					Expect(definitions).To(ConsistOf([]config.ServiceDefinition{
+						{
+							ServiceName: "router",
+							Name:        "router",
+							Check: &config.ServiceDefinitionCheck{
+								Name:     "dns_health_check",
+								Script:   "/var/vcap/jobs/router/bin/dns_health_check",
+								Interval: "3s",
+							},
+							Tags: []string{"some-node-0", "xn--jedi-nen-i1a27a"},
+						},
+					}))
+				})
+			})
 		})
 
 		Context("when running on windows", func() {
@@ -121,7 +155,7 @@ var _ = Describe("ServiceDefiner", func() {
 			})
 
 			It("generates a definition with the default values", func() {
-				definitions := definer.GenerateDefinitions(config.Config{
+				definitions, err := definer.GenerateDefinitions(config.Config{
 					Node: config.ConfigNode{
 						Name:  "some_node",
 						Index: 0,
@@ -134,6 +168,7 @@ var _ = Describe("ServiceDefiner", func() {
 						},
 					},
 				})
+				Expect(err).ToNot(HaveOccurred())
 				Expect(definitions).To(ConsistOf([]config.ServiceDefinition{
 					{
 						ServiceName: "router",
@@ -150,7 +185,7 @@ var _ = Describe("ServiceDefiner", func() {
 		})
 
 		It("generates a definition with the service name dasherized", func() {
-			definitions := definer.GenerateDefinitions(config.Config{
+			definitions, err := definer.GenerateDefinitions(config.Config{
 				Node: config.ConfigNode{
 					Name:  "some_node",
 					Index: 0,
@@ -163,6 +198,7 @@ var _ = Describe("ServiceDefiner", func() {
 					},
 				},
 			})
+			Expect(err).ToNot(HaveOccurred())
 
 			script := "/var/vcap/jobs/cloud_controller/bin/dns_health_check"
 			if Windows {
@@ -184,7 +220,7 @@ var _ = Describe("ServiceDefiner", func() {
 		})
 
 		It("generates a definition with the check field overridden", func() {
-			definitions := definer.GenerateDefinitions(config.Config{
+			definitions, err := definer.GenerateDefinitions(config.Config{
 				Node: config.ConfigNode{
 					Name:  "some_node",
 					Index: 0,
@@ -203,6 +239,7 @@ var _ = Describe("ServiceDefiner", func() {
 					},
 				},
 			})
+			Expect(err).ToNot(HaveOccurred())
 			Expect(definitions).To(ConsistOf([]config.ServiceDefinition{
 				{
 					ServiceName: "doppler",
@@ -218,7 +255,7 @@ var _ = Describe("ServiceDefiner", func() {
 		})
 
 		It("generates a definition with the checks field specified", func() {
-			definitions := definer.GenerateDefinitions(config.Config{
+			definitions, err := definer.GenerateDefinitions(config.Config{
 				Node: config.ConfigNode{
 					Name:  "some_node",
 					Index: 0,
@@ -237,6 +274,7 @@ var _ = Describe("ServiceDefiner", func() {
 					},
 				},
 			})
+			Expect(err).ToNot(HaveOccurred())
 
 			script := "/var/vcap/jobs/uaa/bin/dns_health_check"
 			if Windows {
@@ -263,7 +301,7 @@ var _ = Describe("ServiceDefiner", func() {
 		})
 
 		It("generates a definition with the name field overridden", func() {
-			definitions := definer.GenerateDefinitions(config.Config{
+			definitions, err := definer.GenerateDefinitions(config.Config{
 				Node: config.ConfigNode{
 					Name:  "some_node",
 					Index: 0,
@@ -278,6 +316,7 @@ var _ = Describe("ServiceDefiner", func() {
 					},
 				},
 			})
+			Expect(err).ToNot(HaveOccurred())
 
 			script := "/var/vcap/jobs/cell/bin/dns_health_check"
 			if Windows {
@@ -299,7 +338,7 @@ var _ = Describe("ServiceDefiner", func() {
 		})
 
 		It("generates a definition with the tag field overridden", func() {
-			definitions := definer.GenerateDefinitions(config.Config{
+			definitions, err := definer.GenerateDefinitions(config.Config{
 				Node: config.ConfigNode{
 					Name:  "some_node",
 					Index: 0,
@@ -314,6 +353,7 @@ var _ = Describe("ServiceDefiner", func() {
 					},
 				},
 			})
+			Expect(err).ToNot(HaveOccurred())
 
 			script := "/var/vcap/jobs/dea/bin/dns_health_check"
 			if Windows {
@@ -335,7 +375,7 @@ var _ = Describe("ServiceDefiner", func() {
 		})
 
 		It("generates definitions with the address field specified", func() {
-			definitions := definer.GenerateDefinitions(config.Config{
+			definitions, err := definer.GenerateDefinitions(config.Config{
 				Node: config.ConfigNode{
 					Name:  "some_node",
 					Index: 0,
@@ -350,6 +390,7 @@ var _ = Describe("ServiceDefiner", func() {
 					},
 				},
 			})
+			Expect(err).ToNot(HaveOccurred())
 
 			script := "/var/vcap/jobs/dea/bin/dns_health_check"
 			if Windows {
@@ -372,7 +413,7 @@ var _ = Describe("ServiceDefiner", func() {
 		})
 
 		It("generates definitions with the port field specified", func() {
-			definitions := definer.GenerateDefinitions(config.Config{
+			definitions, err := definer.GenerateDefinitions(config.Config{
 				Node: config.ConfigNode{
 					Name:  "some_node",
 					Index: 0,
@@ -387,6 +428,7 @@ var _ = Describe("ServiceDefiner", func() {
 					},
 				},
 			})
+			Expect(err).ToNot(HaveOccurred())
 
 			script := "/var/vcap/jobs/router/bin/dns_health_check"
 			if Windows {
@@ -409,7 +451,7 @@ var _ = Describe("ServiceDefiner", func() {
 		})
 
 		It("generates definitions with the EnableTagOverride field specified", func() {
-			definitions := definer.GenerateDefinitions(config.Config{
+			definitions, err := definer.GenerateDefinitions(config.Config{
 				Node: config.ConfigNode{
 					Name:  "some_node",
 					Index: 0,
@@ -424,6 +466,7 @@ var _ = Describe("ServiceDefiner", func() {
 					},
 				},
 			})
+			Expect(err).ToNot(HaveOccurred())
 
 			script := "/var/vcap/jobs/router/bin/dns_health_check"
 			if Windows {
@@ -446,7 +489,7 @@ var _ = Describe("ServiceDefiner", func() {
 		})
 
 		It("generates definitions with the Id field specified", func() {
-			definitions := definer.GenerateDefinitions(config.Config{
+			definitions, err := definer.GenerateDefinitions(config.Config{
 				Node: config.ConfigNode{
 					Name:  "some_node",
 					Index: 0,
@@ -461,6 +504,7 @@ var _ = Describe("ServiceDefiner", func() {
 					},
 				},
 			})
+			Expect(err).ToNot(HaveOccurred())
 
 			script := "/var/vcap/jobs/router/bin/dns_health_check"
 			if Windows {
@@ -483,7 +527,7 @@ var _ = Describe("ServiceDefiner", func() {
 		})
 
 		It("generates definitions with the Token field specified", func() {
-			definitions := definer.GenerateDefinitions(config.Config{
+			definitions, err := definer.GenerateDefinitions(config.Config{
 				Node: config.ConfigNode{
 					Name:  "some_node",
 					Index: 0,
@@ -498,6 +542,7 @@ var _ = Describe("ServiceDefiner", func() {
 					},
 				},
 			})
+			Expect(err).ToNot(HaveOccurred())
 
 			script := "/var/vcap/jobs/router/bin/dns_health_check"
 			if Windows {
@@ -520,7 +565,7 @@ var _ = Describe("ServiceDefiner", func() {
 		})
 
 		It("generates definitions with a check type given the overrides", func() {
-			definitions := definer.GenerateDefinitions(config.Config{
+			definitions, err := definer.GenerateDefinitions(config.Config{
 				Node: config.ConfigNode{
 					Name:  "some_node",
 					Index: 0,
@@ -549,6 +594,7 @@ var _ = Describe("ServiceDefiner", func() {
 					},
 				},
 			})
+			Expect(err).ToNot(HaveOccurred())
 			Expect(definitions).To(ConsistOf([]config.ServiceDefinition{
 				{
 					ServiceName: "router",
