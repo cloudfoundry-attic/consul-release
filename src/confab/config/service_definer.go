@@ -10,7 +10,6 @@ import (
 	"strings"
 
 	"code.cloudfoundry.org/lager"
-	"golang.org/x/net/idna"
 )
 
 var createFile = os.Create
@@ -59,7 +58,7 @@ type ServiceDefiner struct {
 	Logger logger
 }
 
-func (s ServiceDefiner) GenerateDefinitions(config Config) ([]ServiceDefinition, error) {
+func (s ServiceDefiner) GenerateDefinitions(config Config) []ServiceDefinition {
 	definitions := []ServiceDefinition{}
 
 	for name, service := range config.Consul.Agent.Services {
@@ -76,17 +75,7 @@ func (s ServiceDefiner) GenerateDefinitions(config Config) ([]ServiceDefinition,
 			fmt.Sprintf("%s-%d", strings.Replace(config.Node.Name, "_", "-", -1), config.Node.Index),
 		}
 		if config.Node.Zone != "" {
-			encodedZone, err := idna.ToASCII(config.Node.Zone)
-			if err != nil {
-				s.Logger.Error("service-definer.generate-definitions.encode-zone.failed", err, lager.Data{
-					"zone": config.Node.Zone,
-				})
-				return nil, err
-			}
-
-			encodedZone = strings.Replace(encodedZone, "@", "-", -1)
-
-			tags = append(tags, encodedZone)
+			tags = append(tags, config.Node.Zone)
 		}
 		definition := ServiceDefinition{
 			ServiceName: name,
@@ -120,7 +109,7 @@ func (s ServiceDefiner) GenerateDefinitions(config Config) ([]ServiceDefinition,
 		definitions = append(definitions, definition)
 	}
 
-	return definitions, nil
+	return definitions
 }
 
 func (s ServiceDefiner) WriteDefinitions(configDir string, definitions []ServiceDefinition) error {

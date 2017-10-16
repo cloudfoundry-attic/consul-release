@@ -46,6 +46,3 @@
 [submodule "src/acceptance-tests/testing/fake-dns-server/vendor/github.com/miekg/dns"]
 	path = src/acceptance-tests/testing/fake-dns-server/vendor/github.com/miekg/dns
 	url = https://github.com/miekg/dns.git
-[submodule "src/confab/vendor/golang.org/x/net"]
-	path = src/confab/vendor/golang.org/x/net
-	url = https://go.googlesource.com/net

@@ -39,7 +39,7 @@ type agentClient interface {
 }
 
 type serviceDefiner interface {
-	GenerateDefinitions(config.Config) ([]config.ServiceDefinition, error)
+	GenerateDefinitions(config.Config) []config.ServiceDefinition
 	WriteDefinitions(string, []config.ServiceDefinition) error
 }
 
@@ -170,10 +170,7 @@ func (c Controller) StopAgent() {
 
 func (c Controller) WriteServiceDefinitions() error {
 	c.Logger.Info("controller.write-service-definitions.generate-definitions")
-	definitions, err := c.ServiceDefiner.GenerateDefinitions(c.Config)
-	if err != nil {
-		return err
-	}
+	definitions := c.ServiceDefiner.GenerateDefinitions(c.Config)
 
 	c.Logger.Info("controller.write-service-definitions.write")
 	if err := c.ServiceDefiner.WriteDefinitions(c.ConfigDir, definitions); err != nil {
