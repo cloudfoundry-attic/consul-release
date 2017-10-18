@@ -254,11 +254,11 @@ var _ = Describe("Spammer", func() {
 
 				err := spammer.Check()
 				Expect(err).To(Equal(helpers.ErrorSet{
-					fmt.Sprintf("Error writing key \"%s-some-key-0\": some error occurred", prefix):    1,
-					fmt.Sprintf("Error writing key \"%s-some-key-1\": some error occurred", prefix):    1,
-					fmt.Sprintf("Error writing key \"%s-some-key-2\": some error occurred", prefix):    1,
-					fmt.Sprintf("Error writing key \"%s-some-key-3\": another error occurred", prefix): 1,
-					fmt.Sprintf("Error writing key \"%s-some-key-4\": another error occurred", prefix): 1,
+					fmt.Sprintf("generic: error writing key \"%s-some-key-0\": some error occurred", prefix):    1,
+					fmt.Sprintf("generic: error writing key \"%s-some-key-1\": some error occurred", prefix):    1,
+					fmt.Sprintf("generic: error writing key \"%s-some-key-2\": some error occurred", prefix):    1,
+					fmt.Sprintf("generic: error writing key \"%s-some-key-3\": another error occurred", prefix): 1,
+					fmt.Sprintf("generic: error writing key \"%s-some-key-4\": another error occurred", prefix): 1,
 				}))
 			})
 		})

@@ -131,13 +131,13 @@ var _ = Describe("HTTPKV", func() {
 			Context("when consul fails to save the value", func() {
 				It("returns an error", func() {
 					server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-						w.Write([]byte("rpc error"))
+						w.Write([]byte("apricot"))
 					}))
 
 					kv := consulclient.NewHTTPKV(server.URL)
 
 					err := kv.Set("some-key", "some-value")
-					Expect(err).To(MatchError(errors.New("rpc error")))
+					Expect(err).To(MatchError(errors.New("unexpected response body: apricot")))
 				})
 			})
 
@@ -148,13 +148,13 @@ var _ = Describe("HTTPKV", func() {
 					}))
 
 					consulclient.SetBodyReader(func(io.Reader) ([]byte, error) {
-						return []byte{}, errors.New("bad things happened")
+						return []byte{}, errors.New("bartlett pears")
 					})
 
 					kv := consulclient.NewHTTPKV(server.URL)
 
 					err := kv.Set("some-key", "some-value")
-					Expect(err).To(MatchError(errors.New("bad things happened")))
+					Expect(err).To(MatchError(errors.New("read body: bartlett pears")))
 				})
 			})
 
@@ -185,8 +185,7 @@ var _ = Describe("HTTPKV", func() {
 
 					err := kv.Set("some-key", "some-value")
 
-					Expect(err).To(BeAssignableToTypeOf(&url.Error{}))
-					Expect(err.(*url.Error).Op).To(Equal("parse"))
+					Expect(err.Error()).To(ContainSubstring("parse"))
 				})
 			})
 		})
