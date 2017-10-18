@@ -1,14 +1,12 @@
 #!/bin/bash -exu
 
+source /var/vcap/packages/golang-1.8-linux/bosh/compile.env
+
 mkdir -p "${BOSH_INSTALL_TARGET}/src/github.com/cloudfoundry-incubator/consul-release/src/acceptance-tests/"
 cp -R ${PWD}/acceptance-tests/* "${BOSH_INSTALL_TARGET}/src/github.com/cloudfoundry-incubator/consul-release/src/acceptance-tests/"
 
 mkdir -p "${BOSH_INSTALL_TARGET}/src/github.com/cloudfoundry-incubator/check-a-record"
 cp -R ${PWD}/acceptance-tests/vendor/github.com/cloudfoundry-incubator/check-a-record/ "${BOSH_INSTALL_TARGET}/src/github.com/cloudfoundry-incubator/"
-
-export GOROOT="$(readlink -nf /var/vcap/packages/golang-1.8-linux)"
-export GOPATH="${BOSH_INSTALL_TARGET}"
-export PATH="${GOROOT}/bin:${PATH}"
 
 go install "github.com/cloudfoundry-incubator/consul-release/src/acceptance-tests/testing/testconsumer"
 go install "github.com/cloudfoundry-incubator/consul-release/src/acceptance-tests/testing/fake-dns-server"

@@ -1,11 +1,10 @@
 #!/bin/bash -exu
 
+source /var/vcap/packages/golang-1.8-linux/bosh/runtime.env
+
 CONSATS_DIR="/var/vcap/packages/acceptance-tests"
 
 export PATH="${PATH}:/var/vcap/packages/consul/bin"
-export GOROOT="$(readlink -nf /var/vcap/packages/golang-1.8-linux)"
-export GOPATH="${CONSATS_DIR}"
-export PATH="${GOROOT}/bin:${PATH}"
 
 export CONSATS_CONFIG=/tmp/config.json
 export CONSUL_RELEASE_VERSION="<%= p('consul.acceptance_tests.consul_release_version') %>"
