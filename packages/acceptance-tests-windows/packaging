@@ -1,10 +1,13 @@
 . ./exiter.ps1
-. C:\var\vcap\packages\golang-1.8-windows\bosh\compile.ps1
 
 $ErrorActionPreference = "Stop";
 trap { $host.SetShouldExit(1) }
 
 $BOSH_INSTALL_TARGET = Resolve-Path "${env:BOSH_INSTALL_TARGET}"
+
+Push-Location ${BOSH_INSTALL_TARGET}
+. C:\var\vcap\packages\golang-1.8-windows\bosh\compile.ps1
+Pop-Location
 
 # acceptance-tests
 
