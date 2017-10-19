@@ -32,6 +32,7 @@ func (e ErrorSet) Error() string {
 }
 
 func (e ErrorSet) Add(err error) {
+	err = fmt.Errorf("[%s]: %s", time.Now().UTC().Format("15:04:05"), err)
 	e[err.Error()] = e[err.Error()] + 1
 }
 
