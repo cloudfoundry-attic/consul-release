@@ -3,7 +3,7 @@ name: consats
 
 releases:
 - name: consul
-  version: CONSUL_RELEASE_VERSION # REPLACE ME
+  version: latest
 
 stemcells:
 - alias: default
@@ -33,7 +33,7 @@ properties:
         password: BOSH_PASSWORD # REPLACE ME
         director_ca_cert: BOSH_DIRECTOR_CA_CERT # REPLACE ME
       parallel_nodes: 1
-      consul_release_version: CONSUL_RELEASE_VERSION # REPLACE ME
+      consul_release_version: latest
 
 update:
   serial: true

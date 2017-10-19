@@ -72,11 +72,11 @@ Find the "BOSH Lite Warden" stemcell you wish to use. [bosh.io](https://bosh.io/
 
 ### 2. Creating a release
 
-From within the consul-release director run `bosh create release --force` to create a development release.
+From within the consul-release director run `bosh create-release --force` to create a development release.
 
 ### 3. Uploading a release
 
-Once you've created a development release run `bosh upload release` to upload your development release to the director.
+Once you've created a development release run `bosh upload-release` to upload your development release to the director.
 
 ### 4. Using a sample deployment manifest
 
@@ -466,13 +466,17 @@ See below for more information on the contents of this configuration file.
 
 An example config json for BOSH-lite would look like:
 
+Note: If you're running the tests as BOSH errand (see below), then the integration
+config json will be generated from the values you specify in the `consats.yml` manifest.
+
 ```json
 cat > integration_config.json << EOF
 {
   "bosh":{
     "target": "192.168.50.4",
     "username": "admin",
-    "password": "admin"
+    "password": "admin",
+	"director_ca_cert": "some-cert"
   }
 }
 EOF
@@ -483,7 +487,7 @@ The full set of config parameters is explained below:
 * `bosh.target` (required) Public BOSH IP address that will be used to host test environment
 * `bosh.username` (required) Username for the BOSH director login
 * `bosh.password` (required) Password for the BOSH director login
-* `bosh.director_ca_cert` BOSH Director CA Cert
+* `bosh.director_ca_cert` (required for non-BOSH-lite environments) BOSH Director CA Cert
 * `aws.subnet` Subnet ID for AWS deployments
 * `aws.access_key_id` Key ID for AWS deployments
 * `aws.secret_access_key` Secret Access Key for AWS deployments
@@ -501,26 +505,19 @@ The full set of config parameters is explained below:
 
 The `acceptance-tests` BOSH errand assumes that the BOSH director has already uploaded the correct versions of the dependent releases.
 The required releases are:
-* [turbulence-release](http://bosh.io/releases/github.com/cppforlife/turbulence-release?version=0.4)
-* [consul-release](http://bosh.io/releases/github.com/cloudfoundry-incubator/consul-release) or `bosh create release && bosh upload release`
-
-For BOSH-Lite:
-* [bosh-warden-cpi-release](http://bosh.io/releases/github.com/cppforlife/bosh-warden-cpi-release?version=28)
-
-For AWS:
-* [bosh-aws-cpi-release](http://bosh.io/releases/github.com/cloudfoundry-incubator/bosh-aws-cpi-release?version=39)
+* [consul-release](http://bosh.io/releases/github.com/cloudfoundry-incubator/consul-release) or `bosh create-release && bosh upload release`
+* [turbulence-release](http://bosh.io/releases/github.com/cppforlife/turbulence-release) (if running with turbulence)
 
 ##### Creating a consats deployment manifest
 
-We provide an example deployment manifest for running the errand on AWS.
-The manifest can be used by replacing all of the placeholder values in the file `manifests/aws/consats.yml`.
+We provide an example deployment manifest for running the errand.
+The manifest can be used by replacing all of the placeholder values in the file `manifests/consats.yml`.
 
 ##### Deploying the errand
 
-Run `bosh deployment manifests/aws/consats.yml`.
-Run `bosh deploy`.
+Run `bosh deploy manifests/consats.yml -d consats`.
 
 ##### Running the errand
 
-Run `bosh run errand acceptance-tests`
+Run `bosh run-errand acceptance-tests -d consats`.
 
