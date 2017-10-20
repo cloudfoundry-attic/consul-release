@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"math/rand"
+	"strings"
 	"sync"
 	"time"
 
@@ -253,15 +254,20 @@ var _ = Describe("Spammer", func() {
 				spammer.Stop()
 
 				err := spammer.Check()
-				var errs []string
-				for k, _ := range err.(helpers.ErrorSet) {
-					errs = append(errs, k)
+				errSet := err.(helpers.ErrorSet)
+				Expect(len(errSet)).To(Equal(5))
+				for i := 0; i < 5; i++ {
+					key := fmt.Sprintf("some-key-%d", i)
+					for k, _ := range errSet {
+						if strings.Contains(k, key) {
+							if i < 3 {
+								Expect(k).To(ContainSubstring(fmt.Sprintf("]: generic: error writing key \"%s-%s\": some error occurred", prefix, key)))
+							} else {
+								Expect(k).To(ContainSubstring(fmt.Sprintf("]: generic: error writing key \"%s-%s\": another error occurred", prefix, key)))
+							}
+						}
+					}
 				}
-				Expect(errs[0]).To(ContainSubstring(fmt.Sprintf("]: generic: error writing key \"%s-some-key-0\": some error occurred", prefix)))
-				Expect(errs[1]).To(ContainSubstring(fmt.Sprintf("]: generic: error writing key \"%s-some-key-1\": some error occurred", prefix)))
-				Expect(errs[2]).To(ContainSubstring(fmt.Sprintf("]: generic: error writing key \"%s-some-key-2\": some error occurred", prefix)))
-				Expect(errs[3]).To(ContainSubstring(fmt.Sprintf("]: generic: error writing key \"%s-some-key-3\": another error occurred", prefix)))
-				Expect(errs[4]).To(ContainSubstring(fmt.Sprintf("]: generic: error writing key \"%s-some-key-4\": another error occurred", prefix)))
 			})
 		})
 	})
