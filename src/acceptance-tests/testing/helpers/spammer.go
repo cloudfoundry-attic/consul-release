@@ -43,25 +43,28 @@ type kv interface {
 }
 
 type Spammer struct {
-	kv                                        kv
-	store                                     map[string]string
-	testConsumerConnectionRefusedErrorMessage string
-	testConsumerConnectionDroppedErrorMessage string
-	done                                      chan struct{}
-	wg                                        sync.WaitGroup
-	intervalDuration                          time.Duration
-	errors                                    ErrorSet
-	keyWriteAttempts                          int
-	prefix                                    string
+	kv                                         kv
+	store                                      map[string]string
+	testConsumerConnectionRefusedErrorMessage  string
+	testConsumerConnectionDroppedErrorMessage  string
+	testConsumerContextDeadlineExceededMessage string
+	done                                       chan struct{}
+	wg                                         sync.WaitGroup
+	intervalDuration                           time.Duration
+	errors                                     ErrorSet
+	keyWriteAttempts                           int
+	prefix                                     string
 }
 
 func NewSpammer(kv kv, spamInterval time.Duration, prefix string) *Spammer {
 	address := strings.TrimPrefix(strings.TrimSuffix(kv.Address(), "/consul"), "http://")
 	linuxMessage := fmt.Sprintf("dial tcp %s: getsockopt: connection refused", address)
 	windowsMessage := fmt.Sprintf("dial tcp %s: i/o timeout", address)
+	windowsContextDeadlineMessage := fmt.Sprintf("dial tcp %s: context deadline exceeded", address)
 	return &Spammer{
-		testConsumerConnectionRefusedErrorMessage: linuxMessage,
-		testConsumerConnectionDroppedErrorMessage: windowsMessage,
+		testConsumerConnectionRefusedErrorMessage:  linuxMessage,
+		testConsumerConnectionDroppedErrorMessage:  windowsMessage,
+		testConsumerContextDeadlineExceededMessage: windowsContextDeadlineMessage,
 		kv:               kv,
 		store:            make(map[string]string),
 		done:             make(chan struct{}),
@@ -104,6 +107,10 @@ func (s *Spammer) Spam() {
 						// this typically happens when the test-consumer vm is rolled
 						counts.attempts--
 					case strings.Contains(err.Error(), s.testConsumerConnectionRefusedErrorMessage):
+						// failures to connect to the test consumer should not count as failed key writes
+						// this typically happens when the test-consumer vm is rolled
+						counts.attempts--
+					case strings.Contains(err.Error(), s.testConsumerContextDeadlineExceededMessage):
 						// failures to connect to the test consumer should not count as failed key writes
 						// this typically happens when the test-consumer vm is rolled
 						counts.attempts--

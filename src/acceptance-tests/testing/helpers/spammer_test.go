@@ -11,6 +11,7 @@ import (
 	"github.com/cloudfoundry-incubator/consul-release/src/acceptance-tests/testing/helpers"
 
 	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
 )
 
@@ -79,47 +80,31 @@ var _ = Describe("Spammer", func() {
 				Expect(err).To(MatchError(ContainSubstring("0 keys have been written")))
 			})
 
-			It("does not return an error when an underlying consul api client error occurs", func() {
-				kv.SetCall.Stub = func(string, string) error {
-					if kv.SetCall.CallCount.Value() < 10 {
-						return errors.New("dial tcp some-prefix-some-address: getsockopt: connection refused")
+			DescribeTable("ignored errors",
+				func(errorMessageToIgnore string) {
+					kv.SetCall.Stub = func(string, string) error {
+						if kv.SetCall.CallCount.Value() < 10 {
+							return errors.New(errorMessageToIgnore)
+						}
+						return nil
 					}
-					return nil
-				}
 
-				spammer = helpers.NewSpammer(kv, time.Duration(0), prefix)
-				spammer.Spam()
+					spammer = helpers.NewSpammer(kv, time.Duration(0), prefix)
+					spammer.Spam()
 
-				Eventually(func() int {
-					return kv.SetCall.CallCount.Value()
-				}).Should(BeNumerically(">", 100))
+					Eventually(func() int {
+						return kv.SetCall.CallCount.Value()
+					}).Should(BeNumerically(">", 100))
 
-				spammer.Stop()
+					spammer.Stop()
 
-				err := spammer.Check()
-				Expect(err).NotTo(HaveOccurred())
-			})
-
-			It("does not return an error when an underlying proxy http error occurs", func() {
-				kv.SetCall.Stub = func(string, string) error {
-					if kv.SetCall.CallCount.Value() < 10 {
-						return errors.New("unexpected status: 502 Bad Gateway")
-					}
-					return nil
-				}
-
-				spammer = helpers.NewSpammer(kv, time.Duration(0), prefix)
-				spammer.Spam()
-
-				Eventually(func() int {
-					return kv.SetCall.CallCount.Value()
-				}).Should(BeNumerically(">", 100))
-
-				spammer.Stop()
-
-				err := spammer.Check()
-				Expect(err).NotTo(HaveOccurred())
-			})
+					err := spammer.Check()
+					Expect(err).NotTo(HaveOccurred())
+				},
+				Entry("bad gateway", "unexpected status: 502 Bad Gateway"),
+				Entry("connection refused", "dial tcp some-prefix-some-address: getsockopt: connection refused"),
+				Entry("context deadline exceeded", "dial tcp some-prefix-some-address: context deadline exceeded"),
+			)
 
 			Context("when rpc errors are encountered", func() {
 				It("resets rpc error count once a successful write occurs", func() {
