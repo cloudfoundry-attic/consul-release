@@ -333,6 +333,9 @@ indeed safe to follow the above steps.
 Additional information about outage recovery can be found on the consul
 [documentation page](https://www.consul.io/docs/guides/outage.html).
 
+
+#### X/Y nodes reported success
+
 NOTE: The above will not work if a consul server is failing because of an issue
 with a client node. In fact if you were to perform the recovery steps outlined
 above you may fall below quorum and take down the consul servers. To know if you
