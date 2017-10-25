@@ -49,3 +49,6 @@
 [submodule "src/confab/vendor/golang.org/x/net"]
 	path = src/confab/vendor/golang.org/x/net
 	url = https://go.googlesource.com/net
+[submodule "src/confab/vendor/golang.org/x/text"]
+	path = src/confab/vendor/golang.org/x/text
+	url = https://go.googlesource.com/text
