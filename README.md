@@ -350,18 +350,30 @@ the above steps:
 The important part is:
 
 ```
-{"error":"7/8 nodes reported success"}
+{"error":"214/215 nodes reported success"}
 ```
-
 This indicates that the consul server attempted to set keys on a client node
-and the client node failed to set the key. In this instance the consul server
-will not continue starting to prevent partitioning a client node from the
-cluster.
+and the client node failed to set the key.
+
+An additional variation of this error message can be:
+```
+{"error":"1/215 nodes reported failure"}
+```
+This indicates that the consul server attempted to verify the keys on a client
+node and the client node failed to reply.
+
+As of consul-release v181 and later, this should only occur when you are
+explicitly attempting to rotate keys by changing the value of the manifest
+property `consul.encrypt_keys`.
 
 The resolution in this case is to find the client node that is failing to set
 keys and resolve whatever issue is occuring on that node. The most common issue
-is either the disk is full/not writeable and consul cannot write to its
-datastore or consul cannot communicate with a node on port 8301.
+is either the disk is full/not writeable and consul cannot write to its 
+datastore or consul cannot communicate with a node on port 8301. If you are unable
+to determine the VM that is the root cause of the issue, you may still be able
+to work around this issue by waiting longer for the key rotation to complete.
+Try setting `confab.timeout_in_seconds` to a much larger value like 600
+(10 minutes).
 
 ### Frequent Disappearance of Registered Services
 
