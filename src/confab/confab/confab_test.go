@@ -206,6 +206,9 @@ var _ = Describe("confab", func() {
 					"allow_stale":      true,
 					"max_stale":        "30s",
 					"recursor_timeout": "5s",
+					"service_ttl": map[string]interface{}{
+						"*": "0s",
+					},
 				},
 				"ports": map[string]int{
 					"dns": 53,

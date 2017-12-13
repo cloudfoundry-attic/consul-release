@@ -60,6 +60,7 @@ type ConfigConsulAgentDnsConfig struct {
 	AllowStale      bool   `json:"allow_stale"`
 	MaxStale        string `json:"max_stale"`
 	RecursorTimeout string `json:"recursor_timeout"`
+	ServiceTTL      string `json:"service_ttl"`
 }
 
 type ConfigConsulTelemetry struct {
@@ -84,6 +85,7 @@ func defaultConfig() Config {
 					AllowStale:      true,
 					MaxStale:        "30s",
 					RecursorTimeout: "5s",
+					ServiceTTL:      "0s",
 				},
 				Servers: ConfigConsulAgentServers{
 					LAN: []string{},

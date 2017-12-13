@@ -42,9 +42,14 @@ type ConsulConfigPorts struct {
 }
 
 type ConsulConfigDnsConfig struct {
-	AllowStale      bool   `json:"allow_stale"`
-	MaxStale        string `json:"max_stale"`
-	RecursorTimeout string `json:"recursor_timeout"`
+	AllowStale      bool                   `json:"allow_stale"`
+	MaxStale        string                 `json:"max_stale"`
+	RecursorTimeout string                 `json:"recursor_timeout"`
+	ServiceTTL      ConsulConfigServiceTTL `json:"service_ttl"`
+}
+
+type ConsulConfigServiceTTL struct {
+	AllServices string `json:"*"`
 }
 
 type ConsulConfigPerformance struct {
@@ -92,6 +97,9 @@ func GenerateConfiguration(config Config, configDir, nodeName string) ConsulConf
 			AllowStale:      config.Consul.Agent.DnsConfig.AllowStale,
 			MaxStale:        config.Consul.Agent.DnsConfig.MaxStale,
 			RecursorTimeout: config.Consul.Agent.DnsConfig.RecursorTimeout,
+			ServiceTTL: ConsulConfigServiceTTL{
+				AllServices: config.Consul.Agent.DnsConfig.ServiceTTL,
+			},
 		},
 		Performance: ConsulConfigPerformance{
 			RaftMultiplier: 1,

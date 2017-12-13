@@ -135,6 +135,23 @@ var _ = Describe("ConsulConfigDefiner", func() {
 					})
 				})
 			})
+
+			Describe("service_ttl", func() {
+				Context("when the `consul.agent.dns_config.service_ttl` property is set", func() {
+					It("uses that value", func() {
+						consulConfig = config.GenerateConfiguration(config.Config{
+							Consul: config.ConfigConsul{
+								Agent: config.ConfigConsulAgent{
+									DnsConfig: config.ConfigConsulAgentDnsConfig{
+										ServiceTTL: "15s",
+									},
+								},
+							},
+						}, configDir, "")
+						Expect(consulConfig.DnsConfig.ServiceTTL.AllServices).To(Equal("15s"))
+					})
+				})
+			})
 		})
 
 		Describe("log_level", func() {

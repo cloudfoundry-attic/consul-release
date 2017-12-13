@@ -48,7 +48,8 @@ var _ = Describe("Config", func() {
 							"dns_config": {
 								"allow_stale": true,
 								"max_stale": "15s",
-								"recursor_timeout": "15s"
+								"recursor_timeout": "15s",
+								"service_ttl": "0s"
 							},
 							"require_ssl": true
 						},
@@ -97,6 +98,7 @@ var _ = Describe("Config", func() {
 								AllowStale:      true,
 								MaxStale:        "15s",
 								RecursorTimeout: "15s",
+								ServiceTTL:      "0s",
 							},
 							RequireSSL: true,
 						},
@@ -139,6 +141,7 @@ var _ = Describe("Config", func() {
 								AllowStale:      true,
 								MaxStale:        "30s",
 								RecursorTimeout: "5s",
+								ServiceTTL:      "0s",
 							},
 						},
 					},
@@ -160,7 +163,7 @@ var _ = Describe("Config", func() {
 								"lan": ["server1", "server2", "server3"],
 								"wan": ["wan-server1", "wan-server2", "wan-server3"]
 							},
-							"dns_config": { "allow_stale": true, "max_stale": "15s", "recursor_timeout": "15s" }
+							"dns_config": { "allow_stale": true, "max_stale": "15s", "recursor_timeout": "15s", "service_ttl": "10s" }
 						},
 						"encrypt_keys": ["key-1", "key-2"]
 					}
@@ -191,6 +194,7 @@ var _ = Describe("Config", func() {
 							AllowStale:      true,
 							MaxStale:        "15s",
 							RecursorTimeout: "15s",
+							ServiceTTL:      "10s",
 						},
 						Services: map[string]config.ServiceDefinition{
 							"myservice": {

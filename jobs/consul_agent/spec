@@ -114,6 +114,10 @@ properties:
     description: "Timeout used by Consul when recursively querying an upstream DNS server."
     default: "5s"
 
+  consul.agent.dns_config.service_ttl:
+    description: "TTL for service DNS"
+    default: "0s"
+
   consul.agent.domain:
     description: "Domain suffix for DNS"
 
