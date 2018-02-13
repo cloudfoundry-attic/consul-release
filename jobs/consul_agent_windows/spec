@@ -7,6 +7,7 @@ templates:
   confab.json.erb: confab.json
   consul_link.json.erb: consul_link.json
   pre-start.ps1.erb: bin/pre-start.ps1
+  post-start.ps1.erb: bin/post-start.ps1
 
 packages:
 - consul-windows
