@@ -2,7 +2,7 @@
 
 CONSATS_DIR="/var/vcap/packages/acceptance-tests"
 pushd ${CONSATS_DIR} > /dev/null
-  source /var/vcap/packages/golang-1.8-linux/bosh/runtime.env
+  source /var/vcap/packages/golang-1.9-linux/bosh/runtime.env
 popd > /dev/null
 
 export PATH="${PATH}:/var/vcap/packages/consul/bin"
