@@ -72,7 +72,7 @@ Find the "BOSH Lite Warden" stemcell you wish to use. [bosh.io](https://bosh.io/
 
 ### 2. Creating a release
 
-From within the consul-release director run `bosh create-release --force` to create a development release.
+From within the consul-release directory run `bosh create-release --force` to create a development release.
 
 ### 3. Uploading a release
 
