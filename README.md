@@ -84,7 +84,7 @@ We provide a set of sample deployment manifests that can be used as a starting p
 
 ### 5. Deploy.
 
-Run `bosh -d DEPLOYMENT_NAME deploy OUTPUT_MANIFEST_PATH`.
+Run `bosh -d DEPLOYMENT_NAME deploy DEPLOYMENT_MANIFEST_PATH`.
 
 ## Configuring
 
