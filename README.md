@@ -80,7 +80,7 @@ Once you've created a development release run `bosh upload-release` to upload yo
 
 ### 4. Using a sample deployment manifest
 
-We provide a set of sample deployment manifests that can be used as a starting point for creating your own manifest, but they should not be considered comprehensive. They are located in the manifests directory.
+We provide a set of sample deployment manifests that can be used as a starting point for creating your own manifest, but they should not be considered comprehensive. They are located in the `manifests` directory.
 
 ### 5. Deploy.
 
