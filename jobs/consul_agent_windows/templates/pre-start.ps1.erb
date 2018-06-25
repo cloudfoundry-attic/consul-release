@@ -14,8 +14,9 @@ New-Item -ItemType Directory -Force -Path "${DATA_DIR}"
 New-Item -ItemType Directory -Force -Path "${CONF_DIR}"
 New-Item -ItemType Directory -Force -Path "${CERT_DIR}"
 New-Item -ItemType Directory -Force -Path "${RUN_DIR}"
-function DnsServers($interface) {
-  return (Get-DnsClientServerAddress -InterfaceAlias $interface -AddressFamily ipv4 -ErrorAction Stop).ServerAddresses
+
+function DnsServers($ifIndex) {
+  return (Get-DnsClientServerAddress -InterfaceIndex $ifIndex -AddressFamily ipv4 -ErrorAction Stop).ServerAddresses
 }
 
 function WaitForDNSLock() {
@@ -42,10 +43,8 @@ ClearConsulAgentPidfile
 
 WaitForDNSLock
 
-[array]$routeable_interfaces = Get-WmiObject Win32_NetworkAdapterConfiguration | Where { $_.IpAddress -AND ($_.IpAddress | Where { $addr = [Net.IPAddress] $_; $addr.AddressFamily -eq "InterNetwork" -AND ($addr.address -BAND ([Net.IPAddress] "255.255.0.0").address) -ne ([Net.IPAddress] "169.254.0.0").address }) }
-$ifindex = $routeable_interfaces[0].Index
-$interface = (Get-WmiObject Win32_NetworkAdapter | Where { $_.DeviceID -eq $ifindex }).netconnectionid
-$servers = DnsServers($interface)
+$ifindex = (Get-NetIPAddress | where {$_.IPAddress -eq  "<%= spec.ip%>"}).InterfaceIndex
+$servers = DnsServers($ifIndex)
 
 <% rewrite_resolv = p("consul.agent.rewrite_resolv") %>
 
@@ -59,8 +58,8 @@ else
     Write-Host "Setting DNS Servers"
     $newDNS = ,"127.0.0.1" + $servers
     Write-Host $newDNS
-    Set-DnsClientServerAddress -InterfaceAlias $interface -ServerAddresses $newDNS
-    $servers = DnsServers($interface)
+    Set-DnsClientServerAddress -InterfaceIndex $ifIndex -ServerAddresses $newDNS
+    $servers = DnsServers($ifIndex)
     if($servers[0] -ne "127.0.0.1") {
         Write-Error "Failed to set the DNS Servers"
     }
