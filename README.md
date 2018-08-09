@@ -72,7 +72,7 @@ Find the "BOSH Lite Warden" stemcell you wish to use. [bosh.io](https://bosh.io/
 
 ### 2. Creating a release
 
-From within the consul-release director run `bosh create-release --force` to create a development release.
+From within the consul-release directory run `bosh create-release --force` to create a development release.
 
 ### 3. Uploading a release
 
@@ -80,11 +80,11 @@ Once you've created a development release run `bosh upload-release` to upload yo
 
 ### 4. Using a sample deployment manifest
 
-We provide a set of sample deployment manifests that can be used as a starting point for creating your own manifest, but they should not be considered comprehensive. They are located in manifests/aws and manifests/bosh-lite.
+We provide a set of sample deployment manifests that can be used as a starting point for creating your own manifest, but they should not be considered comprehensive. They are located in the `manifests` directory.
 
 ### 5. Deploy.
 
-Run `bosh -d OUTPUT_MANIFEST_PATH deploy`.
+Run `bosh -d DEPLOYMENT_NAME deploy DEPLOYMENT_MANIFEST_PATH`.
 
 ## Configuring
 
