@@ -10,11 +10,3 @@ consul/consul_0.7.4_linux_amd64.zip:
   size: 8764647
   object_id: 933383cb-4ac4-4abb-955e-f41d9dfc6638
   sha: 5d2ccf2bfe7ec35263fbb582701f01283bf66648
-golang/go1.9.7.linux-amd64.tar.gz:
-  size: 118297141
-  object_id: c1b00ec0-eec4-4d12-434a-32171f0af9c6
-  sha: fa74941098fcf91fdcf1a45f6275a0de3ac67f1f
-golang/go1.9.7.windows-amd64.zip:
-  size: 123888185
-  object_id: bbcd743c-f16b-447a-4917-87f29d045866
-  sha: f2a307383ba8313f9374616eae73d727a718302c
