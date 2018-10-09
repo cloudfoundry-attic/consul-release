@@ -1,0 +1,78 @@
+name: consul
+version: "198"
+commit_hash: c5125b8
+uncommitted_changes: false
+jobs:
+- name: acceptance-tests
+  version: fad3cbef6e7d07b87a968aab6fcd712df22e2faa87070d6e483cd41c38dcf1b1
+  fingerprint: fad3cbef6e7d07b87a968aab6fcd712df22e2faa87070d6e483cd41c38dcf1b1
+  sha1: sha256:128aea43097a8d7ef5dc46c61850e9fa647590ff39e629085e37ec6ba2cd8af4
+- name: consul-test-consumer
+  version: 683fd76e52f413cb97f759f8333baf7809a17afa340941b1ca7681de2566bbca
+  fingerprint: 683fd76e52f413cb97f759f8333baf7809a17afa340941b1ca7681de2566bbca
+  sha1: sha256:3470d3fcb85b036a7f86bdc59f7776e5ad4e87fad1272ac806f3fa47119aa4e5
+- name: consul-test-consumer-windows
+  version: 21ba1939056dde71518892b518ad8ad3b4aeb082f882d46a09b9ec06f74a7b2b
+  fingerprint: 21ba1939056dde71518892b518ad8ad3b4aeb082f882d46a09b9ec06f74a7b2b
+  sha1: sha256:fa2f70aa6305ca4231741466bdd533f6d6141f547e4a26cb6b677f3e0acce49e
+- name: consul_agent
+  version: 4d9f62c27ad733c2de3ebb7ebd4005c6ddfd73f34f3e7481f04431adcbab5de0
+  fingerprint: 4d9f62c27ad733c2de3ebb7ebd4005c6ddfd73f34f3e7481f04431adcbab5de0
+  sha1: sha256:d9d951f6f7e73fd08d70d84dabb7ea71cdbfffac56cd2462dcfd945afdfa6365
+- name: consul_agent_windows
+  version: 30c0bde7c87c8273d6d0b8a348882a8151b4c267f4509b092abb87dc569dfce3
+  fingerprint: 30c0bde7c87c8273d6d0b8a348882a8151b4c267f4509b092abb87dc569dfce3
+  sha1: sha256:76075d29d85b72c671c08822d748e570529168f9c3c541fb3987a0ea86f9ec42
+- name: fake-dns-server
+  version: 66c04aa3958499f7f3abe8455286e13a1e7e9818057f32494e61cd8e510991f7
+  fingerprint: 66c04aa3958499f7f3abe8455286e13a1e7e9818057f32494e61cd8e510991f7
+  sha1: sha256:7262d23a9424f4bced520cf87fd10ceb5504984755a6f9a842ab3fcf2b98c581
+packages:
+- name: acceptance-tests
+  version: d730e9bb3b7764f972876fd7ceef96e6b873cb619696eaf3b5907f3bdcf42819
+  fingerprint: d730e9bb3b7764f972876fd7ceef96e6b873cb619696eaf3b5907f3bdcf42819
+  sha1: sha256:52c9cf786c30e28b9b6e61669b45bfaf11656be5a735504cce6a1361fe29662a
+  dependencies:
+  - golang-1-linux
+- name: acceptance-tests-windows
+  version: 07d70885811df1977cbb7bdfb9cbeb2b9a74edc25a05cd8bb1a28c6f386206ec
+  fingerprint: 07d70885811df1977cbb7bdfb9cbeb2b9a74edc25a05cd8bb1a28c6f386206ec
+  sha1: sha256:be64a0bef292f11628af06606c331ba10f0971a476b6e676b92f0bb5df1482ef
+  dependencies:
+  - golang-1-windows
+- name: confab
+  version: fa5c57dcb567e965a51bb3e444d3375fe46ca10a7c3516e1c6bb05377e0e8931
+  fingerprint: fa5c57dcb567e965a51bb3e444d3375fe46ca10a7c3516e1c6bb05377e0e8931
+  sha1: sha256:ac3b5637140d76112c5d3cc63f79742d69bd8dc414efee841cf2970349b83724
+  dependencies:
+  - golang-1-linux
+- name: confab-windows
+  version: 939e5ff88e71167371c187e44d6f5dc6e6b08ab3b760cd9ecfa6bbb35fe1a6bc
+  fingerprint: 939e5ff88e71167371c187e44d6f5dc6e6b08ab3b760cd9ecfa6bbb35fe1a6bc
+  sha1: sha256:01665feb54d249269821ff0f34726ba53b4525de59a35783d0dad68604a019de
+  dependencies:
+  - golang-1-windows
+- name: consul
+  version: aa267a2e570e051b5b24b0029f8dc9ee3bccc443e4e6c8db7a90bbde04586054
+  fingerprint: aa267a2e570e051b5b24b0029f8dc9ee3bccc443e4e6c8db7a90bbde04586054
+  sha1: sha256:bfaa76662697d7e90f3661e405cecfb99fc08c93ccfdb3276e21cc0e1b36ce18
+  dependencies: []
+- name: consul-windows
+  version: ed50fbfcfef13de31c13e68048861dd8b28b9eb7f55309745703704abb68ce7f
+  fingerprint: ed50fbfcfef13de31c13e68048861dd8b28b9eb7f55309745703704abb68ce7f
+  sha1: sha256:ce64c4d56a54beeb23ab0379763cc9afbc0873c68c942589455a487c0f87350f
+  dependencies: []
+- name: golang-1-linux
+  version: 864e21e6d4f474b33b5d810004e2382cd5c64972
+  fingerprint: 864e21e6d4f474b33b5d810004e2382cd5c64972
+  sha1: 5e52b62c0c036ddc9701cc92e16ce808f958ae2d
+  dependencies: []
+- name: golang-1-windows
+  version: feb0de65f16dad009b76d1f2fa062bea00da3c70
+  fingerprint: feb0de65f16dad009b76d1f2fa062bea00da3c70
+  sha1: aef86259df3671eecc764d4dd6f9279f159e7806
+  dependencies: []
+license:
+  version: fccbcdf79f9fd40f5ef7e2461bdb42fbaf893f587dbd1a848c18b82530d7d002
+  fingerprint: fccbcdf79f9fd40f5ef7e2461bdb42fbaf893f587dbd1a848c18b82530d7d002
+  sha1: sha256:73a6873c33c420ef9c5a27db671aea20d1dad6bd84779b0238ece94d91f12999
